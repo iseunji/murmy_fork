@@ -1,0 +1,17 @@
+{
+  "name": "fork-murder-mystery",
+  "version": "1.0.0",
+  "description": "《Fork》 - 2인용 인터랙티브 머더 미스터리 게임",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.4"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.3"
+  }
+}

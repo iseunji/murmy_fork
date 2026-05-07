@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#212121">
+  <meta name="description" content="Fork - 2인용 머더 미스터리 웹 게임">
+  <title>Fork — 갈라진 의도</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+  <!-- Film grain overlay -->
+  <div class="film-grain" aria-hidden="true"></div>
+
+  <!-- Sound Toggle (persistent across all screens) -->
+  <button class="sound-toggle" id="btn-sound-toggle" aria-label="소리 켜기/끄기">
+    <svg class="sound-icon sound-icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20">
+      <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+      <path d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"/>
+    </svg>
+    <svg class="sound-icon sound-icon-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20">
+      <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+      <line x1="23" y1="9" x2="17" y2="15"/>
+      <line x1="17" y1="9" x2="23" y2="15"/>
+    </svg>
+  </button>
+
+  <!-- ===== SCREEN 1: TITLE ===== -->
+  <section id="screen-title" class="screen active">
+    <div class="screen-inner title-layout">
+      <div class="title-content">
+        <h1 class="game-title">Fork</h1>
+        <p class="game-subtitle">갈라진 의도</p>
+        <div class="sketch-divider" aria-hidden="true"></div>
+        <p class="game-meta">2인용 머더 미스터리</p>
+      </div>
+      <button class="btn btn-primary btn-start" id="btn-start">시작하기</button>
+    </div>
+  </section>
+
+  <!-- ===== SCREEN 2: LOBBY ===== -->
+  <section id="screen-lobby" class="screen">
+    <div class="screen-inner">
+      <h2 class="screen-heading">로비</h2>
+
+      <div class="lobby-options">
+        <!-- Create Room -->
+        <div class="lobby-card" id="lobby-create-section">
+          <h3 class="lobby-card-title">방 만들기</h3>
+          <p class="lobby-card-desc">새로운 게임 방을 만들고 상대를 초대하세요.</p>
+          <button class="btn btn-primary" id="btn-create-room">방 만들기</button>
+        </div>
+
+        <!-- Join Room -->
+        <div class="lobby-card" id="lobby-join-section">
+          <h3 class="lobby-card-title">방 참가하기</h3>
+          <p class="lobby-card-desc">상대가 공유한 코드를 입력하세요.</p>
+          <div class="join-form">
+            <input
+              type="text"
+              id="input-room-code"
+              class="input-room-code"
+              maxlength="4"
+              placeholder="0000"
+              inputmode="numeric"
+              autocomplete="off"
+              aria-label="방 코드 입력"
+            >
+            <button class="btn btn-primary" id="btn-join-room">참가</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Room Created State -->
+      <div class="room-created-info" id="room-created-info" hidden>
+        <p class="room-created-label">방 코드</p>
+        <div class="room-code-display" id="room-code-display">----</div>
+        <p class="room-status" id="lobby-status">대기 중...</p>
+        <div class="player-count" id="player-count">
+          <span class="player-dot filled"></span>
+          <span class="player-dot"></span>
+          <span class="player-count-text">1 / 2</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SCREEN 3: WAITING ===== -->
+  <section id="screen-waiting" class="screen">
+    <div class="screen-inner waiting-layout">
+      <div class="waiting-content">
+        <p class="waiting-text pulse">상대방을 기다리는 중...</p>
+        <p class="waiting-label">방 코드를 공유하세요</p>
+        <div class="room-code-display room-code-large" id="waiting-room-code">----</div>
+        <p class="waiting-status" id="waiting-status"></p>
+      </div>
+
+      <div class="ready-section">
+        <div class="ready-indicators">
+          <div class="ready-indicator" id="ready-indicator-1">
+            <span class="ready-dot"></span>
+            <span class="ready-label">플레이어 1</span>
+          </div>
+          <div class="ready-indicator" id="ready-indicator-2">
+            <span class="ready-dot"></span>
+            <span class="ready-label">플레이어 2</span>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="btn-ready" disabled>준비</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SCREEN: CHARACTER SELECT ===== -->
+  <section id="screen-character-select" class="screen">
+    <div class="screen-inner character-select-layout">
+      <div class="character-select-header">
+        <h2 class="screen-heading">인물 선택</h2>
+        <p class="character-select-desc">당신의 인물을 선택하세요.</p>
+      </div>
+      <div class="character-cards" id="character-cards">
+        <!-- Character cards injected by JS -->
+      </div>
+      <div class="character-waiting" id="character-waiting" hidden>
+        <p class="pulse">상대방의 선택을 기다리는 중...</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SCREEN 4: INTRO ===== -->
+  <section id="screen-intro" class="screen">
+    <div class="screen-inner">
+      <div class="role-indicator" id="intro-role">조교</div>
+
+      <div class="intro-narrative-section">
+        <h2 class="intro-title">사건 개요</h2>
+        <div class="intro-story" id="intro-narrative">
+          <!-- Story paragraphs injected by JS via typewriter -->
+        </div>
+      </div>
+
+      <div class="secret-briefing sketch-border" id="intro-briefing">
+        <div class="briefing-header">
+          <span class="briefing-icon">&#x1F512;</span>
+          <h3 class="briefing-title">비밀 지령</h3>
+        </div>
+        <div class="briefing-content" id="briefing-content">
+          <!-- Secret briefing injected by JS -->
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-bottom" id="btn-intro-next">다음</button>
+    </div>
+  </section>
+
+  <!-- ===== SCREEN 5: INVESTIGATION ===== -->
+  <section id="screen-investigation" class="screen">
+    <!-- Top Bar -->
+    <header class="investigation-topbar">
+      <div class="phase-info">
+        <h2 class="phase-title" id="phase-title">1단계</h2>
+        <p class="phase-subtitle" id="phase-subtitle">초기 조사</p>
+      </div>
+      <div class="timer-display">
+        <span class="timer-icon">&#x23F1;</span>
+        <span class="timer-value" id="phase-timer">05:00</span>
+      </div>
+    </header>
+
+    <!-- Phase Progress -->
+    <div class="phase-progress" id="phase-progress" aria-label="단계 진행도">
+      <span class="phase-dot" aria-label="단계"></span>
+      <span class="phase-dot" aria-label="단계"></span>
+      <span class="phase-dot" aria-label="단계"></span>
+      <span class="phase-dot" aria-label="단계"></span>
+      <span class="phase-dot" aria-label="단계"></span>
+    </div>
+
+    <div class="screen-inner investigation-body">
+      <!-- Narrative Section -->
+      <div class="narrative-section" id="narrative-section">
+        <div class="narrative-content" id="phase-narrative">
+          <!-- Phase narrative injected by JS -->
+        </div>
+        <button class="narrative-toggle" id="btn-toggle-narrative" aria-label="내러티브 접기/펼치기">
+          <span class="toggle-icon">&#x25B2;</span>
+        </button>
+      </div>
+
+      <!-- Evidence Panel -->
+      <div class="evidence-panel" id="evidence-panel">
+        <h3 class="evidence-heading" id="evidence-heading">증거</h3>
+
+        <!-- State 1: "Go collect" button (before collection starts) -->
+        <div class="evidence-collect-prompt" id="evidence-collect-prompt">
+          <button class="btn btn-primary btn-collect" id="btn-start-collection">증거 수집하러 가기</button>
+        </div>
+
+        <!-- State 2: Waiting for partner -->
+        <div class="evidence-waiting-partner" id="evidence-waiting-partner" hidden>
+          <p class="pulse">상대방을 기다리는 중...</p>
+        </div>
+
+        <!-- State 3: Turn indicator -->
+        <div class="evidence-turn-indicator" id="evidence-turn-indicator" hidden>
+          <p class="turn-status" id="turn-status"></p>
+        </div>
+
+        <!-- Evidence grid (used for both pool selection and collected review) -->
+        <div class="evidence-grid" id="evidence-grid">
+          <!-- Evidence cards injected by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Evidence Detail Modal -->
+    <div class="modal-overlay" id="evidence-modal" hidden>
+      <div class="modal-content evidence-detail">
+        <button class="modal-close" id="btn-close-evidence" aria-label="닫기">&times;</button>
+        <div class="evidence-detail-type" id="evidence-modal-type"></div>
+        <h3 class="evidence-detail-title" id="evidence-modal-title"></h3>
+        <div class="evidence-detail-body" id="evidence-modal-content">
+          <!-- Evidence content injected by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Bar -->
+    <footer class="investigation-bottombar">
+      <div class="ready-count" id="phase-ready-count">0 / 2 준비</div>
+      <button class="btn btn-primary" id="btn-phase-ready">준비 완료</button>
+    </footer>
+  </section>
+
+  <!-- ===== SCREEN 6: AI CHAT ===== -->
+  <section id="screen-ai-chat" class="screen">
+    <!-- Top Bar -->
+    <header class="chat-topbar">
+      <div class="chat-ai-identity">
+        <span class="ai-name glitch" data-text="ARIA">ARIA</span>
+        <span class="ai-status">온라인</span>
+      </div>
+      <div class="timer-display">
+        <span class="timer-icon">&#x23F1;</span>
+        <span class="timer-value" id="ai-chat-timer">10:00</span>
+      </div>
+    </header>
+
+    <!-- Chat Area -->
+    <div class="chat-area" id="chat-area">
+      <div class="chat-messages" id="ai-chat-messages">
+        <!-- Messages injected by JS -->
+      </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="chat-input-area">
+      <div class="chat-input-wrapper">
+        <input
+          type="text"
+          id="ai-chat-input"
+          class="chat-input"
+          placeholder="ARIA에게 질문하세요..."
+          autocomplete="off"
+          aria-label="메시지 입력"
+        >
+        <button class="btn-send" id="btn-ai-send" aria-label="전송">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13"/>
+          </svg>
+        </button>
+      </div>
+      <div class="chat-bottom-bar">
+        <span class="ai-ready-count" id="ai-ready-count">0/2</span>
+        <button class="btn btn-secondary btn-chat-ready" id="btn-ai-ready">대화 종료 &amp; 준비</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SCREEN 7: VERDICT ===== -->
+  <section id="screen-verdict" class="screen">
+    <div class="screen-inner verdict-layout">
+      <div class="verdict-header">
+        <h2 class="verdict-title">최종 판결</h2>
+        <p class="verdict-instruction">당신의 판단을 내려주세요.</p>
+      </div>
+
+      <div class="verdict-choices" id="verdict-buttons">
+        <button class="verdict-card" id="btn-accuse-partner" data-verdict="partner">
+          <span class="verdict-card-icon">&#x1F464;</span>
+          <span class="verdict-card-label">상대 조교</span>
+          <span class="verdict-card-desc">상대방이 범인이라고 고발합니다.</span>
+        </button>
+
+        <button class="verdict-card" id="btn-accuse-ai" data-verdict="aria">
+          <span class="verdict-card-icon">&#x1F916;</span>
+          <span class="verdict-card-label">ARIA</span>
+          <span class="verdict-card-desc">인공지능 ARIA가 범인이라고 고발합니다.</span>
+        </button>
+
+        <button class="verdict-card" id="btn-accuse-self" data-verdict="self">
+          <span class="verdict-card-icon">&#x1F4A0;</span>
+          <span class="verdict-card-label">자백</span>
+          <span class="verdict-card-desc">스스로 범행을 인정합니다.</span>
+        </button>
+      </div>
+
+      <div class="verdict-waiting" id="verdict-waiting" hidden>
+        <p class="pulse">상대방의 판결을 기다리는 중...</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SCREEN 8: ENDING ===== -->
+  <section id="screen-ending" class="screen">
+    <div class="screen-inner ending-layout">
+      <div class="ending-header">
+        <h2 class="ending-title" id="ending-title">END 01</h2>
+        <p class="ending-subtitle" id="ending-subtitle">Forked</p>
+      </div>
+
+      <div class="ending-narrative" id="ending-narrative">
+        <!-- Ending paragraphs injected by JS, revealed sequentially -->
+      </div>
+
+      <div class="ending-epilogue" id="ending-epilogue">
+        <div class="epilogue-terminal">
+          <div class="epilogue-terminal-header">
+            <span class="terminal-dot red"></span>
+            <span class="terminal-dot yellow"></span>
+            <span class="terminal-dot green"></span>
+            <span class="terminal-title">ARIA_FINAL_LOG</span>
+          </div>
+          <div class="epilogue-terminal-body" id="epilogue-terminal-body">
+            <!-- AI epilogue text injected by JS -->
+            <span class="terminal-cursor" aria-hidden="true"></span>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-bottom" id="btn-restart">처음으로</button>
+    </div>
+  </section>
+
+  <!-- Socket.io client -->
+  <script src="/socket.io/socket.io.js"></script>
+  <!-- App script -->
+  <script src="/app.js"></script>
+</body>
+</html>

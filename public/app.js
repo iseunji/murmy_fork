@@ -81,6 +81,11 @@ function $(id) {
   return document.getElementById(id);
 }
 
+/** Returns the character's given name suffix like '(하진)', or '' if unavailable. */
+function charSuffix() {
+  return state.character ? `(${state.character.name.slice(1)})` : '';
+}
+
 /**
  * Return a promise that resolves after `ms` milliseconds.
  * @param {number} ms
@@ -208,8 +213,8 @@ function restoreStateFromSession() {
    4. TYPEWRITER EFFECT
    ========================================================================== */
 
-/** AbortController for the currently-running typewriter so we can cancel it. */
-let typewriterAbort = null;
+/** Per-element AbortControllers so concurrent typewriters on different elements don't cancel each other. */
+const typewriterAborts = new WeakMap();
 
 /**
  * Reveal text inside an element one character at a time.
@@ -222,11 +227,10 @@ let typewriterAbort = null;
  */
 async function typewriter(element, text, speed = 30) {
   // Cancel any in-progress typewriter on this element.
-  if (typewriterAbort) {
-    typewriterAbort.abort();
-  }
+  const existing = typewriterAborts.get(element);
+  if (existing) existing.abort();
   const controller = new AbortController();
-  typewriterAbort = controller;
+  typewriterAborts.set(element, controller);
 
   element.textContent = '';
 
@@ -237,8 +241,8 @@ async function typewriter(element, text, speed = 30) {
   }
 
   // Clear the controller reference when finished naturally.
-  if (typewriterAbort === controller) {
-    typewriterAbort = null;
+  if (typewriterAborts.get(element) === controller) {
+    typewriterAborts.delete(element);
   }
 }
 
@@ -281,13 +285,20 @@ async function terminalTypewriter(element, text, speed = 45) {
 async function streamText(element, text, opts = {}) {
   const { wordDelay = 30, paragraphPause = 300, dangerPhrases = [] } = opts;
 
-  if (typewriterAbort) {
-    typewriterAbort.abort();
-  }
+  const existing = typewriterAborts.get(element);
+  if (existing) existing.abort();
   const controller = new AbortController();
-  typewriterAbort = controller;
+  typewriterAborts.set(element, controller);
 
   element.innerHTML = '';
+
+  // If text contains dialogue lines, show a reading guide at the top
+  if (/^.{1,5}:\s*"/m.test(text)) {
+    const guide = document.createElement('p');
+    guide.className = 'dialogue-guide';
+    guide.textContent = '파란색 대사는 각자 역할을 맡은 사람이 소리내어 읽어주세요.';
+    element.appendChild(guide);
+  }
 
   // Streaming cursor
   const cursor = document.createElement('span');
@@ -312,6 +323,11 @@ async function streamText(element, text, opts = {}) {
       }
     }
     if (isDanger) p.classList.add('text-danger');
+
+    // Dialogue lines (e.g. '도현: "..."') get highlighted
+    if (/^.{1,5}:\s*"/.test(paragraphs[pi])) {
+      p.classList.add('text-dialogue');
+    }
 
     // Split paragraph into lines (single \n) then words
     const lines = paragraphs[pi].split('\n');
@@ -341,8 +357,8 @@ async function streamText(element, text, opts = {}) {
   // Remove cursor when done
   if (cursor.parentNode) cursor.remove();
 
-  if (typewriterAbort === controller) {
-    typewriterAbort = null;
+  if (typewriterAborts.get(element) === controller) {
+    typewriterAborts.delete(element);
   }
 }
 
@@ -395,6 +411,7 @@ class AmbientSound {
     this.ctx = null;
     this.nodes = {};  // Stores references to audio nodes for cleanup.
     this.running = false;
+    this.bgm = null;  // HTMLAudioElement for background music
   }
 
   /**
@@ -421,8 +438,20 @@ class AmbientSound {
     this._ensureContext();
     this.startRain();
     this.startDrone();
-    this.startHum();
     this.running = true;
+  }
+
+  startBGM(fromBeginning) {
+    if (!this.bgm) {
+      this.bgm = new Audio('/assets/bgm.mp3');
+      this.bgm.loop = true;
+      this.bgm.volume = 0.3;
+    }
+    if (fromBeginning) {
+      this.bgm.currentTime = 0;
+    }
+    const p = this.bgm.play();
+    if (p) p.catch(() => {});
   }
 
   /**
@@ -521,31 +550,29 @@ class AmbientSound {
   }
 
   /**
-   * Gracefully fade out and stop all ambient layers.
+   * Immediately stop all ambient layers and BGM.
    */
   stop() {
-    if (!this.running || !this.ctx) return;
-    const now = this.ctx.currentTime;
+    if (this.bgm) {
+      this.bgm.pause();
+    }
 
+    // Cancel any pending cleanup from a previous stop call.
+    if (this._stopTimer) {
+      clearTimeout(this._stopTimer);
+      this._stopTimer = null;
+    }
+
+    // Immediately stop and disconnect all Web Audio nodes.
     Object.values(this.nodes).forEach((group) => {
       Object.values(group).forEach((node) => {
-        if (node instanceof GainNode) {
-          node.gain.linearRampToValueAtTime(0, now + 1);
-        }
+        try { node.stop?.(); } catch (_) { /* already stopped */ }
+        try { node.disconnect(); } catch (_) { /* ok */ }
       });
     });
 
-    // Disconnect everything after the fade-out.
-    setTimeout(() => {
-      Object.values(this.nodes).forEach((group) => {
-        Object.values(group).forEach((node) => {
-          try { node.stop?.(); } catch (_) { /* already stopped */ }
-          try { node.disconnect(); } catch (_) { /* ok */ }
-        });
-      });
-      this.nodes = {};
-      this.running = false;
-    }, 1200);
+    this.nodes = {};
+    this.running = false;
   }
 }
 
@@ -1079,7 +1106,7 @@ async function showEnding(data) {
   // --- Title ---
   const titleEl = $('ending-title');
   if (titleEl) {
-    titleEl.textContent = data.title || '';
+    titleEl.textContent = (data.title || '') + charSuffix();
     titleEl.classList.add('fade-in');
   }
 
@@ -1289,7 +1316,10 @@ socket.on('room-joined', (data) => {
     const btnReady = $('btn-ready');
     if (btnReady) btnReady.disabled = false;
   } else {
-    showToast(data.error || '\uBC29 \uCC38\uAC00\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.'); // Failed to join room.
+    // Room not found (e.g. server restarted) — clear stale state and go home.
+    state.roomCode = null;
+    try { sessionStorage.removeItem('murmy_state'); } catch (_) {}
+    showScreen('screen-title');
   }
 });
 
@@ -1315,7 +1345,10 @@ socket.on('player-joined', (data) => {
 // ---- Ready State ----
 
 socket.on('ready-update', (data) => {
-  // Light up the ready dot for the player who pressed ready.
+  // Only light up the OTHER player's dot.
+  // Our own dot is handled by the click handler for instant feedback.
+  if (data.playerNum === state.playerNum) return;
+
   const indicator = $(`ready-indicator-${data.playerNum}`);
   if (indicator) {
     indicator.classList.add('is-ready');
@@ -1338,8 +1371,8 @@ const SKETCH_FILTER = '<defs><filter id="pencil"><feTurbulence type="turbulence"
 const SK = 'filter="url(#pencil)"'; // shorthand
 
 const CHARACTER_SILHOUETTES = {
-  hajin: '<img src="/assets/hajin.png" alt="서하진" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" />',
-  dohyun: '<img src="/assets/dohyun.png" alt="윤도현" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" />',
+  hajin: '<img src="/assets/hajin.png" alt="서하진" />',
+  dohyun: '<img src="/assets/dohyun.png" alt="윤도현" />',
 };
 
 function renderCharacterCards(characters) {
@@ -1360,8 +1393,17 @@ function renderCharacterCards(characters) {
         '<span class="character-trait">' + char.trait + '</span>' +
       '</div>';
     card.addEventListener('click', () => {
-      if (card.classList.contains('taken') || card.classList.contains('selected')) return;
+      if (card.classList.contains('taken')) return;
       SFX.click();
+
+      if (card.classList.contains('selected')) {
+        // Deselect current selection
+        card.classList.remove('selected');
+        socket.emit('select-character', { characterId: char.id });
+        return;
+      }
+
+      // Select (or switch to) this character
       container.querySelectorAll('.character-card').forEach((c) => c.classList.remove('selected'));
       card.classList.add('selected');
       socket.emit('select-character', { characterId: char.id });
@@ -1383,6 +1425,19 @@ socket.on('character-selected-by-other', (data) => {
   if (!container) return;
   const card = container.querySelector('[data-character-id="' + data.characterId + '"]');
   if (card) card.classList.add('taken');
+});
+
+socket.on('character-freed-by-other', (data) => {
+  const container = $('character-cards');
+  if (!container) return;
+  const card = container.querySelector('[data-character-id="' + data.characterId + '"]');
+  if (card) card.classList.remove('taken');
+});
+
+socket.on('character-deselected', () => {
+  state.characterId = null;
+  const waiting = $('character-waiting');
+  if (waiting) waiting.hidden = true;
 });
 
 socket.on('character-confirmed', (data) => {
@@ -1416,6 +1471,18 @@ socket.on('game-start', async (data) => {
   // Show the intro screen with role and briefing.
   showScreen('screen-intro');
 
+  // Append character name to intro title.
+  const introTitle = document.querySelector('.intro-title');
+  if (introTitle) introTitle.textContent = `사건 개요${charSuffix()}`;
+
+  // Start BGM 3 seconds after entering the intro (사건 개요) screen.
+  setTimeout(() => {
+    if (state.soundEnabled) {
+      ambient.startBGM(true);
+      state.bgmStarted = true;
+    }
+  }, 3000);
+
   await sleep(500);
 
   // Display role label with character name.
@@ -1435,11 +1502,19 @@ socket.on('game-start', async (data) => {
     const introText =
       'K대학교 인공지능학과 자율시스템 연구실.\n국내 최상위 AI 연구 그룹으로, 최근 \'실제 인간 수준의 가치판단과 자율성을 가진 AI 시스템\' 연구로 학계 안팎의 큰 주목을 받고 있다.\n그 연구의 중심에는 ARIA가 있다 — 연구실이 자체 개발한 자율 추론 인공지능. 로봇 팔과 연결되어 물리적 세계에도 개입할 수 있는, 국내 유일의 embodied AI 시스템이다.'
       + '\n\n'
-      + '추석 연휴. 캠퍼스는 텅 비었다.\n대부분의 학생들은 떠났지만, 당신은 남아 교수의 업무를 처리하고 있었다.'
+      + '간만에 찾아온 긴 연휴. 캠퍼스는 텅 비었다.\n대부분의 학생들은 떠났지만, 당신은 학교 근처 자취방에 남아 교수의 업무를 처리하고 있었다.'
       + '\n\n'
-      + '밤 9시, 교수에게서 급한 호출이 왔다.\n"당장 연구실로 와라."'
+      + '오후 10시 반, 교수에게서 갑자기 전화가 왔다.\n"당장 연구실로 와라."'
       + '\n\n'
-      + '밤 11시, 동료와 함께 연구실에 도착했다.\n문을 연 순간 — 교수가 AI 터미널 옆에서 쓰러져 있었다.';
+      + '부랴부랴 연구실로 바로 출발하여 도착한 시간은 밤 11시.'
+      + '\n\n'
+      + '연구실 안에는 불이 켜져 있었고, 문 앞에는 동료가 기다리고 있었다.'
+      + '\n\n'
+      + '도현: "형도 올 줄 알았어요. 저도 교수님이 오라고 하셔서 방금 도착했는데, 문이 잠겨있어서 기다리고 있었거든요. 열쇠 형한테 있죠?"'
+      + '\n\n'
+      + '하진: "응, 내가 가지고 있어."'
+      + '\n\n'
+      + '문을 열고 들어간 순간 — 교수가 AI 어시스턴트 화면이 켜진 모니터 책상 옆에 쓰러져 있었다.';
     await streamText(narrativeEl, introText, { wordDelay: 30, paragraphPause: 400 });
   }
 
@@ -1472,6 +1547,9 @@ socket.on('phase-data', async (data) => {
 
   if (isVerdictPhase) {
     showScreen('screen-verdict');
+    // Append character name to verdict title.
+    const verdictTitle = document.querySelector('.verdict-title');
+    if (verdictTitle) verdictTitle.textContent = `최종 판결${charSuffix()}`;
     // Reset verdict UI
     const verdictButtons = $('verdict-buttons');
     const verdictWaiting = $('verdict-waiting');
@@ -1483,6 +1561,14 @@ socket.on('phase-data', async (data) => {
 
   if (isAiPhase) {
     showScreen('screen-ai-chat');
+
+    // Append character name to AI chat header.
+    const aiNameEl = document.querySelector('.ai-name');
+    if (aiNameEl) {
+      const label = `ARIA${charSuffix()}`;
+      aiNameEl.textContent = label;
+      aiNameEl.setAttribute('data-text', label);
+    }
 
     await sleep(400);
 
@@ -1510,7 +1596,7 @@ socket.on('phase-data', async (data) => {
 
     // Update phase metadata.
     const titleEl = $('phase-title');
-    if (titleEl) titleEl.textContent = data.title || '';
+    if (titleEl) titleEl.textContent = (data.title || '') + charSuffix();
 
     const subtitleEl = $('phase-subtitle');
     if (subtitleEl) subtitleEl.textContent = data.subtitle || '';
@@ -1707,6 +1793,10 @@ function bindEvents() {
         if (state.ambientStarted) {
           ambient.start();
         }
+        // Resume BGM if it was previously started
+        if (state.bgmStarted) {
+          ambient.startBGM();
+        }
       } else {
         // Stop ambient sound
         ambient.stop();
@@ -1722,7 +1812,10 @@ function bindEvents() {
       SFX.click();
       // Start ambient on first user interaction (autoplay policy compliance).
       if (!state.ambientStarted) {
-        ambient.start();
+        ambient._ensureContext();
+        ambient.startRain();
+        ambient.startDrone();
+        ambient.running = true;
         state.ambientStarted = true;
       }
       showScreen('screen-lobby');

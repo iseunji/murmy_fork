@@ -66,6 +66,19 @@ function findEvidence(phaseId, role, evidenceId) {
 }
 
 // ---------------------------------------------------------------------------
+// Helper: find evidence by ID across ALL roles (shared pool lookup)
+// ---------------------------------------------------------------------------
+function findEvidenceGlobal(phaseId, evidenceId) {
+  const phase = findPhase(phaseId);
+  if (!phase || !phase.evidence) return null;
+  const all = [
+    ...(phase.evidence.culprit || []),
+    ...(phase.evidence.innocent || []),
+  ];
+  return all.find((e) => e.id === evidenceId) || null;
+}
+
+// ---------------------------------------------------------------------------
 // Helper: build the evidence *list* (without content) for a role in a phase
 // ---------------------------------------------------------------------------
 function buildEvidenceList(phaseId, role) {
@@ -76,6 +89,21 @@ function buildEvidenceList(phaseId, role) {
     title: e.title,
     type: e.type,
   }));
+}
+
+// ---------------------------------------------------------------------------
+// Helper: build a SHARED evidence list combining both roles (without content)
+// ---------------------------------------------------------------------------
+function buildSharedEvidenceList(phaseId) {
+  const phase = findPhase(phaseId);
+  if (!phase || !phase.evidence) return [];
+  const culprit = (phase.evidence.culprit || []).map((e) => ({
+    id: e.id, title: e.title, type: e.type,
+  }));
+  const innocent = (phase.evidence.innocent || []).map((e) => ({
+    id: e.id, title: e.title, type: e.type,
+  }));
+  return [...culprit, ...innocent];
 }
 
 // ---------------------------------------------------------------------------
@@ -97,18 +125,18 @@ function sendPhaseData(room) {
   const phase = findPhase(phaseId);
   if (!phase) return;
 
+  const hasEvidence = buildSharedEvidenceList(phaseId).length > 0;
+
   room.players.forEach((socket) => {
     if (!socket) return;
     const role = room.roles[socket.id];
-    const fullEvidenceList = buildEvidenceList(phaseId, role);
-    const hasEvidence = fullEvidenceList.length > 0;
 
     socket.emit('phase-data', {
       phaseId,
       title: phase.title || phaseId,
       subtitle: phase.subtitle || '',
       narrative: buildNarrative(phaseId, role),
-      evidenceList: hasEvidence ? [] : fullEvidenceList,
+      evidenceList: [],
       hasEvidence,
       duration: phase.duration || 120,
     });
@@ -157,20 +185,12 @@ function startPhaseTimer(room) {
       // Auto-assign remaining evidence if collection is still active
       const ec = room.evidenceCollection;
       if (ec.active) {
-        // Alternate turns, assigning each player's remaining pool to their picked list
+        // Alternate turns, distributing shared pool items between players
         let turnIdx = ec.currentTurnIndex;
-        let hasRemaining = true;
-        while (hasRemaining) {
-          hasRemaining = false;
-          for (let i = 0; i < ec.turnOrder.length; i++) {
-            const idx = (turnIdx + i) % ec.turnOrder.length;
-            const sid = ec.turnOrder[idx];
-            if (ec.pools[sid] && ec.pools[sid].length > 0) {
-              const item = ec.pools[sid].shift();
-              ec.picked[sid].push(item.id);
-              hasRemaining = true;
-            }
-          }
+        while (ec.sharedPool.length > 0) {
+          const sid = ec.turnOrder[turnIdx % ec.turnOrder.length];
+          const item = ec.sharedPool.shift();
+          ec.picked[sid].push(item.id);
           turnIdx++;
         }
         ec.active = false;
@@ -212,7 +232,7 @@ function advancePhase(room) {
     readyToCollect: [],
     turnOrder: [],
     currentTurnIndex: 0,
-    pools: {},
+    sharedPool: [],
     picked: {},
     active: false,
   };
@@ -314,7 +334,7 @@ io.on('connection', (socket) => {
         readyToCollect: [],    // socket.ids of players who clicked "go collect"
         turnOrder: [],         // [socketId1, socketId2]
         currentTurnIndex: 0,   // index into turnOrder
-        pools: {},             // socketId -> [{id, title, type}, ...] remaining evidence
+        sharedPool: [],        // [{id, title, type}, ...] single shared pool for both players
         picked: {},            // socketId -> [evidenceId, ...] picked evidence IDs
         active: false,         // whether collection is in progress
       },
@@ -458,12 +478,13 @@ io.on('connection', (socket) => {
 
     room.readyCount += 1;
 
-    // Broadcast which player is ready (so both can see dots light up)
-    const playerIndex = room.players.indexOf(socket);
+    // Notify the OTHER player which dot to light up.
+    // The player who pressed ready already has instant feedback from their click handler.
+    const playerIndex = room.players.findIndex((s) => s && s.id === socket.id);
     const playerNum = playerIndex + 1;
     console.log(`[Room ${roomCode}] player-ready from socket ${socket.id}, playerIndex=${playerIndex}, playerNum=${playerNum}`);
     room.players.forEach((s) => {
-      if (s) s.emit('ready-update', { playerNum });
+      if (s && s.id !== socket.id) s.emit('ready-update', { playerNum });
     });
 
     // Need both players connected and ready
@@ -496,17 +517,34 @@ io.on('connection', (socket) => {
     const room = rooms[roomCode];
     if (!room || room.gameState !== 'character-select') return;
 
+    const previousSelection = room.characterSelections[socket.id];
+    const partner = getPartnerSocket(room, socket.id);
+
+    // Toggle: clicking the same character deselects it
+    if (previousSelection === characterId) {
+      delete room.characterSelections[socket.id];
+      socket.emit('character-deselected', { characterId });
+      if (partner) {
+        partner.emit('character-freed-by-other', { characterId });
+      }
+      return;
+    }
+
     // Check if already taken by the other player
-    const alreadyTaken = Object.values(room.characterSelections).includes(characterId);
-    if (alreadyTaken) {
+    const otherPlayerId = Object.keys(room.characterSelections).find(id => id !== socket.id);
+    if (otherPlayerId && room.characterSelections[otherPlayerId] === characterId) {
       socket.emit('character-taken', { characterId });
       return;
+    }
+
+    // Free previous selection if switching characters
+    if (previousSelection && partner) {
+      partner.emit('character-freed-by-other', { characterId: previousSelection });
     }
 
     room.characterSelections[socket.id] = characterId;
 
     // Notify partner this character was claimed
-    const partner = getPartnerSocket(room, socket.id);
     if (partner) {
       partner.emit('character-selected-by-other', { characterId });
     }
@@ -518,9 +556,10 @@ io.on('connection', (socket) => {
     const selectedCount = Object.keys(room.characterSelections).length;
     if (selectedCount >= 2) {
       const shuffled = [...room.players].filter(Boolean);
-      const roleAssignment = Math.random() < 0.5
-        ? ['culprit', 'innocent']
-        : ['innocent', 'culprit'];
+      // 하진(hajin)을 선택한 플레이어가 항상 범인
+      const roleAssignment = shuffled.map((s) =>
+        room.characterSelections[s.id] === 'hajin' ? 'culprit' : 'innocent'
+      );
 
       shuffled.forEach((s, i) => {
         room.roles[s.id] = roleAssignment[i];
@@ -574,12 +613,6 @@ io.on('connection', (socket) => {
     const room = rooms[roomCode];
     if (!room) return;
 
-    const role = room.roles[socket.id];
-    if (!role) {
-      socket.emit('error', { message: 'Role not assigned' });
-      return;
-    }
-
     // Only allow viewing evidence the player has previously picked
     const pickedList = room.evidenceCollection.picked[socket.id];
     if (pickedList && !pickedList.includes(evidenceId)) {
@@ -588,7 +621,7 @@ io.on('connection', (socket) => {
     }
 
     const phaseId = room.gameState;
-    const evidence = findEvidence(phaseId, role, evidenceId);
+    const evidence = findEvidenceGlobal(phaseId, evidenceId);
 
     if (!evidence) {
       socket.emit('error', { message: 'Evidence not found' });
@@ -631,19 +664,18 @@ io.on('connection', (socket) => {
 
       const phaseId = room.gameState;
 
-      // Initialize pools and picked for each player
+      // Build a single shared pool from both roles' evidence
+      ec.sharedPool = buildSharedEvidenceList(phaseId);
       ec.turnOrder.forEach((sid) => {
-        const role = room.roles[sid];
-        ec.pools[sid] = buildEvidenceList(phaseId, role);
         ec.picked[sid] = [];
       });
 
-      // Emit initial state to both players
+      // Emit initial state — both players see the same shared pool
       const currentTurnSocketId = ec.turnOrder[ec.currentTurnIndex];
       room.players.forEach((s) => {
         if (!s) return;
         s.emit('evidence-collection-state', {
-          pool: ec.pools[s.id] || [],
+          pool: ec.sharedPool,
           isYourTurn: currentTurnSocketId === s.id,
           pickedCount: 0,
         });
@@ -666,20 +698,17 @@ io.on('connection', (socket) => {
     const currentTurnSocketId = ec.turnOrder[ec.currentTurnIndex];
     if (currentTurnSocketId !== socket.id) return;
 
-    // Find and remove the evidence from this player's pool
-    const pool = ec.pools[socket.id];
-    if (!pool) return;
-    const itemIndex = pool.findIndex((e) => e.id === evidenceId);
+    // Find and remove the evidence from the shared pool
+    const itemIndex = ec.sharedPool.findIndex((e) => e.id === evidenceId);
     if (itemIndex === -1) return;
-    pool.splice(itemIndex, 1);
+    ec.sharedPool.splice(itemIndex, 1);
 
-    // Add to picked list
+    // Add to this player's picked list
     ec.picked[socket.id].push(evidenceId);
 
-    // Get full evidence content and send to the picking player
-    const role = room.roles[socket.id];
+    // Get full evidence content (search across all roles) and send to the picking player
     const phaseId = room.gameState;
-    const fullEvidence = findEvidence(phaseId, role, evidenceId);
+    const fullEvidence = findEvidenceGlobal(phaseId, evidenceId);
     if (fullEvidence) {
       socket.emit('evidence-picked', {
         id: fullEvidence.id,
@@ -699,12 +728,8 @@ io.on('connection', (socket) => {
     // Advance turn
     ec.currentTurnIndex = (ec.currentTurnIndex + 1) % 2;
 
-    // Check if BOTH pools are empty
-    const allEmpty = ec.turnOrder.every(
-      (sid) => !ec.pools[sid] || ec.pools[sid].length === 0
-    );
-
-    if (allEmpty) {
+    // Check if shared pool is empty
+    if (ec.sharedPool.length === 0) {
       ec.active = false;
       room.players.forEach((s) => {
         if (s) {
@@ -714,12 +739,12 @@ io.on('connection', (socket) => {
         }
       });
     } else {
-      // Send updated state to both players
+      // Send updated shared pool to both players
       const nextTurnSocketId = ec.turnOrder[ec.currentTurnIndex];
       room.players.forEach((s) => {
         if (!s) return;
         s.emit('evidence-collection-state', {
-          pool: ec.pools[s.id] || [],
+          pool: ec.sharedPool,
           isYourTurn: nextTurnSocketId === s.id,
           pickedCount: (ec.picked[s.id] || []).length,
         });

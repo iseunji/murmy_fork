@@ -61,8 +61,12 @@ function findPhase(phaseId) {
 // ---------------------------------------------------------------------------
 function findEvidence(phaseId, role, evidenceId) {
   const phase = findPhase(phaseId);
-  if (!phase || !phase.evidence || !phase.evidence[role]) return null;
-  return phase.evidence[role].find((e) => e.id === evidenceId) || null;
+  if (!phase || !phase.evidence) return null;
+  // Support flat array (shared pool) or role-based object
+  const list = Array.isArray(phase.evidence)
+    ? phase.evidence
+    : (phase.evidence[role] || []);
+  return list.find((e) => e.id === evidenceId) || null;
 }
 
 // ---------------------------------------------------------------------------
@@ -71,10 +75,9 @@ function findEvidence(phaseId, role, evidenceId) {
 function findEvidenceGlobal(phaseId, evidenceId) {
   const phase = findPhase(phaseId);
   if (!phase || !phase.evidence) return null;
-  const all = [
-    ...(phase.evidence.culprit || []),
-    ...(phase.evidence.innocent || []),
-  ];
+  const all = Array.isArray(phase.evidence)
+    ? phase.evidence
+    : [...(phase.evidence.culprit || []), ...(phase.evidence.innocent || [])];
   return all.find((e) => e.id === evidenceId) || null;
 }
 
@@ -83,8 +86,12 @@ function findEvidenceGlobal(phaseId, evidenceId) {
 // ---------------------------------------------------------------------------
 function buildEvidenceList(phaseId, role) {
   const phase = findPhase(phaseId);
-  if (!phase || !phase.evidence || !phase.evidence[role]) return [];
-  return phase.evidence[role].map((e) => ({
+  if (!phase || !phase.evidence) return [];
+  // Support flat array (shared pool) or role-based object
+  const list = Array.isArray(phase.evidence)
+    ? phase.evidence
+    : (phase.evidence[role] || []);
+  return list.map((e) => ({
     id: e.id,
     title: e.title,
     type: e.type,
@@ -97,13 +104,12 @@ function buildEvidenceList(phaseId, role) {
 function buildSharedEvidenceList(phaseId) {
   const phase = findPhase(phaseId);
   if (!phase || !phase.evidence) return [];
-  const culprit = (phase.evidence.culprit || []).map((e) => ({
+  const all = Array.isArray(phase.evidence)
+    ? phase.evidence
+    : [...(phase.evidence.culprit || []), ...(phase.evidence.innocent || [])];
+  return all.map((e) => ({
     id: e.id, title: e.title, type: e.type,
   }));
-  const innocent = (phase.evidence.innocent || []).map((e) => ({
-    id: e.id, title: e.title, type: e.type,
-  }));
-  return [...culprit, ...innocent];
 }
 
 // ---------------------------------------------------------------------------
@@ -641,6 +647,8 @@ io.on('connection', (socket) => {
       title: evidence.title,
       type: evidence.type,
       content: evidence.content,
+      image: evidence.image || undefined,
+      comboHint: evidence.comboHint || undefined,
       metadata: evidence.metadata || undefined,
     });
   });
@@ -723,6 +731,8 @@ io.on('connection', (socket) => {
         title: fullEvidence.title,
         type: fullEvidence.type,
         content: fullEvidence.content,
+        image: fullEvidence.image || undefined,
+        comboHint: fullEvidence.comboHint || undefined,
         metadata: fullEvidence.metadata || undefined,
       });
     }

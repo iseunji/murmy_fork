@@ -828,6 +828,10 @@ function openEvidenceModal(evidenceId) {
   $('evidence-modal-title').textContent = '...';
   $('evidence-modal-type').textContent = '';
   $('evidence-modal-content').textContent = '';
+  const imgWrap = $('evidence-modal-image-wrap');
+  if (imgWrap) imgWrap.hidden = true;
+  const comboEl = $('evidence-modal-combo-hint');
+  if (comboEl) comboEl.hidden = true;
 
   // Play a reveal sound.
   SFX.reveal();
@@ -1657,6 +1661,26 @@ socket.on('evidence-detail', (data) => {
     typeEl.textContent = `${icon} ${data.type || ''}`;
   }
   if (contentEl) contentEl.textContent = data.content || '';
+
+  // Show evidence image if available
+  const imgWrap = $('evidence-modal-image-wrap');
+  const imgEl = $('evidence-modal-image');
+  if (imgWrap && imgEl && data.image) {
+    imgEl.src = `/assets/evidence/${data.image}`;
+    imgEl.alt = data.title || '';
+    imgWrap.hidden = false;
+  } else if (imgWrap) {
+    imgWrap.hidden = true;
+  }
+
+  // Show combo hint if available
+  const comboEl = $('evidence-modal-combo-hint');
+  if (comboEl && data.comboHint) {
+    comboEl.textContent = data.comboHint;
+    comboEl.hidden = false;
+  } else if (comboEl) {
+    comboEl.hidden = true;
+  }
 });
 
 // ---- Evidence Collection (Turn-Based) ----
@@ -1695,6 +1719,26 @@ socket.on('evidence-picked', (data) => {
     typeEl.textContent = `${icon} ${data.type || ''}`;
   }
   if (contentEl) contentEl.textContent = data.content || '';
+
+  // Show evidence image if available
+  const imgWrap = $('evidence-modal-image-wrap');
+  const imgEl = $('evidence-modal-image');
+  if (imgWrap && imgEl && data.image) {
+    imgEl.src = `/assets/evidence/${data.image}`;
+    imgEl.alt = data.title || '';
+    imgWrap.hidden = false;
+  } else if (imgWrap) {
+    imgWrap.hidden = true;
+  }
+
+  // Show combo hint if available
+  const comboEl = $('evidence-modal-combo-hint');
+  if (comboEl && data.comboHint) {
+    comboEl.textContent = data.comboHint;
+    comboEl.hidden = false;
+  } else if (comboEl) {
+    comboEl.hidden = true;
+  }
 
   SFX.reveal();
 });

@@ -1459,6 +1459,19 @@ body::before {
   padding-right: 32px;
 }
 
+.evidence-detail-image-wrap {
+  margin-bottom: 16px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.evidence-detail-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 8px;
+}
+
 .evidence-detail-body {
   font-size: 0.9rem;
   line-height: 2;
@@ -1467,6 +1480,16 @@ body::before {
 
 .evidence-detail-body p {
   margin-bottom: 14px;
+}
+
+.evidence-detail-combo-hint {
+  margin-top: 16px;
+  padding: 10px 14px;
+  font-size: 0.8rem;
+  color: var(--accent-blue);
+  border: 1px solid var(--accent-blue);
+  border-radius: 6px;
+  opacity: 0.8;
 }
 
 /* Bottom Bar */

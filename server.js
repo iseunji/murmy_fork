@@ -414,6 +414,7 @@ io.on('connection', (socket) => {
       timerInterval: null,
       timerRemaining: 0,
       cleanupTimer: null,
+      disconnectGraceTimer: null,
       disconnectedPlayers: {}, // socketId -> { playerIndex, role }
       evidenceCollection: {
         readyToCollect: [],    // socket.ids of players who clicked "go collect"
@@ -490,6 +491,12 @@ io.on('connection', (socket) => {
 
       delete room.disconnectedPlayers[oldSocketId];
 
+      // Cancel disconnect grace timer
+      if (room.disconnectGraceTimer) {
+        clearTimeout(room.disconnectGraceTimer);
+        room.disconnectGraceTimer = null;
+      }
+
       // Cancel cleanup timer
       if (room.cleanupTimer) {
         clearTimeout(room.cleanupTimer);
@@ -515,6 +522,10 @@ io.on('connection', (socket) => {
     const partner = getPartnerSocket(room, socket.id);
     if (partner) {
       partner.emit('player-joined', { playerNum });
+      // If this was a mid-game reconnection, also notify partner
+      if (role && room.gameState !== 'lobby') {
+        partner.emit('partner-reconnected', {});
+      }
     }
 
     // If this is a reconnection mid-game, restore state
@@ -1240,13 +1251,27 @@ io.on('connection', (socket) => {
 
     console.log(`[Room ${roomCode}] Player ${playerIndex + 1} disconnected (${socket.id})`);
 
-    // Notify partner
+    // Notify partner that the player is temporarily away
     const partner = getPartnerSocket(room, socket.id);
     if (partner) {
-      partner.emit('partner-disconnected', {});
+      partner.emit('partner-away', {});
     }
 
-    // Schedule cleanup if no one reconnects within 60 seconds
+    // Grace period: wait 15 seconds before declaring permanent disconnect
+    room.disconnectGraceTimer = setTimeout(() => {
+      // Check if the player reconnected during grace period
+      const stillDisconnected = room.disconnectedPlayers[socket.id] != null;
+      if (stillDisconnected) {
+        // Player did NOT reconnect — permanent disconnect (closed tab/window)
+        const currentPartner = room.players.find((s) => s !== null);
+        if (currentPartner) {
+          currentPartner.emit('partner-disconnected', {});
+        }
+        console.log(`[Room ${roomCode}] Player ${playerIndex + 1} permanently disconnected`);
+      }
+    }, 15000);
+
+    // Schedule room cleanup if no one reconnects within 60 seconds
     scheduleRoomCleanup(roomCode);
   });
 });

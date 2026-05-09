@@ -2497,10 +2497,22 @@ socket.on('game-ending', async (data) => {
   await showEnding(data);
 });
 
-// ---- Partner Disconnected ----
+// ---- Partner Away (temporary) ----
+
+socket.on('partner-away', () => {
+  showToast('상대 플레이어의 연결이 불안정합니다.', 'warning');
+});
+
+// ---- Partner Reconnected (came back from temporary disconnect) ----
+
+socket.on('partner-reconnected', () => {
+  showToast('상대 플레이어가 다시 접속했습니다.');
+});
+
+// ---- Partner Disconnected (permanent — closed tab/window) ----
 
 socket.on('partner-disconnected', () => {
-  showToast('상대 플레이어가 연결이 끊어졌습니다. 처음으로 돌아갑니다.', 'error');
+  showToast('상대 플레이어가 게임을 종료했습니다. 처음으로 돌아갑니다.', 'error');
   // Reset game and return to title screen
   setTimeout(() => {
     resetGameState();

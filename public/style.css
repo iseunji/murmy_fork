@@ -653,6 +653,11 @@ body::before {
   color: #6cb4ee;
 }
 
+.text-reading-guide {
+  color: #6cb4ee;
+  font-size: 0.8em;
+}
+
 /* ---- Dialogue reading guide ---- */
 .dialogue-guide {
   color: #6cb4ee;

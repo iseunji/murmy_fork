@@ -369,14 +369,26 @@ async function streamText(element, text, opts = {}) {
       if (controller.signal.aborted) return;
       if (li > 0) p.appendChild(document.createElement('br'));
 
-      const words = lines[li].split(/(\s+)/);
-      for (const word of words) {
+      // Split line into segments: reading guides like (도현이 읽어주세요) get special styling
+      const segments = lines[li].split(/(\([^)]*읽어주세요\))/);
+      for (const seg of segments) {
         if (controller.signal.aborted) return;
-        p.appendChild(document.createTextNode(word));
-        // Attach cursor at the end
-        p.appendChild(cursor);
-        if (word.trim()) {
-          await new Promise((r) => setTimeout(r, wordDelay));
+        const isGuide = /^\([^)]*읽어주세요\)$/.test(seg);
+        const words = seg.split(/(\s+)/);
+        for (const word of words) {
+          if (controller.signal.aborted) return;
+          if (isGuide && word.trim()) {
+            const span = document.createElement('span');
+            span.className = 'text-reading-guide';
+            span.textContent = word;
+            p.appendChild(span);
+          } else {
+            p.appendChild(document.createTextNode(word));
+          }
+          p.appendChild(cursor);
+          if (word.trim()) {
+            await new Promise((r) => setTimeout(r, wordDelay));
+          }
         }
       }
     }
@@ -1853,7 +1865,7 @@ socket.on('game-start', async (data) => {
     + '\n\n'
     + '하진: "응, 내가 가지고 있어."'
     + '\n\n'
-    + '문을 열고 들어간 곳에는, 교수가 AI 어시스턴트 화면이 켜진 컴퓨터 책상 옆에 쓰러져 있었다.';
+    + '(도현이 읽어주세요) 문을 열고 들어간 곳에는, 교수가 AI 어시스턴트 화면이 켜진 컴퓨터 책상 옆에 쓰러져 있었다.';
 
   // Save intro text for tab access
   state.introNarrative = introText;

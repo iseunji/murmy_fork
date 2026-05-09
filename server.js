@@ -526,6 +526,10 @@ io.on('connection', (socket) => {
       if (role && room.gameState !== 'lobby') {
         partner.emit('partner-reconnected', {});
       }
+    } else if (room.gameState !== 'lobby') {
+      // No partner connected and game was in progress — partner already left.
+      // Immediately tell the joining player so they go back to the title screen.
+      socket.emit('partner-disconnected', {});
     }
 
     // If this is a reconnection mid-game, restore state

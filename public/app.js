@@ -338,7 +338,17 @@ async function streamText(element, text, opts = {}) {
   cursor.className = 'stream-cursor';
   cursor.textContent = '\u258C';
 
-  const paragraphs = text.split('\n\n');
+  // Filter out ---RED--- markers and track where red zone starts
+  const rawParagraphs = text.split('\n\n');
+  const paragraphs = [];
+  let redStartIndex = -1;
+  for (let i = 0; i < rawParagraphs.length; i++) {
+    if (rawParagraphs[i].trim() === '---RED---') {
+      redStartIndex = paragraphs.length;
+    } else {
+      paragraphs.push(rawParagraphs[i]);
+    }
+  }
 
   for (let pi = 0; pi < paragraphs.length; pi++) {
     if (controller.signal.aborted) return;
@@ -346,6 +356,11 @@ async function streamText(element, text, opts = {}) {
     const p = document.createElement('p');
     p.className = 'stream-paragraph';
     element.appendChild(p);
+
+    // Apply red styling for paragraphs after ---RED--- marker
+    if (redStartIndex >= 0 && pi >= redStartIndex) {
+      p.classList.add('text-danger');
+    }
 
     // Check if this paragraph contains a danger phrase
     let isDanger = false;
@@ -1453,7 +1468,19 @@ function renderIntroTabContent(container) {
 
     const briefingDiv = document.createElement('div');
     briefingDiv.className = 'tab-panel-narrative';
-    briefingDiv.textContent = state.briefingText;
+    // Support ---RED--- marker: split into normal and red sections
+    const briefingSections = state.briefingText.split('\n\n---RED---\n\n');
+    if (briefingSections.length > 1) {
+      const normalSpan = document.createElement('span');
+      normalSpan.textContent = briefingSections[0];
+      briefingDiv.appendChild(normalSpan);
+      const redSpan = document.createElement('span');
+      redSpan.style.color = 'var(--accent-red)';
+      redSpan.textContent = '\n\n' + briefingSections.slice(1).join('\n\n');
+      briefingDiv.appendChild(redSpan);
+    } else {
+      briefingDiv.textContent = state.briefingText;
+    }
     container.appendChild(briefingDiv);
   }
 }

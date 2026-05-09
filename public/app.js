@@ -1318,22 +1318,25 @@ function updatePhaseProgress(currentPhaseId, totalPhases = 3) {
    15. NARRATIVE TOGGLE
    ========================================================================== */
 
-/** Whether the narrative panel is currently collapsed. */
-let narrativeCollapsed = false;
+/**
+ * Scroll the narrative panel down by roughly one visible page.
+ */
+function scrollNarrativeDown() {
+  const narrative = $('phase-narrative');
+  if (!narrative) return;
+  narrative.scrollBy({ top: narrative.clientHeight * 0.85, behavior: 'smooth' });
+}
 
 /**
- * Toggle the investigation narrative between collapsed and expanded states.
+ * Update the scroll-down indicator: pulse when more content is below,
+ * hide when fully scrolled.
  */
-function toggleNarrative() {
+function updateNarrativeScrollHint() {
   const narrative = $('phase-narrative');
   const btn = $('btn-toggle-narrative');
-  if (!narrative) return;
-
-  narrativeCollapsed = !narrativeCollapsed;
-  narrative.classList.toggle('collapsed', narrativeCollapsed);
-  if (btn) {
-    btn.textContent = narrativeCollapsed ? '\u25BC' : '\u25B2'; // down/up arrow
-  }
+  if (!narrative || !btn) return;
+  const hasMore = narrative.scrollHeight - narrative.scrollTop - narrative.clientHeight > 5;
+  btn.classList.toggle('has-more', hasMore);
 }
 
 /* ==========================================================================
@@ -2016,9 +2019,9 @@ socket.on('phase-data', async (data) => {
     // Phase narrative with LLM-style streaming.
     const narrativeEl = $('phase-narrative');
     if (narrativeEl && data.narrative) {
-      narrativeEl.classList.remove('collapsed');
-      narrativeCollapsed = false;
+      narrativeEl.scrollTop = 0;
       await streamText(narrativeEl, data.narrative, { wordDelay: 25, paragraphPause: 300 });
+      updateNarrativeScrollHint();
     }
 
     // Show turn order guidance for investigation2
@@ -2641,8 +2644,15 @@ function bindEvents() {
   const btnToggleNarrative = $('btn-toggle-narrative');
   if (btnToggleNarrative) {
     btnToggleNarrative.addEventListener('click', () => {
-      toggleNarrative();
+      scrollNarrativeDown();
     });
+  }
+
+  const narrativeEl = $('phase-narrative');
+  if (narrativeEl) {
+    narrativeEl.addEventListener('scroll', () => {
+      updateNarrativeScrollHint();
+    }, { passive: true });
   }
 
   // ---- AI Chat Screen ----
@@ -2796,7 +2806,6 @@ function resetGameState() {
   try { sessionStorage.removeItem('murmy_state'); } catch (_) {}
 
   // Reset any lingering UI states.
-  narrativeCollapsed = false;
   document.body.classList.remove('timer-critical');
 
   // Hide game tabs

@@ -1264,14 +1264,6 @@ body::before {
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  transition: max-height 0.4s ease;
-}
-
-.narrative-section.collapsed .narrative-content {
-  max-height: 60px;
-  overflow: hidden;
-  mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
 }
 
 .narrative-content p {
@@ -1285,20 +1277,31 @@ body::before {
   color: var(--text-secondary);
   font-size: 0.7rem;
   border-top: 1px solid var(--border);
-  transition: color 0.2s;
+  transition: opacity 0.3s;
 }
 
 .narrative-toggle:hover {
   color: var(--text-primary);
 }
 
-.narrative-section.collapsed .toggle-icon {
-  transform: rotate(180deg);
+/* Pulse when more content is below */
+.narrative-toggle.has-more .toggle-icon {
+  animation: pulse-scroll-arrow 1.5s ease-in-out infinite;
+}
+
+/* Fade out when fully scrolled */
+.narrative-toggle:not(.has-more) {
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+@keyframes pulse-scroll-arrow {
+  0%, 100% { opacity: 0.4; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(3px); }
 }
 
 .toggle-icon {
   display: inline-block;
-  transition: transform 0.3s;
   font-size: 0.6rem;
 }
 

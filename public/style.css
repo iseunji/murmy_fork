@@ -1071,10 +1071,14 @@ body::before {
    SCREEN 4: INTRO
    ============================================================ */
 
+.intro-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
 .role-indicator {
-  position: absolute;
-  top: 0;
-  right: 0;
   font-family: var(--font-mono);
   font-size: 0.7rem;
   color: var(--accent-blue);
@@ -1083,6 +1087,7 @@ body::before {
   border-radius: var(--radius-sm);
   border: 1px solid var(--accent-blue-dim);
   letter-spacing: 0.08em;
+  flex-shrink: 0;
 }
 
 .intro-narrative {
@@ -1093,12 +1098,13 @@ body::before {
   font-family: var(--font-display);
   font-size: 1.8rem;
   color: var(--accent-amber);
-  margin-bottom: 20px;
+  margin: 0;
 }
 
 .intro-story {
   color: var(--text-primary);
   font-weight: 300;
+  font-size: 0.9rem;
   line-height: 2;
 }
 
@@ -2088,8 +2094,10 @@ body::before {
 .game-tabs {
   position: fixed;
   top: 0;
-  left: 0;
-  right: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: var(--container-max);
   z-index: 900;
   display: flex;
   background: var(--surface);
@@ -2099,6 +2107,7 @@ body::before {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  gap: 1px;
 }
 .game-tabs::-webkit-scrollbar { display: none; }
 .game-tabs[hidden] { display: none; }
@@ -2106,29 +2115,30 @@ body::before {
 .game-tab {
   flex: 1;
   min-width: 0;
-  padding: 10px 8px;
+  padding: 11px 8px;
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
-  color: var(--text-secondary);
+  color: #b0b0b0;
   font-family: var(--font-body);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
   white-space: nowrap;
 }
 .game-tab:hover:not(:disabled) {
   color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.04);
 }
 .game-tab.active {
   color: var(--accent-amber);
   border-bottom-color: var(--accent-amber);
 }
 .game-tab:disabled {
-  color: var(--border);
+  color: #6a6a6a;
   cursor: not-allowed;
-  opacity: 0.4;
+  opacity: 1;
 }
 .game-tab.has-new::after {
   content: '';
@@ -2143,14 +2153,33 @@ body::before {
 
 /* Offset screens when tabs are visible */
 body.tabs-visible .screen {
-  padding-top: calc(var(--safe-top) + 44px);
+  padding-top: calc(var(--safe-top) + 44px + var(--page-px));
 }
 body.tabs-visible .investigation-topbar {
-  top: calc(var(--safe-top) + 42px);
+  top: calc(var(--safe-top) + 44px);
 }
 body.tabs-visible .chat-topbar {
-  top: calc(var(--safe-top) + 42px);
+  top: calc(var(--safe-top) + 44px);
 }
+body.tabs-visible .sound-toggle {
+  display: none;
+}
+
+/* Sound button inside tab bar */
+.game-tab-sound {
+  flex: 0 0 auto;
+  min-width: 40px;
+  padding: 10px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 2px solid transparent !important;
+  color: #b0b0b0;
+}
+.game-tab-sound .sound-icon { display: none; }
+.game-tab-sound .sound-icon-off { display: block; }
+.game-tab-sound.sound-on .sound-icon-on { display: block; }
+.game-tab-sound.sound-on .sound-icon-off { display: none; }
 
 /* ---- Tab Panel Overlay ---- */
 .tab-panel-overlay .tab-panel-content {

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#212121">
   <meta name="description" content="Fork - 2인용 머더 미스터리 웹 게임">
-  <title>Fork — 갈라진 의도</title>
+  <title>Fork: 갈라진 의도</title>
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,10 +34,21 @@
 
   <!-- Game Info Tabs (visible after game starts) -->
   <nav class="game-tabs" id="game-tabs" hidden>
-    <button class="game-tab" data-tab="intro" id="tab-intro">사건의 전말</button>
+    <button class="game-tab" data-tab="intro" id="tab-intro">사건 개요</button>
     <button class="game-tab" data-tab="phase1" id="tab-phase1">조사 1</button>
     <button class="game-tab" data-tab="phase2" id="tab-phase2" disabled>조사 2</button>
     <button class="game-tab" data-tab="combo" id="tab-combo" disabled>조합</button>
+    <button class="game-tab game-tab-sound" id="tab-sound-toggle" aria-label="소리 켜기/끄기">
+      <svg class="sound-icon sound-icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16">
+        <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+        <path d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"/>
+      </svg>
+      <svg class="sound-icon sound-icon-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16">
+        <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+        <line x1="23" y1="9" x2="17" y2="15"/>
+        <line x1="17" y1="9" x2="23" y2="15"/>
+      </svg>
+    </button>
   </nav>
 
   <!-- ===== SCREEN 1: TITLE ===== -->
@@ -145,10 +156,11 @@
   <!-- ===== SCREEN 4: INTRO ===== -->
   <section id="screen-intro" class="screen">
     <div class="screen-inner">
-      <div class="role-indicator" id="intro-role">조교</div>
-
       <div class="intro-narrative-section">
-        <h2 class="intro-title">사건 개요</h2>
+        <div class="intro-header">
+          <h2 class="intro-title">사건 개요</h2>
+          <div class="role-indicator" id="intro-role">조교</div>
+        </div>
         <div class="intro-story" id="intro-narrative">
           <!-- Story paragraphs injected by JS via typewriter -->
         </div>

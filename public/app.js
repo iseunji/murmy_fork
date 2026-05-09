@@ -47,7 +47,7 @@ const state = {
   collectedEvidence: [],  // IDs of evidence this player picked
   hasEvidence: false,     // Whether current phase has evidence to collect
   // Tab system — persistent info across phases
-  introNarrative: '',      // Intro story text for "사건의 전말" tab
+  introNarrative: '',      // Intro story text for "사건 개요" tab
   briefingText: '',        // Secret briefing text
   phase1Evidence: [],      // [{id, title, type}] cards collected in investigation1
   phase2Evidence: [],      // [{id, title, type}] cards collected in investigation2
@@ -1372,15 +1372,15 @@ function openTabPanel(tabId) {
 
   switch (tabId) {
     case 'intro':
-      title.textContent = '사건의 전말';
+      title.textContent = '사건 개요';
       renderIntroTabContent(body);
       break;
     case 'phase1':
-      title.textContent = '조사 단계 1 — 현장 조사';
+      title.textContent = '조사 단계 1: 현장 조사';
       renderEvidenceTabContent(body, state.phase1Evidence);
       break;
     case 'phase2':
-      title.textContent = '조사 단계 2 — 디지털 흔적';
+      title.textContent = '조사 단계 2: 디지털 흔적';
       renderEvidenceTabContent(body, state.phase2Evidence);
       break;
     case 'combo':
@@ -1839,7 +1839,7 @@ socket.on('game-start', async (data) => {
   // Dissolve-in for general narrative intro.
   const narrativeEl = $('intro-narrative');
   const introText =
-    'K대학교 인공지능학과 자율시스템 연구실.\n국내 최상위 AI 연구 그룹으로, 최근 \'실제 인간 수준의 가치판단과 자율성을 가진 AI 시스템\' 연구로 학계 안팎의 큰 주목을 받고 있다.\n그 연구의 중심에는 ARIA가 있다 — 연구실이 자체 개발한 자율 추론 인공지능. 로봇 팔과 연결되어 물리적 세계에도 개입할 수 있는, 국내 유일의 embodied AI 시스템이다.'
+    'S 대학교 인공지능학과 자율시스템 연구실.\n국내 최상위 AI 연구 그룹으로, 최근 \'실제 인간 수준의 가치판단과 자율성을 가진 AI 시스템\' 연구로 학계 안팎의 큰 주목을 받고 있다.\n그 연구의 중심에는 ARIA가 있다. 연구실이 자체 개발한 자율 추론 인공지능. 로봇 팔과 연결되어 물리적 세계에도 개입할 수 있는, embodied AI 시스템이다.'
     + '\n\n'
     + '간만에 찾아온 긴 연휴. 캠퍼스는 텅 비었다.\n대부분의 학생들은 떠났지만, 당신은 학교 근처 자취방에 남아 교수의 업무를 처리하고 있었다.'
     + '\n\n'
@@ -1853,7 +1853,7 @@ socket.on('game-start', async (data) => {
     + '\n\n'
     + '하진: "응, 내가 가지고 있어."'
     + '\n\n'
-    + '문을 열고 들어간 순간 — 교수가 AI 어시스턴트 화면이 켜진 모니터 책상 옆에 쓰러져 있었다.';
+    + '문을 열고 들어간 곳에는, 교수가 AI 어시스턴트 화면이 켜진 컴퓨터 책상 옆에 쓰러져 있었다.';
 
   // Save intro text for tab access
   state.introNarrative = introText;
@@ -2431,26 +2431,24 @@ function bindEvents() {
   // ---- Sound Toggle ----
 
   const btnSoundToggle = $('btn-sound-toggle');
-  if (btnSoundToggle) {
-    btnSoundToggle.addEventListener('click', () => {
-      state.soundEnabled = !state.soundEnabled;
-      btnSoundToggle.classList.toggle('sound-on', state.soundEnabled);
+  const tabSoundToggle = $('tab-sound-toggle');
 
-      if (state.soundEnabled) {
-        // Resume ambient if it was previously started
-        if (state.ambientStarted) {
-          ambient.start();
-        }
-        // Resume BGM if it was previously started
-        if (state.bgmStarted) {
-          ambient.startBGM();
-        }
-      } else {
-        // Stop ambient sound
-        ambient.stop();
-      }
-    });
+  function toggleSound() {
+    state.soundEnabled = !state.soundEnabled;
+    // Sync both buttons
+    if (btnSoundToggle) btnSoundToggle.classList.toggle('sound-on', state.soundEnabled);
+    if (tabSoundToggle) tabSoundToggle.classList.toggle('sound-on', state.soundEnabled);
+
+    if (state.soundEnabled) {
+      if (state.ambientStarted) ambient.start();
+      if (state.bgmStarted) ambient.startBGM();
+    } else {
+      ambient.stop();
+    }
   }
+
+  if (btnSoundToggle) btnSoundToggle.addEventListener('click', toggleSound);
+  if (tabSoundToggle) tabSoundToggle.addEventListener('click', toggleSound);
 
   // ---- Title Screen ----
 
@@ -2787,9 +2785,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize sound toggle button state.
   const soundBtn = $('btn-sound-toggle');
-  if (soundBtn) {
-    soundBtn.classList.toggle('sound-on', state.soundEnabled);
-  }
+  if (soundBtn) soundBtn.classList.toggle('sound-on', state.soundEnabled);
+  const tabSoundBtn = $('tab-sound-toggle');
+  if (tabSoundBtn) tabSoundBtn.classList.toggle('sound-on', state.soundEnabled);
 
   // Inject minimal toast and overlay styles if not already present.
   injectDynamicStyles();

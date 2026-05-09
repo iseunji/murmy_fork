@@ -806,6 +806,7 @@ body::before {
   font-size: clamp(2rem, 8vw, 3.5rem);
   font-weight: 500;
   letter-spacing: 0.5em;
+  text-indent: 0.5em;
   color: var(--accent-amber);
   padding: 12px 0;
   user-select: all;

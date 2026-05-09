@@ -340,13 +340,16 @@ async function streamText(element, text, opts = {}) {
   cursor.className = 'stream-cursor';
   cursor.textContent = '\u258C';
 
-  // Filter out ---RED--- markers and track where red zone starts
+  // Filter out ---RED---/---WHITE--- markers and track zone boundaries
   const rawParagraphs = text.split('\n\n');
   const paragraphs = [];
   let redStartIndex = -1;
+  let whiteStartIndex = -1;
   for (let i = 0; i < rawParagraphs.length; i++) {
     if (rawParagraphs[i].trim() === '---RED---') {
       redStartIndex = paragraphs.length;
+    } else if (rawParagraphs[i].trim() === '---WHITE---') {
+      whiteStartIndex = paragraphs.length;
     } else {
       paragraphs.push(rawParagraphs[i]);
     }
@@ -359,8 +362,8 @@ async function streamText(element, text, opts = {}) {
     p.className = 'stream-paragraph';
     element.appendChild(p);
 
-    // Apply red styling for paragraphs after ---RED--- marker
-    if (redStartIndex >= 0 && pi >= redStartIndex) {
+    // Apply red styling for paragraphs after ---RED--- but before ---WHITE---
+    if (redStartIndex >= 0 && pi >= redStartIndex && (whiteStartIndex < 0 || pi < whiteStartIndex)) {
       p.classList.add('text-danger');
     }
 
@@ -1470,16 +1473,26 @@ function renderIntroTabContent(container) {
 
     const briefingDiv = document.createElement('div');
     briefingDiv.className = 'tab-panel-narrative';
-    // Support ---RED--- marker: split into normal and red sections
+    // Support ---RED--- and ---WHITE--- markers for colored sections
     const briefingSections = state.briefingText.split('\n\n---RED---\n\n');
     if (briefingSections.length > 1) {
       const normalSpan = document.createElement('span');
       normalSpan.textContent = briefingSections[0];
       briefingDiv.appendChild(normalSpan);
+
+      const afterRed = briefingSections.slice(1).join('\n\n');
+      const whiteSections = afterRed.split('\n\n---WHITE---\n\n');
+
       const redSpan = document.createElement('span');
       redSpan.style.color = 'var(--accent-red)';
-      redSpan.textContent = '\n\n' + briefingSections.slice(1).join('\n\n');
+      redSpan.textContent = '\n\n' + whiteSections[0];
       briefingDiv.appendChild(redSpan);
+
+      if (whiteSections.length > 1) {
+        const whiteSpan = document.createElement('span');
+        whiteSpan.textContent = '\n\n' + whiteSections.slice(1).join('\n\n');
+        briefingDiv.appendChild(whiteSpan);
+      }
     } else {
       briefingDiv.textContent = state.briefingText;
     }

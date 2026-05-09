@@ -46,6 +46,16 @@ const state = {
   isMyTurn: false,
   collectedEvidence: [],  // IDs of evidence this player picked
   hasEvidence: false,     // Whether current phase has evidence to collect
+  // Tab system — persistent info across phases
+  introNarrative: '',      // Intro story text for "사건의 전말" tab
+  briefingText: '',        // Secret briefing text
+  phase1Evidence: [],      // [{id, title, type}] cards collected in investigation1
+  phase2Evidence: [],      // [{id, title, type}] cards collected in investigation2
+  allCollectedEvidence: [],// [{id, title, type, phase}] all cards across phases
+  comboCards: [],          // [{id, title, type, content}] successfully combined cards
+  reachedPhases: new Set(),// Phase IDs the player has entered
+  currentEvidenceId: null, // ID of the evidence currently open in modal
+  isDiscussion: false,     // Whether current phase is a discussion phase
 };
 
 /**
@@ -159,6 +169,14 @@ function saveStateToSession() {
       currentScreenId: currentScreenId,
       viewedEvidence: [...state.viewedEvidence],
       hasAccused: state.hasAccused,
+      // Tab system persistence
+      introNarrative: state.introNarrative,
+      briefingText: state.briefingText,
+      phase1Evidence: state.phase1Evidence,
+      phase2Evidence: state.phase2Evidence,
+      allCollectedEvidence: state.allCollectedEvidence,
+      comboCards: state.comboCards,
+      reachedPhases: [...state.reachedPhases],
     };
     sessionStorage.setItem('murmy_state', JSON.stringify(data));
   } catch (_) {
@@ -192,6 +210,21 @@ function restoreStateFromSession() {
     state.hasAccused = data.hasAccused || false;
     if (data.viewedEvidence) {
       state.viewedEvidence = new Set(data.viewedEvidence);
+    }
+    // Restore tab system state
+    state.introNarrative = data.introNarrative || '';
+    state.briefingText = data.briefingText || '';
+    state.phase1Evidence = data.phase1Evidence || [];
+    state.phase2Evidence = data.phase2Evidence || [];
+    state.allCollectedEvidence = data.allCollectedEvidence || [];
+    state.comboCards = data.comboCards || [];
+    if (data.reachedPhases) {
+      state.reachedPhases = new Set(data.reachedPhases);
+    }
+    // Show tabs if game is in progress
+    if (state.role) {
+      showGameTabs();
+      updateTabStates();
     }
 
     // Show the saved screen immediately (no blackout transition).
@@ -1272,6 +1305,305 @@ function toggleNarrative() {
 }
 
 /* ==========================================================================
+   15b. GAME TABS MANAGEMENT
+   ========================================================================== */
+
+/**
+ * Show the persistent game tabs at the top of the screen.
+ */
+function showGameTabs() {
+  const tabs = $('game-tabs');
+  if (tabs) {
+    tabs.hidden = false;
+    document.body.classList.add('tabs-visible');
+  }
+}
+
+/**
+ * Hide the game tabs.
+ */
+function hideGameTabs() {
+  const tabs = $('game-tabs');
+  if (tabs) {
+    tabs.hidden = true;
+    document.body.classList.remove('tabs-visible');
+  }
+}
+
+/**
+ * Update which tabs are enabled/disabled based on game progress.
+ */
+function updateTabStates() {
+  const tabIntro = $('tab-intro');
+  const tabPhase1 = $('tab-phase1');
+  const tabPhase2 = $('tab-phase2');
+  const tabCombo = $('tab-combo');
+
+  // Intro tab is always enabled after game starts
+  if (tabIntro) tabIntro.disabled = false;
+
+  // Phase 1 tab — enabled once investigation1 has been entered
+  if (tabPhase1) {
+    tabPhase1.disabled = !state.reachedPhases.has('investigation1');
+  }
+
+  // Phase 2 tab — enabled once investigation2 has been entered
+  if (tabPhase2) {
+    tabPhase2.disabled = !state.reachedPhases.has('investigation2');
+  }
+
+  // Combo tab — enabled once at least one combo card exists
+  if (tabCombo) {
+    tabCombo.disabled = state.comboCards.length === 0;
+  }
+}
+
+/**
+ * Open a tab panel overlay showing the specified tab content.
+ * @param {'intro'|'phase1'|'phase2'|'combo'} tabId
+ */
+function openTabPanel(tabId) {
+  const overlay = $('tab-panel-overlay');
+  const title = $('tab-panel-title');
+  const body = $('tab-panel-body');
+  if (!overlay || !title || !body) return;
+
+  body.innerHTML = '';
+
+  switch (tabId) {
+    case 'intro':
+      title.textContent = '사건의 전말';
+      renderIntroTabContent(body);
+      break;
+    case 'phase1':
+      title.textContent = '조사 단계 1 — 현장 조사';
+      renderEvidenceTabContent(body, state.phase1Evidence);
+      break;
+    case 'phase2':
+      title.textContent = '조사 단계 2 — 디지털 흔적';
+      renderEvidenceTabContent(body, state.phase2Evidence);
+      break;
+    case 'combo':
+      title.textContent = '조합 카드';
+      renderComboTabContent(body);
+      break;
+    default:
+      return;
+  }
+
+  overlay.removeAttribute('hidden');
+  overlay.classList.add('active');
+
+  // Highlight active tab
+  document.querySelectorAll('.game-tab').forEach((t) => t.classList.remove('active'));
+  const activeTab = document.querySelector(`.game-tab[data-tab="${tabId}"]`);
+  if (activeTab) activeTab.classList.add('active');
+}
+
+/**
+ * Close the tab panel overlay.
+ */
+function closeTabPanel() {
+  const overlay = $('tab-panel-overlay');
+  if (overlay) {
+    overlay.classList.remove('active');
+    overlay.setAttribute('hidden', '');
+  }
+  document.querySelectorAll('.game-tab').forEach((t) => t.classList.remove('active'));
+}
+
+/**
+ * Render the intro narrative content in the tab panel.
+ */
+function renderIntroTabContent(container) {
+  if (!state.introNarrative) {
+    container.innerHTML = '<p class="tab-panel-empty">아직 사건 개요를 확인하지 않았습니다.</p>';
+    return;
+  }
+  const narrativeDiv = document.createElement('div');
+  narrativeDiv.className = 'tab-panel-narrative';
+  narrativeDiv.textContent = state.introNarrative;
+  container.appendChild(narrativeDiv);
+
+  if (state.briefingText) {
+    const separator = document.createElement('hr');
+    separator.style.borderColor = 'var(--border)';
+    separator.style.margin = '20px 0';
+    container.appendChild(separator);
+
+    const briefingLabel = document.createElement('h4');
+    briefingLabel.textContent = '비밀 지령';
+    briefingLabel.style.color = 'var(--accent-red)';
+    briefingLabel.style.marginBottom = '8px';
+    briefingLabel.style.fontFamily = 'var(--font-display)';
+    briefingLabel.style.fontSize = '18px';
+    container.appendChild(briefingLabel);
+
+    const briefingDiv = document.createElement('div');
+    briefingDiv.className = 'tab-panel-narrative';
+    briefingDiv.textContent = state.briefingText;
+    container.appendChild(briefingDiv);
+  }
+}
+
+/**
+ * Render evidence cards for a tab panel (phase 1, phase 2).
+ */
+function renderEvidenceTabContent(container, evidenceList) {
+  if (!evidenceList || evidenceList.length === 0) {
+    container.innerHTML = '<p class="tab-panel-empty">수집된 증거가 없습니다.</p>';
+    return;
+  }
+
+  const grid = document.createElement('div');
+  grid.className = 'evidence-grid';
+
+  evidenceList.forEach((ev) => {
+    const card = document.createElement('div');
+    card.className = 'evidence-card collected';
+    card.dataset.id = ev.id;
+
+    const icon = document.createElement('span');
+    icon.className = 'evidence-icon';
+    icon.textContent = EVIDENCE_ICONS[ev.type] || DEFAULT_EVIDENCE_ICON;
+
+    const titleSpan = document.createElement('span');
+    titleSpan.className = 'evidence-title';
+    titleSpan.textContent = ev.title;
+
+    card.appendChild(icon);
+    card.appendChild(titleSpan);
+
+    card.addEventListener('click', () => {
+      openEvidenceModal(ev.id);
+    });
+
+    grid.appendChild(card);
+  });
+
+  container.appendChild(grid);
+}
+
+/**
+ * Render combo cards in the tab panel.
+ */
+function renderComboTabContent(container) {
+  if (!state.comboCards || state.comboCards.length === 0) {
+    container.innerHTML = '<p class="tab-panel-empty">조합된 카드가 없습니다.</p>';
+    return;
+  }
+
+  const grid = document.createElement('div');
+  grid.className = 'evidence-grid';
+
+  state.comboCards.forEach((combo) => {
+    const card = document.createElement('div');
+    card.className = 'evidence-card collected combo-card';
+    card.dataset.id = combo.id;
+
+    const icon = document.createElement('span');
+    icon.className = 'evidence-icon';
+    icon.textContent = EVIDENCE_ICONS[combo.type] || DEFAULT_EVIDENCE_ICON;
+
+    const titleSpan = document.createElement('span');
+    titleSpan.className = 'evidence-title';
+    titleSpan.textContent = combo.title;
+
+    card.appendChild(icon);
+    card.appendChild(titleSpan);
+
+    card.addEventListener('click', () => {
+      openEvidenceModal(combo.id);
+    });
+
+    grid.appendChild(card);
+  });
+
+  container.appendChild(grid);
+}
+
+/* ==========================================================================
+   15c. COMBO CARD MODAL
+   ========================================================================== */
+
+/**
+ * Show the combo success modal with the newly combined card.
+ */
+function showComboSuccessModal(data) {
+  const modal = $('combo-modal');
+  const titleEl = $('combo-modal-title');
+  const typeEl = $('combo-modal-type');
+  const contentEl = $('combo-modal-content');
+
+  if (!modal) return;
+
+  if (titleEl) titleEl.textContent = data.title || '';
+  if (typeEl) {
+    const icon = EVIDENCE_ICONS[data.type] || DEFAULT_EVIDENCE_ICON;
+    typeEl.textContent = `${icon} ${data.type || ''}`;
+  }
+  if (contentEl) contentEl.textContent = data.content || '';
+
+  modal.removeAttribute('hidden');
+  modal.classList.add('active');
+}
+
+/**
+ * Close the combo success modal.
+ */
+function closeComboModal() {
+  const modal = $('combo-modal');
+  if (modal) {
+    modal.classList.remove('active');
+    modal.setAttribute('hidden', '');
+  }
+}
+
+/* ==========================================================================
+   15d. TRADE PROPOSAL UI
+   ========================================================================== */
+
+/**
+ * Show the trade proposal modal when partner proposes a trade.
+ */
+function showTradeProposalModal(data) {
+  const modal = $('trade-proposal-modal');
+  const cardInfo = $('trade-proposed-card-info');
+  const myCardsGrid = $('trade-my-cards-grid');
+
+  if (!modal || !cardInfo || !myCardsGrid) return;
+
+  // Show proposed card info
+  const icon = EVIDENCE_ICONS[data.card.type] || DEFAULT_EVIDENCE_ICON;
+  cardInfo.textContent = `${icon} ${data.card.title}`;
+
+  // Show my cards for selection
+  myCardsGrid.innerHTML = '';
+  state.allCollectedEvidence.forEach((ev) => {
+    const card = document.createElement('button');
+    card.className = 'trade-my-card';
+    card.textContent = `${EVIDENCE_ICONS[ev.type] || DEFAULT_EVIDENCE_ICON} ${ev.title}`;
+    card.addEventListener('click', () => {
+      SFX.click();
+      socket.emit('trade-accept', { myCardId: ev.id });
+      closeTradeProposalModal();
+    });
+    myCardsGrid.appendChild(card);
+  });
+
+  modal.removeAttribute('hidden');
+  modal.classList.add('active');
+}
+
+function closeTradeProposalModal() {
+  const modal = $('trade-proposal-modal');
+  if (modal) {
+    modal.classList.remove('active');
+    modal.setAttribute('hidden', '');
+  }
+}
+
+/* ==========================================================================
    16. SOCKET EVENT HANDLERS
    ========================================================================== */
 
@@ -1475,6 +1807,10 @@ socket.on('game-start', async (data) => {
   // Show the intro screen with role and briefing.
   showScreen('screen-intro');
 
+  // Show game tabs and enable intro tab
+  showGameTabs();
+  updateTabStates();
+
   // Append character name to intro title.
   const introTitle = document.querySelector('.intro-title');
   if (introTitle) introTitle.textContent = `사건 개요${charSuffix()}`;
@@ -1502,23 +1838,28 @@ socket.on('game-start', async (data) => {
 
   // Dissolve-in for general narrative intro.
   const narrativeEl = $('intro-narrative');
+  const introText =
+    'K대학교 인공지능학과 자율시스템 연구실.\n국내 최상위 AI 연구 그룹으로, 최근 \'실제 인간 수준의 가치판단과 자율성을 가진 AI 시스템\' 연구로 학계 안팎의 큰 주목을 받고 있다.\n그 연구의 중심에는 ARIA가 있다 — 연구실이 자체 개발한 자율 추론 인공지능. 로봇 팔과 연결되어 물리적 세계에도 개입할 수 있는, 국내 유일의 embodied AI 시스템이다.'
+    + '\n\n'
+    + '간만에 찾아온 긴 연휴. 캠퍼스는 텅 비었다.\n대부분의 학생들은 떠났지만, 당신은 학교 근처 자취방에 남아 교수의 업무를 처리하고 있었다.'
+    + '\n\n'
+    + '오후 10시 반, 교수에게서 갑자기 전화가 왔다.\n"당장 연구실로 와라."'
+    + '\n\n'
+    + '부랴부랴 연구실로 바로 출발하여 도착한 시간은 밤 11시.'
+    + '\n\n'
+    + '연구실 안에는 불이 켜져 있었고, 문 앞에는 동료가 기다리고 있었다.'
+    + '\n\n'
+    + '도현: "형도 올 줄 알았어요. 저도 교수님이 오라고 하셔서 방금 도착했는데, 문이 잠겨있어서 기다리고 있었거든요. 열쇠 형한테 있죠?"'
+    + '\n\n'
+    + '하진: "응, 내가 가지고 있어."'
+    + '\n\n'
+    + '문을 열고 들어간 순간 — 교수가 AI 어시스턴트 화면이 켜진 모니터 책상 옆에 쓰러져 있었다.';
+
+  // Save intro text for tab access
+  state.introNarrative = introText;
+  state.briefingText = data.briefing || '';
+
   if (narrativeEl) {
-    const introText =
-      'K대학교 인공지능학과 자율시스템 연구실.\n국내 최상위 AI 연구 그룹으로, 최근 \'실제 인간 수준의 가치판단과 자율성을 가진 AI 시스템\' 연구로 학계 안팎의 큰 주목을 받고 있다.\n그 연구의 중심에는 ARIA가 있다 — 연구실이 자체 개발한 자율 추론 인공지능. 로봇 팔과 연결되어 물리적 세계에도 개입할 수 있는, 국내 유일의 embodied AI 시스템이다.'
-      + '\n\n'
-      + '간만에 찾아온 긴 연휴. 캠퍼스는 텅 비었다.\n대부분의 학생들은 떠났지만, 당신은 학교 근처 자취방에 남아 교수의 업무를 처리하고 있었다.'
-      + '\n\n'
-      + '오후 10시 반, 교수에게서 갑자기 전화가 왔다.\n"당장 연구실로 와라."'
-      + '\n\n'
-      + '부랴부랴 연구실로 바로 출발하여 도착한 시간은 밤 11시.'
-      + '\n\n'
-      + '연구실 안에는 불이 켜져 있었고, 문 앞에는 동료가 기다리고 있었다.'
-      + '\n\n'
-      + '도현: "형도 올 줄 알았어요. 저도 교수님이 오라고 하셔서 방금 도착했는데, 문이 잠겨있어서 기다리고 있었거든요. 열쇠 형한테 있죠?"'
-      + '\n\n'
-      + '하진: "응, 내가 가지고 있어."'
-      + '\n\n'
-      + '문을 열고 들어간 순간 — 교수가 AI 어시스턴트 화면이 켜진 모니터 책상 옆에 쓰러져 있었다.';
     await streamText(narrativeEl, introText, { wordDelay: 30, paragraphPause: 400 });
   }
 
@@ -1543,11 +1884,16 @@ socket.on('game-start', async (data) => {
 socket.on('phase-data', async (data) => {
   state.currentPhase = data.phaseId;
   state.isReady = false;
+  state.isDiscussion = data.isDiscussion || false;
+  state.reachedPhases.add(data.phaseId);
   saveStateToSession();
+
+  // Update tab states based on game progress
+  updateTabStates();
 
   // Determine which screen to show based on the phase.
   const isAiPhase = data.phaseId === 'aria';
-  const isVerdictPhase = data.phaseId === 'verdict';
+  const isVerdictPhase = data.phaseId === 'accusation';
 
   if (isVerdictPhase) {
     showScreen('screen-verdict');
@@ -1630,7 +1976,15 @@ socket.on('phase-data', async (data) => {
     state.collectedEvidence = [];
     resetEvidenceUI();
 
-    if (data.hasEvidence) {
+    if (data.isDiscussion && data.collectedEvidence && data.collectedEvidence.length > 0) {
+      // Discussion phase: show collected evidence for review/trade/combine
+      state.allCollectedEvidence = data.collectedEvidence;
+      const heading = $('evidence-heading');
+      if (heading) heading.textContent = '보유 중인 증거';
+      const prompt = $('evidence-collect-prompt');
+      if (prompt) prompt.style.display = 'none';
+      renderEvidenceCards(data.collectedEvidence);
+    } else if (data.hasEvidence) {
       // Show "go collect" button; cards will appear after collection starts.
       showEvidenceCollectPrompt();
     } else if (data.evidenceList && data.evidenceList.length > 0) {
@@ -1660,6 +2014,8 @@ socket.on('evidence-detail', (data) => {
   const typeEl = $('evidence-modal-type');
   const contentEl = $('evidence-modal-content');
 
+  state.currentEvidenceId = data.id;
+
   if (titleEl) titleEl.textContent = data.title || '';
   if (typeEl) {
     const icon = EVIDENCE_ICONS[data.type] || DEFAULT_EVIDENCE_ICON;
@@ -1686,6 +2042,33 @@ socket.on('evidence-detail', (data) => {
   } else if (comboEl) {
     comboEl.hidden = true;
   }
+
+  // Show action buttons contextually
+  const actionButtons = $('evidence-action-buttons');
+  const btnDonate = $('btn-donate-card');
+  const btnExchange = $('btn-exchange-card');
+  const btnCombine = $('btn-combine-card');
+
+  if (actionButtons && !data.isComboCard) {
+    const showDonate = data.canDonate;
+    const showExchange = data.canExchange;
+    const showCombine = data.comboHint; // card has combo potential
+
+    if (showDonate || showExchange || showCombine) {
+      actionButtons.hidden = false;
+      if (btnDonate) { btnDonate.hidden = !showDonate; btnDonate.disabled = false; }
+      if (btnExchange) { btnExchange.hidden = !showExchange; btnExchange.disabled = false; }
+      if (btnCombine) {
+        btnCombine.hidden = !showCombine;
+        btnCombine.disabled = !data.canCombine;
+        btnCombine.dataset.comboId = data.comboId || '';
+      }
+    } else {
+      actionButtons.hidden = true;
+    }
+  } else if (actionButtons) {
+    actionButtons.hidden = true;
+  }
 });
 
 // ---- Evidence Collection (Turn-Based) ----
@@ -1708,6 +2091,7 @@ socket.on('evidence-collection-state', (data) => {
 socket.on('evidence-picked', (data) => {
   // This player successfully picked an evidence item. Show its content in modal.
   state.collectedEvidence.push(data.id);
+  state.currentEvidenceId = data.id;
 
   const titleEl = $('evidence-modal-title');
   const typeEl = $('evidence-modal-type');
@@ -1757,8 +2141,123 @@ socket.on('evidence-collection-complete', (data) => {
   // All evidence has been collected. Show only what this player picked.
   state.collectionActive = false;
   state.collectedEvidence = data.collected || [];
+
+  // Save full card info per phase for tab access
+  const collectedFull = data.collectedFull || [];
+  if (data.phase === 'investigation1') {
+    state.phase1Evidence = collectedFull;
+  } else if (data.phase === 'investigation2') {
+    state.phase2Evidence = collectedFull;
+  }
+  // Update allCollectedEvidence
+  state.allCollectedEvidence = [
+    ...state.phase1Evidence,
+    ...state.phase2Evidence,
+  ];
+
+  // Update tab states (phase1/phase2 tabs now have content)
+  updateTabStates();
+
   renderCollectedEvidence(state.collectedEvidence);
   showToast('증거 수집이 완료되었습니다.', 'info');
+});
+
+// ---- Combo Success ----
+
+socket.on('combo-success', (data) => {
+  // Add to combo cards state
+  state.comboCards.push({
+    id: data.id,
+    title: data.title,
+    type: data.type,
+    content: data.content,
+  });
+
+  // Update tab states (combo tab now active)
+  updateTabStates();
+
+  // Close evidence modal if open
+  closeEvidenceModal();
+
+  // Show combo success modal
+  showComboSuccessModal(data);
+});
+
+// ---- Trade Proposal (received from partner) ----
+
+socket.on('trade-proposal', (data) => {
+  showTradeProposalModal(data);
+});
+
+socket.on('trade-proposed', () => {
+  showToast('교환을 제안했습니다. 상대방의 응답을 기다리는 중...', 'info');
+  closeEvidenceModal();
+});
+
+socket.on('trade-completed', (data) => {
+  // Update local evidence lists
+  if (data.gave && data.received) {
+    // Remove the given card
+    state.allCollectedEvidence = state.allCollectedEvidence.filter((e) => e.id !== data.gave.id);
+    state.phase1Evidence = state.phase1Evidence.filter((e) => e.id !== data.gave.id);
+    state.phase2Evidence = state.phase2Evidence.filter((e) => e.id !== data.gave.id);
+
+    // Add the received card
+    const receivedCard = { id: data.received.id, title: data.received.title, type: data.received.type };
+    state.allCollectedEvidence.push(receivedCard);
+    // Determine which phase list to add to based on ID prefix
+    if (data.received.id.includes('inv1')) {
+      state.phase1Evidence.push(receivedCard);
+    } else if (data.received.id.includes('inv2')) {
+      state.phase2Evidence.push(receivedCard);
+    }
+  }
+  showToast(`교환 완료! "${data.received?.title || ''}" 카드를 받았습니다.`, 'info');
+
+  // Re-render evidence if on discussion phase
+  if (state.isDiscussion) {
+    renderEvidenceCards(state.allCollectedEvidence);
+  }
+});
+
+socket.on('trade-rejected', (data) => {
+  showToast(data.reason || '교환이 거절되었습니다.', 'error');
+});
+
+socket.on('trade-reject-confirmed', () => {
+  showToast('교환을 거절했습니다.', 'info');
+});
+
+// ---- Donate Completed ----
+
+socket.on('donate-completed', (data) => {
+  if (data.direction === 'gave') {
+    // Remove from local evidence
+    state.allCollectedEvidence = state.allCollectedEvidence.filter((e) => e.id !== data.cardId);
+    state.phase1Evidence = state.phase1Evidence.filter((e) => e.id !== data.cardId);
+    state.phase2Evidence = state.phase2Evidence.filter((e) => e.id !== data.cardId);
+    showToast(`"${data.card?.title || ''}" 카드를 양도했습니다.`, 'info');
+    closeEvidenceModal();
+  } else {
+    // Received a card
+    const card = data.card || { id: data.cardId, title: data.cardId, type: 'unknown' };
+    state.allCollectedEvidence.push(card);
+    if (card.id.includes('inv1')) {
+      state.phase1Evidence.push(card);
+    } else if (card.id.includes('inv2')) {
+      state.phase2Evidence.push(card);
+    }
+    showToast(`"${card.title}" 카드를 받았습니다!`, 'info');
+  }
+
+  // Re-render evidence if on discussion phase
+  if (state.isDiscussion) {
+    renderEvidenceCards(state.allCollectedEvidence);
+  }
+});
+
+socket.on('donate-rejected', (data) => {
+  showToast(data.reason || '양도가 거절되었습니다.', 'error');
 });
 
 // ---- AI Chat Responses ----
@@ -1833,6 +2332,101 @@ socket.on('connect', () => {
  * Bind all interactive elements once the DOM is ready.
  */
 function bindEvents() {
+
+  // ---- Game Tabs ----
+
+  document.querySelectorAll('.game-tab').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      if (tab.disabled) return;
+      SFX.click();
+      const tabId = tab.dataset.tab;
+      openTabPanel(tabId);
+    });
+  });
+
+  const tabPanelClose = $('tab-panel-close');
+  if (tabPanelClose) {
+    tabPanelClose.addEventListener('click', () => {
+      SFX.click();
+      closeTabPanel();
+    });
+  }
+
+  const tabPanelOverlay = $('tab-panel-overlay');
+  if (tabPanelOverlay) {
+    tabPanelOverlay.addEventListener('click', (e) => {
+      if (e.target === tabPanelOverlay) closeTabPanel();
+    });
+  }
+
+  // ---- Combo Modal ----
+
+  const btnCloseCombo = $('btn-close-combo');
+  if (btnCloseCombo) {
+    btnCloseCombo.addEventListener('click', () => {
+      SFX.click();
+      closeComboModal();
+    });
+  }
+
+  const comboModal = $('combo-modal');
+  if (comboModal) {
+    comboModal.addEventListener('click', (e) => {
+      if (e.target === comboModal) closeComboModal();
+    });
+  }
+
+  // ---- Trade Proposal Modal ----
+
+  const btnTradeReject = $('btn-trade-reject');
+  if (btnTradeReject) {
+    btnTradeReject.addEventListener('click', () => {
+      SFX.click();
+      socket.emit('trade-reject', {});
+      closeTradeProposalModal();
+    });
+  }
+
+  const tradeProposalModal = $('trade-proposal-modal');
+  if (tradeProposalModal) {
+    tradeProposalModal.addEventListener('click', (e) => {
+      if (e.target === tradeProposalModal) {
+        socket.emit('trade-reject', {});
+        closeTradeProposalModal();
+      }
+    });
+  }
+
+  // ---- Evidence Action Buttons ----
+
+  const btnDonateCard = $('btn-donate-card');
+  if (btnDonateCard) {
+    btnDonateCard.addEventListener('click', () => {
+      if (!state.currentEvidenceId) return;
+      SFX.click();
+      socket.emit('donate-card', { cardId: state.currentEvidenceId });
+    });
+  }
+
+  const btnExchangeCard = $('btn-exchange-card');
+  if (btnExchangeCard) {
+    btnExchangeCard.addEventListener('click', () => {
+      if (!state.currentEvidenceId) return;
+      SFX.click();
+      socket.emit('trade-propose', { cardId: state.currentEvidenceId });
+    });
+  }
+
+  const btnCombineCard = $('btn-combine-card');
+  if (btnCombineCard) {
+    btnCombineCard.addEventListener('click', () => {
+      if (btnCombineCard.disabled) return;
+      const comboId = btnCombineCard.dataset.comboId;
+      if (!comboId) return;
+      SFX.click();
+      socket.emit('combine-cards', { comboId });
+    });
+  }
 
   // ---- Sound Toggle ----
 
@@ -2134,6 +2728,16 @@ function resetGameState() {
   state.viewedEvidence = new Set();
   state.isReady = false;
   state.hasAccused = false;
+  // Reset tab system state
+  state.introNarrative = '';
+  state.briefingText = '';
+  state.phase1Evidence = [];
+  state.phase2Evidence = [];
+  state.allCollectedEvidence = [];
+  state.comboCards = [];
+  state.reachedPhases = new Set();
+  state.currentEvidenceId = null;
+  state.isDiscussion = false;
 
   // Clear saved session so refresh goes to title screen.
   try { sessionStorage.removeItem('murmy_state'); } catch (_) {}
@@ -2141,6 +2745,9 @@ function resetGameState() {
   // Reset any lingering UI states.
   narrativeCollapsed = false;
   document.body.classList.remove('timer-critical');
+
+  // Hide game tabs
+  hideGameTabs();
 
   // Restore lobby UI for next game.
   const lobbyOptions = document.querySelector('.lobby-options');

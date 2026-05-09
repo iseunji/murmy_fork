@@ -2080,3 +2080,229 @@ body::before {
     -webkit-font-smoothing: subpixel-antialiased;
   }
 }
+
+/* ============================================================
+   Game Info Tabs — persistent tab bar at top of screen
+   ============================================================ */
+
+.game-tabs {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 900;
+  display: flex;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0;
+  padding-top: var(--safe-top);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.game-tabs::-webkit-scrollbar { display: none; }
+.game-tabs[hidden] { display: none; }
+
+.game-tab {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 8px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+.game-tab:hover:not(:disabled) {
+  color: var(--text-primary);
+}
+.game-tab.active {
+  color: var(--accent-amber);
+  border-bottom-color: var(--accent-amber);
+}
+.game-tab:disabled {
+  color: var(--border);
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+.game-tab.has-new::after {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--accent-red);
+  border-radius: 50%;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+/* Offset screens when tabs are visible */
+body.tabs-visible .screen {
+  padding-top: calc(var(--safe-top) + 44px);
+}
+body.tabs-visible .investigation-topbar {
+  top: calc(var(--safe-top) + 42px);
+}
+body.tabs-visible .chat-topbar {
+  top: calc(var(--safe-top) + 42px);
+}
+
+/* ---- Tab Panel Overlay ---- */
+.tab-panel-overlay .tab-panel-content {
+  max-width: var(--container-max);
+  width: 90vw;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 24px 20px;
+}
+.tab-panel-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  color: var(--accent-amber);
+  margin-bottom: 16px;
+}
+.tab-panel-body {
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.tab-panel-body .evidence-grid {
+  margin-top: 12px;
+}
+.tab-panel-narrative {
+  white-space: pre-wrap;
+  line-height: 1.8;
+  font-size: 14px;
+}
+.tab-panel-empty {
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 40px 0;
+  font-size: 14px;
+}
+
+/* ---- Evidence Action Buttons ---- */
+.evidence-action-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.evidence-action-buttons[hidden] { display: none; }
+
+.btn-action {
+  flex: 1;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.btn-donate {
+  background: transparent;
+  color: var(--accent-blue);
+  border-color: var(--accent-blue-dim);
+}
+.btn-donate:hover { background: var(--accent-blue-glow); }
+.btn-exchange {
+  background: transparent;
+  color: var(--accent-amber);
+  border-color: var(--accent-amber-dim);
+}
+.btn-exchange:hover { background: rgba(212, 165, 116, 0.1); }
+.btn-combine {
+  background: transparent;
+  color: var(--accent-red);
+  border-color: var(--accent-red-dim);
+}
+.btn-combine:hover:not(:disabled) {
+  background: rgba(191, 64, 64, 0.1);
+}
+.btn-combine:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.btn-action[hidden] { display: none; }
+
+/* ---- Combo Success Modal ---- */
+.combo-detail {
+  text-align: center;
+}
+.combo-success-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, var(--accent-red), var(--accent-amber));
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 6px 20px;
+  border-radius: 20px;
+  margin-bottom: 16px;
+  letter-spacing: 1px;
+}
+.combo-detail .evidence-detail-title {
+  color: var(--accent-amber);
+}
+.combo-detail .evidence-detail-body {
+  text-align: left;
+}
+
+/* ---- Trade Proposal Modal ---- */
+.trade-proposal-content {
+  max-width: var(--container-max);
+  width: 90vw;
+  padding: 24px 20px;
+}
+.trade-proposal-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  color: var(--accent-amber);
+  margin-bottom: 12px;
+}
+.trade-proposal-desc {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.trade-proposed-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--accent-blue-dim);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  color: var(--text-primary);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+.trade-my-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.trade-my-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  text-align: left;
+}
+.trade-my-card:hover {
+  border-color: var(--accent-amber);
+}
+.trade-proposal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}

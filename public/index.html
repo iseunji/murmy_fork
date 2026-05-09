@@ -32,6 +32,14 @@
     </svg>
   </button>
 
+  <!-- Game Info Tabs (visible after game starts) -->
+  <nav class="game-tabs" id="game-tabs" hidden>
+    <button class="game-tab" data-tab="intro" id="tab-intro">사건의 전말</button>
+    <button class="game-tab" data-tab="phase1" id="tab-phase1">조사 1</button>
+    <button class="game-tab" data-tab="phase2" id="tab-phase2" disabled>조사 2</button>
+    <button class="game-tab" data-tab="combo" id="tab-combo" disabled>조합</button>
+  </nav>
+
   <!-- ===== SCREEN 1: TITLE ===== -->
   <section id="screen-title" class="screen active">
     <div class="screen-inner title-layout">
@@ -220,24 +228,6 @@
       </div>
     </div>
 
-    <!-- Evidence Detail Modal -->
-    <div class="modal-overlay" id="evidence-modal" hidden>
-      <div class="modal-content evidence-detail">
-        <button class="modal-close" id="btn-close-evidence" aria-label="닫기">&times;</button>
-        <div class="evidence-detail-type" id="evidence-modal-type"></div>
-        <h3 class="evidence-detail-title" id="evidence-modal-title"></h3>
-        <div class="evidence-detail-image-wrap" id="evidence-modal-image-wrap" hidden>
-          <img class="evidence-detail-image" id="evidence-modal-image" alt="" />
-        </div>
-        <div class="evidence-detail-body" id="evidence-modal-content">
-          <!-- Evidence content injected by JS -->
-        </div>
-        <div class="evidence-detail-combo-hint" id="evidence-modal-combo-hint" hidden>
-          <!-- Combo hint injected by JS -->
-        </div>
-      </div>
-    </div>
-
     <!-- Bottom Bar -->
     <footer class="investigation-bottombar">
       <div class="ready-count" id="phase-ready-count">0 / 2 준비</div>
@@ -360,6 +350,60 @@
       <button class="btn btn-primary btn-bottom" id="btn-restart">처음으로</button>
     </div>
   </section>
+
+  <!-- Evidence Detail Modal (global — accessible from any screen) -->
+  <div class="modal-overlay" id="evidence-modal" hidden>
+    <div class="modal-content evidence-detail">
+      <button class="modal-close" id="btn-close-evidence" aria-label="닫기">&times;</button>
+      <div class="evidence-detail-type" id="evidence-modal-type"></div>
+      <h3 class="evidence-detail-title" id="evidence-modal-title"></h3>
+      <div class="evidence-detail-image-wrap" id="evidence-modal-image-wrap" hidden>
+        <img class="evidence-detail-image" id="evidence-modal-image" alt="" />
+      </div>
+      <div class="evidence-detail-body" id="evidence-modal-content"></div>
+      <div class="evidence-detail-combo-hint" id="evidence-modal-combo-hint" hidden></div>
+      <!-- Action Buttons (shown contextually) -->
+      <div class="evidence-action-buttons" id="evidence-action-buttons" hidden>
+        <button class="btn btn-action btn-donate" id="btn-donate-card">양도하기</button>
+        <button class="btn btn-action btn-exchange" id="btn-exchange-card">교환하기</button>
+        <button class="btn btn-action btn-combine" id="btn-combine-card" hidden>조합하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab Panel Overlay -->
+  <div class="modal-overlay tab-panel-overlay" id="tab-panel-overlay" hidden>
+    <div class="modal-content tab-panel-content">
+      <button class="modal-close" id="tab-panel-close" aria-label="닫기">&times;</button>
+      <h3 class="tab-panel-title" id="tab-panel-title"></h3>
+      <div class="tab-panel-body" id="tab-panel-body"></div>
+    </div>
+  </div>
+
+  <!-- Combo Success Modal -->
+  <div class="modal-overlay" id="combo-modal" hidden>
+    <div class="modal-content combo-detail">
+      <button class="modal-close" id="btn-close-combo" aria-label="닫기">&times;</button>
+      <div class="combo-success-badge">조합 성공!</div>
+      <div class="evidence-detail-type" id="combo-modal-type"></div>
+      <h3 class="evidence-detail-title" id="combo-modal-title"></h3>
+      <div class="evidence-detail-body" id="combo-modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Trade Proposal Modal -->
+  <div class="modal-overlay" id="trade-proposal-modal" hidden>
+    <div class="modal-content trade-proposal-content">
+      <h3 class="trade-proposal-title">교환 제안</h3>
+      <p class="trade-proposal-desc">상대방이 다음 카드의 교환을 제안했습니다:</p>
+      <div class="trade-proposed-card" id="trade-proposed-card-info"></div>
+      <p class="trade-proposal-desc">교환할 나의 카드를 선택하세요:</p>
+      <div class="trade-my-cards" id="trade-my-cards-grid"></div>
+      <div class="trade-proposal-actions">
+        <button class="btn btn-secondary" id="btn-trade-reject">거절</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Socket.io client -->
   <script src="/socket.io/socket.io.js"></script>

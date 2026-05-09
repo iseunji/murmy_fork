@@ -28,7 +28,7 @@ const rooms = {}; // roomCode -> room object
 const socketToRoom = {}; // socketId -> roomCode (for fast lookup on disconnect)
 
 // Phase order used by the state machine
-const PHASE_ORDER = ['discovery', 'scene', 'digital', 'aria', 'truth', 'verdict'];
+const PHASE_ORDER = ['investigation1', 'discussion1', 'investigation2', 'discussion2', 'accusation'];
 
 // ---------------------------------------------------------------------------
 // Helper: generate a unique 4-digit room code
@@ -99,6 +99,24 @@ function buildEvidenceList(phaseId, role) {
 }
 
 // ---------------------------------------------------------------------------
+// Helper: find evidence by ID across ALL phases (global lookup)
+// ---------------------------------------------------------------------------
+function findEvidenceAnyPhase(evidenceId) {
+  for (const phase of gameData.phases) {
+    if (!phase.evidence || phase.evidence.length === 0) continue;
+    const list = Array.isArray(phase.evidence)
+      ? phase.evidence
+      : [...(phase.evidence.culprit || []), ...(phase.evidence.innocent || [])];
+    const found = list.find((e) => e.id === evidenceId);
+    if (found) return found;
+  }
+  // Also check combinations
+  const combo = (gameData.combinations || []).find((c) => c.id === evidenceId);
+  if (combo) return combo;
+  return null;
+}
+
+// ---------------------------------------------------------------------------
 // Helper: build a SHARED evidence list combining both roles (without content)
 // ---------------------------------------------------------------------------
 function buildSharedEvidenceList(phaseId) {
@@ -156,6 +174,12 @@ function sendPhaseData(room) {
       };
     }
 
+    // For discussion phases, send collected evidence so players can review/trade/combine
+    const isDiscussion = phaseId === 'discussion1' || phaseId === 'discussion2';
+    const collectedEvidence = isDiscussion
+      ? (room.allCollectedEvidence[socket.id] || []).map((e) => ({ id: e.id, title: e.title, type: e.type }))
+      : [];
+
     socket.emit('phase-data', {
       phaseId,
       title: phase.title || phaseId,
@@ -166,6 +190,8 @@ function sendPhaseData(room) {
       duration: phase.duration || 120,
       turnOrderGuidance,
       discussionRules,
+      isDiscussion,
+      collectedEvidence,
     });
 
     // Auto-send AI greeting when entering the aria (AI chat) phase
@@ -214,10 +240,20 @@ function startPhaseTimer(room) {
       if (ec.active) {
         // Alternate turns, distributing shared pool items between players
         let turnIdx = ec.currentTurnIndex;
+        const autoPhaseId = room.gameState;
         while (ec.sharedPool.length > 0) {
           const sid = ec.turnOrder[turnIdx % ec.turnOrder.length];
           const item = ec.sharedPool.shift();
           ec.picked[sid].push(item.id);
+          // Track in allCollectedEvidence
+          if (!room.allCollectedEvidence[sid]) room.allCollectedEvidence[sid] = [];
+          const fullEv = findEvidenceAnyPhase(item.id);
+          room.allCollectedEvidence[sid].push({
+            id: item.id,
+            title: fullEv?.title || item.title || item.id,
+            type: fullEv?.type || item.type || 'unknown',
+            phase: autoPhaseId,
+          });
           turnIdx++;
         }
         ec.active = false;
@@ -225,8 +261,14 @@ function startPhaseTimer(room) {
         // Notify both players that collection is complete
         room.players.forEach((s) => {
           if (s) {
+            const collectedFull = (ec.picked[s.id] || []).map((evId) => {
+              const ev = findEvidenceAnyPhase(evId);
+              return ev ? { id: ev.id, title: ev.title, type: ev.type } : { id: evId, title: evId, type: 'unknown' };
+            });
             s.emit('evidence-collection-complete', {
               collected: ec.picked[s.id] || [],
+              collectedFull,
+              phase: autoPhaseId,
             });
           }
         });
@@ -388,6 +430,9 @@ io.on('connection', (socket) => {
         donations: {},         // socketId -> number of cards donated this discussion
         maxDonationsPerPlayer: 1, // max cards a player can donate per discussion phase
       },
+      allCollectedEvidence: {},  // socketId -> [{id, title, type, phase}] — persists across phases
+      comboCards: {},             // socketId -> [{id, title, type}]
+      pendingTrade: null,        // { from: socketId, cardId: string } or null
     };
 
     rooms[roomCode] = room;
@@ -656,27 +701,48 @@ io.on('connection', (socket) => {
   });
 
   // ------------------------------------------
-  // REQUEST EVIDENCE
+  // REQUEST EVIDENCE (searches all phases globally)
   // ------------------------------------------
   socket.on('request-evidence', ({ evidenceId }) => {
     const roomCode = socketToRoom[socket.id];
     const room = rooms[roomCode];
     if (!room) return;
 
-    // Only allow viewing evidence the player has previously picked
-    const pickedList = room.evidenceCollection.picked[socket.id];
-    if (pickedList && !pickedList.includes(evidenceId)) {
+    // Check if player has this evidence (in allCollectedEvidence or comboCards)
+    const hasInCollected = (room.allCollectedEvidence[socket.id] || []).some((e) => e.id === evidenceId);
+    const hasInCombo = (room.comboCards[socket.id] || []).some((c) => c.id === evidenceId);
+    // Also allow during active collection (current phase picked list)
+    const hasInCurrentPick = (room.evidenceCollection.picked[socket.id] || []).includes(evidenceId);
+
+    if (!hasInCollected && !hasInCombo && !hasInCurrentPick) {
       socket.emit('error', { message: 'You have not collected this evidence' });
       return;
     }
 
-    const phaseId = room.gameState;
-    const evidence = findEvidenceGlobal(phaseId, evidenceId);
-
+    const evidence = findEvidenceAnyPhase(evidenceId);
     if (!evidence) {
       socket.emit('error', { message: 'Evidence not found' });
       return;
     }
+
+    // Check if this card can be combined
+    const comboInfo = (gameData.combinations || []).find((c) => c.requires.includes(evidenceId));
+    let canCombine = false;
+    let comboId = undefined;
+    if (comboInfo) {
+      comboId = comboInfo.id;
+      const playerCards = (room.allCollectedEvidence[socket.id] || []).map((e) => e.id);
+      canCombine = comboInfo.requires.every((reqId) => playerCards.includes(reqId));
+      // Don't allow if already combined
+      const alreadyCombined = (room.comboCards[socket.id] || []).some((c) => c.id === comboInfo.id);
+      if (alreadyCombined) canCombine = false;
+    }
+
+    // Check if donate/exchange are available (discussion phases only)
+    const isDiscussion = room.gameState === 'discussion1' || room.gameState === 'discussion2';
+    const disc = room.discussion;
+    const canDonate = isDiscussion && (disc.donations[socket.id] || 0) < disc.maxDonationsPerPlayer;
+    const canExchange = isDiscussion && disc.tradeCount < disc.maxTrades;
 
     socket.emit('evidence-detail', {
       id: evidence.id,
@@ -685,7 +751,11 @@ io.on('connection', (socket) => {
       content: evidence.content,
       image: evidence.image || undefined,
       comboHint: evidence.comboHint || undefined,
-      metadata: evidence.metadata || undefined,
+      canCombine,
+      comboId,
+      canDonate,
+      canExchange,
+      isComboCard: hasInCombo,
     });
   });
 
@@ -777,6 +847,17 @@ io.on('connection', (socket) => {
     // Get full evidence content (search across all roles) and send to the picking player
     const phaseId = room.gameState;
     const fullEvidence = findEvidenceGlobal(phaseId, evidenceId);
+
+    // Also track in allCollectedEvidence (persists across phases)
+    if (!room.allCollectedEvidence[socket.id]) {
+      room.allCollectedEvidence[socket.id] = [];
+    }
+    room.allCollectedEvidence[socket.id].push({
+      id: evidenceId,
+      title: fullEvidence?.title || evidenceId,
+      type: fullEvidence?.type || 'unknown',
+      phase: phaseId,
+    });
     if (fullEvidence) {
       socket.emit('evidence-picked', {
         id: fullEvidence.id,
@@ -803,8 +884,14 @@ io.on('connection', (socket) => {
       ec.active = false;
       room.players.forEach((s) => {
         if (s) {
+          const collectedFull = (ec.picked[s.id] || []).map((evId) => {
+            const ev = findEvidenceAnyPhase(evId);
+            return ev ? { id: ev.id, title: ev.title, type: ev.type } : { id: evId, title: evId, type: 'unknown' };
+          });
           s.emit('evidence-collection-complete', {
             collected: ec.picked[s.id] || [],
+            collectedFull,
+            phase: phaseId,
           });
         }
       });
@@ -823,29 +910,157 @@ io.on('connection', (socket) => {
   });
 
   // ------------------------------------------
-  // TRADE CARDS (discussion phase — exchange)
+  // TRADE PROPOSE (discussion phase — propose a card exchange)
   // ------------------------------------------
-  socket.on('trade-cards', ({ offeredCardId, requestedCardId, partnerId }) => {
+  socket.on('trade-propose', ({ cardId }) => {
     const roomCode = socketToRoom[socket.id];
     const room = rooms[roomCode];
     if (!room) return;
 
     const disc = room.discussion;
-
-    // Validate trade limit
     if (disc.tradeCount >= disc.maxTrades) {
       socket.emit('trade-rejected', { reason: '이번 토론에서 교환 횟수를 모두 사용했습니다. (최대 2회)' });
       return;
     }
 
-    disc.tradeCount += 1;
+    // Verify the card exists in player's collection
+    const myEvidence = room.allCollectedEvidence[socket.id] || [];
+    if (!myEvidence.some((e) => e.id === cardId)) {
+      socket.emit('error', { message: '해당 카드를 보유하고 있지 않습니다.' });
+      return;
+    }
 
-    // Notify both players of the trade
-    socket.emit('trade-completed', { gave: offeredCardId, received: requestedCardId });
+    const fullCard = findEvidenceAnyPhase(cardId);
+    const cardInfo = fullCard ? { id: fullCard.id, title: fullCard.title, type: fullCard.type } : { id: cardId, title: cardId, type: 'unknown' };
+
+    room.pendingTrade = { from: socket.id, cardId };
+
     const partner = getPartnerSocket(room, socket.id);
     if (partner) {
-      partner.emit('trade-completed', { gave: requestedCardId, received: offeredCardId });
+      partner.emit('trade-proposal', { card: cardInfo, fromSocketId: socket.id });
     }
+    socket.emit('trade-proposed', { cardId });
+  });
+
+  // ------------------------------------------
+  // TRADE ACCEPT (partner accepts and offers their card)
+  // ------------------------------------------
+  socket.on('trade-accept', ({ myCardId }) => {
+    const roomCode = socketToRoom[socket.id];
+    const room = rooms[roomCode];
+    if (!room || !room.pendingTrade) return;
+
+    const disc = room.discussion;
+    if (disc.tradeCount >= disc.maxTrades) {
+      socket.emit('trade-rejected', { reason: '이번 토론에서 교환 횟수를 모두 사용했습니다. (최대 2회)' });
+      room.pendingTrade = null;
+      return;
+    }
+
+    const proposer = room.pendingTrade.from;
+    const proposerCardId = room.pendingTrade.cardId;
+    const accepterCardId = myCardId;
+
+    // Swap cards in allCollectedEvidence
+    const proposerEvidence = room.allCollectedEvidence[proposer] || [];
+    const accepterEvidence = room.allCollectedEvidence[socket.id] || [];
+
+    const pIdx = proposerEvidence.findIndex((e) => e.id === proposerCardId);
+    const aIdx = accepterEvidence.findIndex((e) => e.id === accepterCardId);
+
+    if (pIdx === -1 || aIdx === -1) {
+      socket.emit('error', { message: '교환할 카드를 찾을 수 없습니다.' });
+      room.pendingTrade = null;
+      return;
+    }
+
+    const pCard = proposerEvidence[pIdx];
+    const aCard = accepterEvidence[aIdx];
+
+    // Swap
+    proposerEvidence.splice(pIdx, 1);
+    accepterEvidence.splice(aIdx, 1);
+    proposerEvidence.push(aCard);
+    accepterEvidence.push(pCard);
+
+    disc.tradeCount += 1;
+    room.pendingTrade = null;
+
+    // Notify both
+    const pFullCard = findEvidenceAnyPhase(proposerCardId);
+    const aFullCard = findEvidenceAnyPhase(accepterCardId);
+    const pInfo = pFullCard ? { id: pFullCard.id, title: pFullCard.title, type: pFullCard.type } : { id: proposerCardId };
+    const aInfo = aFullCard ? { id: aFullCard.id, title: aFullCard.title, type: aFullCard.type } : { id: accepterCardId };
+
+    const proposerSocket = room.players.find((s) => s && s.id === proposer);
+    if (proposerSocket) {
+      proposerSocket.emit('trade-completed', { gave: pInfo, received: aInfo });
+    }
+    socket.emit('trade-completed', { gave: aInfo, received: pInfo });
+  });
+
+  // ------------------------------------------
+  // TRADE REJECT
+  // ------------------------------------------
+  socket.on('trade-reject', () => {
+    const roomCode = socketToRoom[socket.id];
+    const room = rooms[roomCode];
+    if (!room || !room.pendingTrade) return;
+
+    const proposer = room.pendingTrade.from;
+    room.pendingTrade = null;
+
+    const proposerSocket = room.players.find((s) => s && s.id === proposer);
+    if (proposerSocket) {
+      proposerSocket.emit('trade-rejected', { reason: '상대방이 교환을 거절했습니다.' });
+    }
+    socket.emit('trade-reject-confirmed', {});
+  });
+
+  // ------------------------------------------
+  // COMBINE CARDS
+  // ------------------------------------------
+  socket.on('combine-cards', ({ comboId }) => {
+    const roomCode = socketToRoom[socket.id];
+    const room = rooms[roomCode];
+    if (!room) return;
+
+    const combo = (gameData.combinations || []).find((c) => c.id === comboId);
+    if (!combo) {
+      socket.emit('error', { message: '유효하지 않은 조합입니다.' });
+      return;
+    }
+
+    // Check if player has all required cards
+    const playerCards = (room.allCollectedEvidence[socket.id] || []).map((e) => e.id);
+    const hasAll = combo.requires.every((reqId) => playerCards.includes(reqId));
+    if (!hasAll) {
+      socket.emit('error', { message: '필요한 카드가 부족합니다.' });
+      return;
+    }
+
+    // Check if already combined
+    if (!room.comboCards[socket.id]) room.comboCards[socket.id] = [];
+    if (room.comboCards[socket.id].some((c) => c.id === comboId)) {
+      socket.emit('error', { message: '이미 조합된 카드입니다.' });
+      return;
+    }
+
+    // Add combo card
+    room.comboCards[socket.id].push({
+      id: combo.id,
+      title: combo.title,
+      type: combo.type,
+    });
+
+    // Send combo card details
+    socket.emit('combo-success', {
+      id: combo.id,
+      title: combo.title,
+      type: combo.type,
+      content: combo.content,
+      image: combo.image || undefined,
+    });
   });
 
   // ------------------------------------------
@@ -869,13 +1084,33 @@ io.on('connection', (socket) => {
       return;
     }
 
-    disc.donations[socket.id] += 1;
+    // Find and move the card in allCollectedEvidence
+    const myEvidence = room.allCollectedEvidence[socket.id] || [];
+    const cardIndex = myEvidence.findIndex((e) => e.id === cardId);
+    if (cardIndex === -1) {
+      socket.emit('error', { message: '해당 카드를 보유하고 있지 않습니다.' });
+      return;
+    }
 
-    // Notify both players of the donation
-    socket.emit('donate-completed', { cardId, direction: 'gave' });
+    const card = myEvidence[cardIndex];
+    myEvidence.splice(cardIndex, 1);
+
     const partner = getPartnerSocket(room, socket.id);
     if (partner) {
-      partner.emit('donate-completed', { cardId, direction: 'received' });
+      if (!room.allCollectedEvidence[partner.id]) room.allCollectedEvidence[partner.id] = [];
+      room.allCollectedEvidence[partner.id].push(card);
+    }
+
+    disc.donations[socket.id] += 1;
+
+    // Get full card info for notification
+    const fullCard = findEvidenceAnyPhase(cardId);
+    const cardInfo = fullCard ? { id: fullCard.id, title: fullCard.title, type: fullCard.type } : { id: cardId, title: cardId, type: 'unknown' };
+
+    // Notify both players of the donation
+    socket.emit('donate-completed', { cardId, direction: 'gave', card: cardInfo });
+    if (partner) {
+      partner.emit('donate-completed', { cardId, direction: 'received', card: cardInfo });
     }
   });
 

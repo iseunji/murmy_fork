@@ -2030,8 +2030,7 @@ socket.on('evidence-detail', (data) => {
 
   if (titleEl) titleEl.textContent = data.title || '';
   if (typeEl) {
-    const icon = EVIDENCE_ICONS[data.type] || DEFAULT_EVIDENCE_ICON;
-    typeEl.textContent = `${icon} ${data.type || ''}`;
+    typeEl.textContent = data.isComboCard ? '조합카드' : '증거카드';
   }
   if (contentEl) contentEl.textContent = data.content || '';
 
@@ -2116,8 +2115,7 @@ socket.on('evidence-picked', (data) => {
   }
   if (titleEl) titleEl.textContent = data.title || '';
   if (typeEl) {
-    const icon = EVIDENCE_ICONS[data.type] || DEFAULT_EVIDENCE_ICON;
-    typeEl.textContent = `${icon} ${data.type || ''}`;
+    typeEl.textContent = '증거카드';
   }
   if (contentEl) contentEl.textContent = data.content || '';
 

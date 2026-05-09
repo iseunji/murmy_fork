@@ -677,6 +677,7 @@ body::before {
   font-weight: 400;
   color: var(--text-primary);
   letter-spacing: 0.08em;
+  text-indent: 0.08em;
   line-height: 1.1;
   animation: flicker 8s infinite;
 }
@@ -768,6 +769,7 @@ body::before {
   font-family: var(--font-mono);
   font-size: 1.6rem;
   letter-spacing: 0.4em;
+  text-indent: 0.4em;
   text-align: center;
   width: 160px;
   padding: 8px 12px;
@@ -2383,6 +2385,7 @@ body.tabs-visible .chat-topbar {
   border-radius: 20px;
   margin-bottom: 16px;
   letter-spacing: 1px;
+  text-indent: 1px;
 }
 .combo-detail .evidence-detail-title {
   color: var(--accent-amber);

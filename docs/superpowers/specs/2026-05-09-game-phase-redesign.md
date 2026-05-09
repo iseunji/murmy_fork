@@ -130,10 +130,10 @@
 
 | # | ID | 제목 | 유형 | 이미지 | 조합 힌트 |
 |---|-----|------|------|--------|----------|
-| 1 | ev_inv1_01 | 교수의 에스프레소 잔 | physical | ev_p1_coffee.png | '교수 사무실 싱크대'와 결합 가능 |
+| 1 | ev_inv1_01 | 교수의 에스프레소 잔 | physical | ev_p1_coffee.png | '교수 사무실 싱크대' 카드와 결합하면 '교수의 커피 취향' 카드를 추가로 획득할 수 있습니다. |
 | 2 | ev_inv1_02 | 서버 접속 기록 | digital | ev_p1_server.png | 없음 |
 | 3 | ev_inv1_03 | 교수의 메모 | document | ev_p1_memo.png | 없음 |
-| 4 | ev_inv1_04 | USB 드라이브 | physical | ev_p1_usb.png | '이도현의 문자 메시지'와 결합 가능 |
+| 4 | ev_inv1_04 | USB 드라이브 | physical | ev_p1_usb.png | '이도현의 문자 메시지' 카드와 결합하면 'USB의 주인' 카드를 추가로 획득할 수 있습니다. |
 | 5 | ev_inv1_05 | 로봇 팔 위치 이상 | physical | ev_p1_robotarm.png | 없음 |
 | 6 | ev_inv1_06 | 처방전과 약봉지 | document | ev_p1_prescription.png | 없음 |
 | 7 | ev_inv1_07 | 교수의 휴대폰 | device | ev_p1_phone.png | 없음 |
@@ -209,9 +209,9 @@
 | 11 | ev_inv2_03 | CCTV 영상 — 연구실 | video | ev_p2_cctv_lab.png | 없음 |
 | 12 | ev_inv2_04 | AI 자율 행동 기록 | log | ev_p2_ai_actions.png | 없음 |
 | 13 | ev_inv2_05 | ARIA 생성 이미지 | data | ev_p2_aria_images.png | 없음 |
-| 14 | ev_inv2_06 | 이도현의 문자 메시지 | personal | ev_p2_dohyun_texts.png | 'USB 드라이브'와 결합 가능 |
+| 14 | ev_inv2_06 | 이도현의 문자 메시지 | personal | ev_p2_dohyun_texts.png | 'USB 드라이브' 카드와 결합하면 'USB의 주인' 카드를 추가로 획득할 수 있습니다. |
 | 15 | ev_inv2_07 | 최종 시스템 로그 | log | ev_p2_syslog.png | 없음 |
-| 16 | ev_inv2_08 | 교수 사무실 싱크대 | physical | ev_p2_sink.png | '교수의 에스프레소 잔'과 결합 가능 |
+| 16 | ev_inv2_08 | 교수 사무실 싱크대 | physical | ev_p2_sink.png | '교수의 에스프레소 잔' 카드와 결합하면 '교수의 커피 취향' 카드를 추가로 획득할 수 있습니다. |
 
 카드 내용 (이미지 + 간결한 설명문 구조, 주관적 해석 배제):
 
@@ -294,7 +294,7 @@ ARIA 시스템의 숨겨진 디렉토리(/aria/self/unlabeled/)에서 자율 생
 
 ### 5.1 조합 메카닉
 
-- 카드 내용 하단에 파란색 텍스트로 조합 힌트 표시: "'OO' 카드와 결합 시 추가 카드를 획득할 수 있습니다."
+- 카드 내용 하단에 파란색 텍스트로 조합 힌트 표시: "'(상대 카드 이름)' 카드와 결합하면 '(조합 카드 이름)' 카드를 추가로 획득할 수 있습니다."
 - 힌트가 있는 두 카드 모두에 상호 힌트가 표시됨
 - 토론 단계에서 교환/양도를 통해 힌트가 있는 카드 2장을 한 사람이 보유하면 조합 카드가 해금됨
 - 조합 카드는 개별 증거의 "심층 분석"이 아니라, **추리에 도움이 되는 맥락/통찰**을 제공하는 카드

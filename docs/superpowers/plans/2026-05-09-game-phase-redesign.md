@@ -656,7 +656,7 @@ socket.on('submit-accusation', ({ target }) => {
       if (role === 'culprit') {
         culpritSocketId = sid;
         const myCards = room.playerCards[sid] || [];
-        const hasCard10 = myCards.includes('ev_inv2_02'); // 삭제된 AI 대화 로그
+        const hasCard10 = myCards.includes('ev_inv2_02'); // 삭제된 ARIA 대화 로그
         const hasCard13 = myCards.includes('ev_inv2_05'); // 복구된 프롬프트 조각들
 
         // Check not accused by partner

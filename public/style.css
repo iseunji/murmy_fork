@@ -58,7 +58,7 @@ html {
 }
 
 html {
-  background-color: var(--bg);
+  background-color: #2d2d2d;
 }
 
 body {
@@ -212,34 +212,7 @@ body::before {
 }
 
 
-/* ---- Sound Toggle Button ---- */
-.sound-toggle {
-  position: fixed;
-  top: calc(var(--safe-top) + 12px);
-  right: calc(50% - var(--container-max) / 2 + 12px);
-  z-index: 50;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  color: var(--text-secondary);
-  transition: color 0.2s, border-color 0.2s, background 0.2s;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.sound-toggle:hover {
-  color: var(--text-primary);
-  border-color: var(--border-light);
-}
-
-.sound-toggle:active {
-  background: var(--surface-raised);
-}
-
+/* ---- Sound Icon (shared by game-sound-bar) ---- */
 .sound-icon {
   display: none;
   flex-shrink: 0;
@@ -248,15 +221,6 @@ body::before {
 /* Default: sound is off, show muted icon */
 .sound-icon-off {
   display: block;
-}
-
-/* When sound is on, swap icons */
-.sound-toggle.sound-on .sound-icon-on {
-  display: block;
-}
-
-.sound-toggle.sound-on .sound-icon-off {
-  display: none;
 }
 
 
@@ -2188,9 +2152,6 @@ body.tabs-visible .investigation-topbar {
 }
 body.tabs-visible .chat-topbar {
   top: calc(var(--safe-top) + 44px + 30px);
-}
-body.tabs-visible .sound-toggle {
-  display: none;
 }
 
 /* Sound toggle bar below tab nav */

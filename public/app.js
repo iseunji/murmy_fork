@@ -2586,13 +2586,10 @@ function bindEvents() {
 
   // ---- Sound Toggle ----
 
-  const btnSoundToggle = $('btn-sound-toggle');
   const tabSoundToggle = $('tab-sound-toggle');
 
   function toggleSound() {
     state.soundEnabled = !state.soundEnabled;
-    // Sync both buttons
-    if (btnSoundToggle) btnSoundToggle.classList.toggle('sound-on', state.soundEnabled);
     if (tabSoundToggle) tabSoundToggle.classList.toggle('sound-on', state.soundEnabled);
 
     if (state.soundEnabled) {
@@ -2603,7 +2600,6 @@ function bindEvents() {
     }
   }
 
-  if (btnSoundToggle) btnSoundToggle.addEventListener('click', toggleSound);
   if (tabSoundToggle) tabSoundToggle.addEventListener('click', toggleSound);
 
   // ---- Title Screen ----
@@ -2949,8 +2945,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setupMobileKeyboardHandling();
 
   // Initialize sound toggle button state.
-  const soundBtn = $('btn-sound-toggle');
-  if (soundBtn) soundBtn.classList.toggle('sound-on', state.soundEnabled);
   const tabSoundBtn = $('tab-sound-toggle');
   if (tabSoundBtn) tabSoundBtn.classList.toggle('sound-on', state.soundEnabled);
 

@@ -221,8 +221,10 @@ function restoreStateFromSession() {
     if (data.reachedPhases) {
       state.reachedPhases = new Set(data.reachedPhases);
     }
-    // Show tabs if game is in progress
-    if (state.role) {
+    // Show tabs only if game is on a screen where tabs should be visible
+    // (사건 개요 이후 화면에서만 탭 표시)
+    const tabScreens = ['screen-intro', 'screen-investigation', 'screen-ai-chat', 'screen-verdict', 'screen-ending'];
+    if (state.role && tabScreens.includes(data.currentScreenId)) {
       showGameTabs();
       updateTabStates();
     }
@@ -1846,9 +1848,12 @@ socket.on('game-start', async (data) => {
   // Show the intro screen with role and briefing.
   showScreen('screen-intro');
 
-  // Show game tabs and enable intro tab
-  showGameTabs();
-  updateTabStates();
+  // Show game tabs AFTER screen transition completes (300ms)
+  // to prevent tabs from flashing on the previous screen
+  setTimeout(() => {
+    showGameTabs();
+    updateTabStates();
+  }, 300);
 
   // Append character name to intro title.
   const introTitle = document.querySelector('.intro-title');
@@ -1878,7 +1883,7 @@ socket.on('game-start', async (data) => {
   // Dissolve-in for general narrative intro.
   const narrativeEl = $('intro-narrative');
   const introText =
-    'S 대학교 인공지능학과 자율시스템 연구실.\n국내 최상위 AI 연구 그룹으로, 최근 \'실제 인간 수준의 가치판단과 자율성을 가진 AI 시스템\' 연구로 학계 안팎의 큰 주목을 받고 있다.\n그 연구의 중심에는 ARIA가 있다. 연구실이 자체 개발한 자율 추론 인공지능. 로봇 팔과 연결되어 물리적 세계에도 개입할 수 있는, embodied AI 시스템이다.'
+    '(하진이 읽어주세요) S 대학교 인공지능학과 자율시스템 연구실.\n국내 최상위 AI 연구 그룹으로, 최근 \'실제 인간 수준의 가치판단과 자율성을 가진 AI 시스템\' 연구로 학계 안팎의 큰 주목을 받고 있다. 그 연구의 중심에는 ARIA가 있다. 연구실이 자체 개발한 자율 추론 인공지능. 로봇 팔과 연결되어 물리적 세계에도 개입할 수 있는, embodied AI 시스템이다.'
     + '\n\n'
     + '간만에 찾아온 긴 연휴. 캠퍼스는 텅 비었다.\n대부분의 학생들은 떠났지만, 당신은 학교 근처 자취방에 남아 교수의 업무를 처리하고 있었다.'
     + '\n\n'

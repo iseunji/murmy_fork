@@ -1789,6 +1789,21 @@ body::before {
   background: rgba(139, 37, 0, 0.08);
 }
 
+.verdict-card[data-verdict="eliminate"] {
+  border-color: rgba(139, 37, 0, 0.3);
+  background: rgba(80, 0, 0, 0.06);
+}
+
+.verdict-card[data-verdict="eliminate"]:hover {
+  border-color: var(--accent-red);
+  background: rgba(139, 37, 0, 0.12);
+}
+
+.verdict-card.selected[data-verdict="eliminate"] {
+  border-color: var(--accent-red);
+  background: rgba(139, 37, 0, 0.15);
+}
+
 .verdict-card-icon {
   font-size: 1.8rem;
 }

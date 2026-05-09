@@ -268,7 +268,15 @@ function advancePhase(room) {
 // ---------------------------------------------------------------------------
 // Helper: determine ending from accusations
 // ---------------------------------------------------------------------------
-function determineEnding(accusations) {
+function determineEnding(accusations, roles) {
+  const accEntries = Object.entries(accusations);
+
+  // Check if the culprit chose to eliminate their partner via ARIA
+  const culpritEntry = accEntries.find(([sid]) => roles[sid] === 'culprit');
+  if (culpritEntry && culpritEntry[1] === 'eliminatePartner') {
+    return 'soleSurvivor';
+  }
+
   const accValues = Object.values(accusations);
 
   // Both accuse AI
@@ -820,7 +828,7 @@ io.on('connection', (socket) => {
 
     // When both have submitted, determine ending
     if (accusationCount >= 2) {
-      const endingType = determineEnding(room.accusations);
+      const endingType = determineEnding(room.accusations, room.roles);
       const endingData = gameData.endings?.[endingType] || {};
 
       room.gameState = 'ending';

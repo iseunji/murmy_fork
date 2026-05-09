@@ -1556,6 +1556,11 @@ socket.on('phase-data', async (data) => {
     if (verdictButtons) verdictButtons.style.display = '';
     if (verdictWaiting) verdictWaiting.style.display = 'none';
     state.hasAccused = false;
+    // Show the "ARIA에게 명령" button only for the culprit
+    const btnEliminate = $('btn-eliminate-partner');
+    if (btnEliminate) {
+      btnEliminate.hidden = state.role !== 'culprit';
+    }
     return;
   }
 
@@ -1993,6 +1998,13 @@ function bindEvents() {
   if (btnAccuseSelf) {
     btnAccuseSelf.addEventListener('click', () => {
       submitAccusation('self');
+    });
+  }
+
+  const btnEliminatePartner = $('btn-eliminate-partner');
+  if (btnEliminatePartner) {
+    btnEliminatePartner.addEventListener('click', () => {
+      submitAccusation('eliminatePartner');
     });
   }
 

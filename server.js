@@ -1198,7 +1198,9 @@ io.on('connection', (socket) => {
           s.emit('game-ending', {
             endingType,
             title: endingData.title || endingType,
+            subtitle: endingData.subtitle || '',
             narrative: endingData.narrative || '',
+            truthReveal: gameData.truthReveal || [],
             epilogue: endingData.epilogue || '',
           });
         }

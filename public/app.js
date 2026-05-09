@@ -1192,10 +1192,9 @@ function scrollChatToBottom() {
 /**
  * Orchestrate the ending screen reveal.
  *
- * Paragraphs are revealed one at a time with fade-in animations and pauses
- * between them. The epilogue is presented in a terminal-style typewriter.
+ * Flow: Title → Narrative → Truth Reveal (사건의 전말) → Epilogue → Restart
  *
- * @param {{endingType: string, title: string, narrative: string[], epilogue: string}} data
+ * @param {{endingType: string, title: string, subtitle: string, narrative: string[], truthReveal: string[], epilogue: string}} data
  */
 async function showEnding(data) {
   showScreen('screen-ending');
@@ -1208,6 +1207,12 @@ async function showEnding(data) {
   if (titleEl) {
     titleEl.textContent = (data.title || '') + charSuffix();
     titleEl.classList.add('fade-in');
+  }
+
+  // --- Subtitle ---
+  const subtitleEl = $('ending-subtitle');
+  if (subtitleEl) {
+    subtitleEl.textContent = data.subtitle || '';
   }
 
   await sleep(1500);
@@ -1231,6 +1236,35 @@ async function showEnding(data) {
       // Pause between paragraphs for dramatic pacing.
       await sleep(randomBetween(2000, 3000));
     }
+  }
+
+  await sleep(2000);
+
+  // --- Truth Reveal (사건의 전말) ---
+  const truthRevealWrapper = $('truth-reveal');
+  const truthRevealInner = $('truth-reveal-inner');
+  if (truthRevealWrapper && truthRevealInner && data.truthReveal && data.truthReveal.length > 0) {
+    truthRevealInner.innerHTML = '';
+
+    for (const paragraph of data.truthReveal) {
+      const p = document.createElement('p');
+      // Apply special styling for header lines (━━ ... ━━)
+      if (paragraph.startsWith('\u2501\u2501')) {
+        if (paragraph.includes('\uACB0\uB860')) {
+          p.className = 'truth-conclusion-header';
+        } else {
+          p.className = 'truth-header';
+        }
+      } else if (data.truthReveal.indexOf(paragraph) === data.truthReveal.length - 1) {
+        // Last paragraph is the conclusion text
+        p.className = 'truth-conclusion';
+      }
+      p.textContent = paragraph;
+      truthRevealInner.appendChild(p);
+    }
+
+    truthRevealWrapper.classList.add('visible');
+    await sleep(2000);
   }
 
   await sleep(1500);

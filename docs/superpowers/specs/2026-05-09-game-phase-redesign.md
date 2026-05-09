@@ -835,9 +835,14 @@ CSS 클래스:
 - 어떤 화면에서든 상대가 이탈하면 즉시 게임 종료
 
 ### 13.12 로비/대기 화면 레이아웃
-- 로비 화면(`#screen-lobby`): `.screen-inner`를 flexbox로 세로 중앙 정렬
+- 로비 화면(`#screen-lobby`): `justify-content: flex-start` + `padding-top: 12dvh`로 콘텐츠를 상단 12% 위치에서 시작
 - 대기 화면(`.waiting-layout`): 기존 flexbox 세로 중앙 정렬 유지
-- 세로 중앙 정렬 기준은 전체 뷰박스 높이
+
+### 13.15 letter-spacing 중앙 정렬 보정
+- `letter-spacing`이 적용된 중앙 정렬 텍스트 요소에 동일 값의 `text-indent`를 추가하여 좌측 치우침 보정
+- CSS `letter-spacing`은 각 글자 뒤에 여백을 추가하므로, 마지막 글자 뒤의 여백 때문에 텍스트가 좌측으로 치우쳐 보이는 문제가 있음
+- `text-indent`로 첫 글자 앞에 동일한 여백을 추가하여 시각적 중앙 정렬 달성
+- 적용 대상: `.game-title`, `.game-subtitle`, `.game-meta`, `.room-created-label`, `.room-code-display`, `.waiting-label`, `.input-room-code`, `.ending-subtitle`, `.combo-success-badge`, 미디어 쿼리 `.room-code-display`
 
 ### 13.13 배경색 구분
 - `html` 배경색을 `#383838`로 설정하여 모바일 뷰박스 바깥 영역을 가운데 콘텐츠(`--bg: #212121`)보다 연하게 표시

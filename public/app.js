@@ -56,6 +56,7 @@ const state = {
   reachedPhases: new Set(),// Phase IDs the player has entered
   currentEvidenceId: null, // ID of the evidence currently open in modal
   isDiscussion: false,     // Whether current phase is a discussion phase
+  allCharacters: [],       // All character objects for "인물 정보" tab
 };
 
 /**
@@ -177,6 +178,7 @@ function saveStateToSession() {
       allCollectedEvidence: state.allCollectedEvidence,
       comboCards: state.comboCards,
       reachedPhases: [...state.reachedPhases],
+      allCharacters: state.allCharacters,
     };
     sessionStorage.setItem('murmy_state', JSON.stringify(data));
   } catch (_) {
@@ -218,6 +220,7 @@ function restoreStateFromSession() {
     state.phase2Evidence = data.phase2Evidence || [];
     state.allCollectedEvidence = data.allCollectedEvidence || [];
     state.comboCards = data.comboCards || [];
+    state.allCharacters = data.allCharacters || [];
     if (data.reachedPhases) {
       state.reachedPhases = new Set(data.reachedPhases);
     }
@@ -1352,6 +1355,8 @@ function showGameTabs() {
     tabs.hidden = false;
     document.body.classList.add('tabs-visible');
   }
+  const soundFloat = $('tab-sound-toggle');
+  if (soundFloat) soundFloat.hidden = false;
 }
 
 /**
@@ -1363,6 +1368,8 @@ function hideGameTabs() {
     tabs.hidden = true;
     document.body.classList.remove('tabs-visible');
   }
+  const soundFloat = $('tab-sound-toggle');
+  if (soundFloat) soundFloat.hidden = true;
 }
 
 /**
@@ -1409,6 +1416,10 @@ function openTabPanel(tabId) {
     case 'intro':
       title.textContent = '사건 개요' + charSuffix();
       renderIntroTabContent(body);
+      break;
+    case 'characters':
+      title.textContent = '인물 정보';
+      renderCharacterInfoTab(body);
       break;
     case 'phase1':
       title.textContent = '조사 단계 1: 현장 조사';
@@ -1501,6 +1512,41 @@ function renderIntroTabContent(container) {
     }
     container.appendChild(briefingDiv);
   }
+}
+
+/**
+ * Render character info tab showing both characters with photos and details.
+ */
+function renderCharacterInfoTab(container) {
+  if (!state.allCharacters || state.allCharacters.length === 0) {
+    container.innerHTML = '<p class="tab-panel-empty">캐릭터 정보를 불러올 수 없습니다.</p>';
+    return;
+  }
+
+  const grid = document.createElement('div');
+  grid.className = 'character-info-grid';
+
+  for (const char of state.allCharacters) {
+    const isMe = state.character && state.character.id === char.id;
+    const card = document.createElement('div');
+    card.className = 'character-info-card' + (isMe ? ' is-me' : '');
+
+    const badge = isMe ? '<span class="character-badge">나</span>' : '';
+    card.innerHTML =
+      '<div class="character-info-portrait">' +
+        '<img src="/assets/' + char.id + '.png" alt="' + char.name + '" />' +
+      '</div>' +
+      '<div class="character-info-details">' +
+        '<h3 class="character-info-name">' + char.name + badge + '</h3>' +
+        '<span class="character-info-age">' + char.age + '세</span>' +
+        '<span class="character-info-trait">' + char.trait + '</span>' +
+        '<p class="character-info-desc">' + char.desc + '</p>' +
+      '</div>';
+
+    grid.appendChild(card);
+  }
+
+  container.appendChild(grid);
 }
 
 /**
@@ -1807,6 +1853,7 @@ function renderCharacterCards(characters) {
 
 socket.on('show-character-select', (data) => {
   showScreen('screen-character-select');
+  state.allCharacters = data.characters || [];
   renderCharacterCards(data.characters);
   // Reset waiting UI
   const waiting = $('character-waiting');
@@ -2801,6 +2848,7 @@ function resetGameState() {
   state.reachedPhases = new Set();
   state.currentEvidenceId = null;
   state.isDiscussion = false;
+  state.allCharacters = [];
 
   // Clear saved session so refresh goes to title screen.
   try { sessionStorage.removeItem('murmy_state'); } catch (_) {}

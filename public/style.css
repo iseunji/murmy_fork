@@ -2170,33 +2170,42 @@ body::before {
 
 /* Offset screens when tabs are visible */
 body.tabs-visible .screen {
-  padding-top: calc(var(--safe-top) + 44px + var(--page-px));
+  padding-top: calc(var(--safe-top) + 44px + 36px + var(--page-px));
 }
 body.tabs-visible .investigation-topbar {
-  top: calc(var(--safe-top) + 44px);
+  top: calc(var(--safe-top) + 44px + 36px);
 }
 body.tabs-visible .chat-topbar {
-  top: calc(var(--safe-top) + 44px);
+  top: calc(var(--safe-top) + 44px + 36px);
 }
 body.tabs-visible .sound-toggle {
   display: none;
 }
 
-/* Sound button inside tab bar */
-.game-tab-sound {
-  flex: 0 0 auto;
-  min-width: 40px;
-  padding: 10px 10px;
+/* Floating sound toggle below tab bar */
+.game-sound-float {
+  position: fixed;
+  top: calc(var(--safe-top) + 44px + 4px);
+  right: max(calc((100vw - var(--container-max)) / 2 + 8px), 8px);
+  z-index: 901;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: #b0b0b0;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-bottom: 2px solid transparent !important;
-  color: #b0b0b0;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
 }
-.game-tab-sound .sound-icon { display: none; }
-.game-tab-sound .sound-icon-off { display: block; }
-.game-tab-sound.sound-on .sound-icon-on { display: block; }
-.game-tab-sound.sound-on .sound-icon-off { display: none; }
+.game-sound-float[hidden] { display: none; }
+.game-sound-float:hover { background: rgba(255,255,255,0.06); }
+.game-sound-float .sound-icon { display: none; }
+.game-sound-float .sound-icon-off { display: block; }
+.game-sound-float.sound-on .sound-icon-on { display: block; }
+.game-sound-float.sound-on .sound-icon-off { display: none; }
 
 /* ---- Tab Panel Overlay ---- */
 .tab-panel-overlay .tab-panel-content {
@@ -2230,6 +2239,79 @@ body.tabs-visible .sound-toggle {
   text-align: center;
   padding: 40px 0;
   font-size: 14px;
+}
+
+/* ---- Character Info Tab ---- */
+.character-info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.character-info-card {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.02);
+}
+.character-info-card.is-me {
+  border-color: var(--accent-amber);
+  background: rgba(218,165,32,0.05);
+}
+.character-info-portrait {
+  flex: 0 0 80px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--surface);
+  border: 2px solid var(--border);
+}
+.character-info-card.is-me .character-info-portrait {
+  border-color: var(--accent-amber);
+}
+.character-info-portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.character-info-details {
+  flex: 1;
+  min-width: 0;
+}
+.character-info-name {
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+}
+.character-badge {
+  display: inline-block;
+  font-size: 11px;
+  padding: 1px 6px;
+  margin-left: 6px;
+  border-radius: 4px;
+  background: var(--accent-amber);
+  color: #000;
+  vertical-align: middle;
+  font-family: var(--font-body);
+  font-weight: 600;
+}
+.character-info-age {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-right: 8px;
+}
+.character-info-trait {
+  font-size: 13px;
+  color: var(--accent-amber);
+}
+.character-info-desc {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
 }
 
 /* ---- Evidence Action Buttons ---- */

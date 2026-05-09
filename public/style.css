@@ -2170,56 +2170,85 @@ body::before {
 
 /* Offset screens when tabs are visible */
 body.tabs-visible .screen {
-  padding-top: calc(var(--safe-top) + 44px + 36px + var(--page-px));
+  padding-top: calc(var(--safe-top) + 44px + 30px + var(--page-px));
 }
 body.tabs-visible .investigation-topbar {
-  top: calc(var(--safe-top) + 44px + 36px);
+  top: calc(var(--safe-top) + 44px + 30px);
 }
 body.tabs-visible .chat-topbar {
-  top: calc(var(--safe-top) + 44px + 36px);
+  top: calc(var(--safe-top) + 44px + 30px);
 }
 body.tabs-visible .sound-toggle {
   display: none;
 }
 
-/* Floating sound toggle below tab bar */
-.game-sound-float {
+/* Sound toggle bar below tab nav */
+.game-sound-bar {
   position: fixed;
-  top: calc(var(--safe-top) + 44px + 4px);
-  right: max(calc((100vw - var(--container-max)) / 2 + 8px), 8px);
-  z-index: 901;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
+  top: calc(var(--safe-top) + 44px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: var(--container-max);
+  z-index: 900;
+  display: flex;
+  justify-content: flex-end;
+  padding: 4px 8px;
   background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  box-sizing: border-box;
+}
+.game-sound-bar[hidden] { display: none; }
+.game-sound-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 8px;
   color: #b0b0b0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  transition: color 0.2s, background 0.2s;
+}
+.game-sound-btn:hover { background: rgba(255,255,255,0.06); }
+.game-sound-btn .sound-icon { display: none; }
+.game-sound-btn .sound-icon-off { display: block; }
+.game-sound-btn.sound-on .sound-icon-on { display: block; }
+.game-sound-btn.sound-on .sound-icon-off { display: none; }
+
+/* ---- Tab Panel Page (full-screen) ---- */
+.tab-panel-screen {
+  z-index: 50 !important;
+}
+.tab-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.tab-panel-back {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  padding: 6px;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: color 0.2s, background 0.2s;
+  transition: color 0.2s, border-color 0.2s;
 }
-.game-sound-float[hidden] { display: none; }
-.game-sound-float:hover { background: rgba(255,255,255,0.06); }
-.game-sound-float .sound-icon { display: none; }
-.game-sound-float .sound-icon-off { display: block; }
-.game-sound-float.sound-on .sound-icon-on { display: block; }
-.game-sound-float.sound-on .sound-icon-off { display: none; }
-
-/* ---- Tab Panel Overlay ---- */
-.tab-panel-overlay .tab-panel-content {
-  max-width: var(--container-max);
-  width: 90vw;
-  max-height: 85vh;
-  overflow-y: auto;
-  padding: 24px 20px;
+.tab-panel-back:hover {
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
 }
 .tab-panel-title {
   font-family: var(--font-display);
   font-size: 22px;
   color: var(--accent-amber);
-  margin-bottom: 16px;
+  margin: 0;
 }
 .tab-panel-body {
   color: var(--text-primary);

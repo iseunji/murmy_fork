@@ -136,6 +136,15 @@ function showScreen(screenId) {
   const allScreens = document.querySelectorAll('.screen');
   allScreens.forEach((s) => s.classList.remove('active'));
 
+  // Tabs should only be visible on in-game screens (not lobby/title/waiting/character-select)
+  const tabScreens = ['screen-intro', 'screen-investigation', 'screen-ai-chat', 'screen-verdict', 'screen-ending'];
+  if (tabScreens.includes(screenId)) {
+    showGameTabs();
+    updateTabStates();
+  } else {
+    hideGameTabs();
+  }
+
   // Brief blackout before the new screen fades in.
   setTimeout(() => {
     const target = $(screenId);
@@ -1355,8 +1364,8 @@ function showGameTabs() {
     tabs.hidden = false;
     document.body.classList.add('tabs-visible');
   }
-  const soundFloat = $('tab-sound-toggle');
-  if (soundFloat) soundFloat.hidden = false;
+  const soundBar = $('game-sound-bar');
+  if (soundBar) soundBar.hidden = false;
 }
 
 /**
@@ -1368,8 +1377,8 @@ function hideGameTabs() {
     tabs.hidden = true;
     document.body.classList.remove('tabs-visible');
   }
-  const soundFloat = $('tab-sound-toggle');
-  if (soundFloat) soundFloat.hidden = true;
+  const soundBar = $('game-sound-bar');
+  if (soundBar) soundBar.hidden = true;
 }
 
 /**
@@ -1400,15 +1409,17 @@ function updateTabStates() {
   }
 }
 
+/** Screen ID that was active before opening a tab page. */
+let _previousScreenId = null;
+
 /**
- * Open a tab panel overlay showing the specified tab content.
- * @param {'intro'|'phase1'|'phase2'|'combo'} tabId
+ * Open a tab panel as a full-screen page.
+ * @param {'intro'|'characters'|'phase1'|'phase2'|'combo'} tabId
  */
 function openTabPanel(tabId) {
-  const overlay = $('tab-panel-overlay');
   const title = $('tab-panel-title');
   const body = $('tab-panel-body');
-  if (!overlay || !title || !body) return;
+  if (!title || !body) return;
 
   body.innerHTML = '';
 
@@ -1437,8 +1448,17 @@ function openTabPanel(tabId) {
       return;
   }
 
-  overlay.removeAttribute('hidden');
-  overlay.classList.add('active');
+  // Remember the current screen so we can return to it
+  _previousScreenId = currentScreenId;
+
+  // Show the tab panel as a full-screen page
+  const allScreens = document.querySelectorAll('.screen');
+  allScreens.forEach((s) => s.classList.remove('active'));
+  const tabScreen = $('tab-panel-screen');
+  if (tabScreen) {
+    tabScreen.classList.add('active');
+    tabScreen.scrollTop = 0;
+  }
 
   // Highlight active tab
   document.querySelectorAll('.game-tab').forEach((t) => t.classList.remove('active'));
@@ -1447,14 +1467,19 @@ function openTabPanel(tabId) {
 }
 
 /**
- * Close the tab panel overlay.
+ * Close the tab panel page and return to the previous screen.
  */
 function closeTabPanel() {
-  const overlay = $('tab-panel-overlay');
-  if (overlay) {
-    overlay.classList.remove('active');
-    overlay.setAttribute('hidden', '');
+  const tabScreen = $('tab-panel-screen');
+  if (tabScreen) tabScreen.classList.remove('active');
+
+  // Restore the previous screen
+  if (_previousScreenId) {
+    const prev = $(_previousScreenId);
+    if (prev) prev.classList.add('active');
   }
+  _previousScreenId = null;
+
   document.querySelectorAll('.game-tab').forEach((t) => t.classList.remove('active'));
 }
 

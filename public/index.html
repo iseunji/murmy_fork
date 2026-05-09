@@ -40,7 +40,8 @@
     <button class="game-tab" data-tab="phase2" id="tab-phase2" disabled>조사 2</button>
     <button class="game-tab" data-tab="combo" id="tab-combo" disabled>조합</button>
   </nav>
-  <button class="game-sound-float" id="tab-sound-toggle" hidden aria-label="소리 켜기/끄기">
+  <div class="game-sound-bar" id="game-sound-bar" hidden>
+    <button class="game-sound-btn" id="tab-sound-toggle" aria-label="소리 켜기/끄기">
       <svg class="sound-icon sound-icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14">
         <path d="M11 5L6 9H2v6h4l5 4V5z"/>
         <path d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"/>
@@ -51,6 +52,7 @@
         <line x1="17" y1="9" x2="23" y2="15"/>
       </svg>
     </button>
+  </div>
 
   <!-- ===== SCREEN 1: TITLE ===== -->
   <section id="screen-title" class="screen active">
@@ -384,14 +386,20 @@
     </div>
   </div>
 
-  <!-- Tab Panel Overlay -->
-  <div class="modal-overlay tab-panel-overlay" id="tab-panel-overlay" hidden>
-    <div class="modal-content tab-panel-content">
-      <button class="modal-close" id="tab-panel-close" aria-label="닫기">&times;</button>
-      <h3 class="tab-panel-title" id="tab-panel-title"></h3>
+  <!-- Tab Panel Page (full-screen, not a popup) -->
+  <section class="screen tab-panel-screen" id="tab-panel-screen">
+    <div class="screen-inner">
+      <div class="tab-panel-header">
+        <button class="tab-panel-back" id="tab-panel-close" aria-label="돌아가기">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </button>
+        <h3 class="tab-panel-title" id="tab-panel-title"></h3>
+      </div>
       <div class="tab-panel-body" id="tab-panel-body"></div>
     </div>
-  </div>
+  </section>
 
   <!-- Combo Success Modal -->
   <div class="modal-overlay" id="combo-modal" hidden>

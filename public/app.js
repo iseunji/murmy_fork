@@ -1372,7 +1372,7 @@ const SK = 'filter="url(#pencil)"'; // shorthand
 
 const CHARACTER_SILHOUETTES = {
   hajin: '<img src="/assets/hajin.png" alt="서하진" />',
-  dohyun: '<img src="/assets/dohyun.png" alt="윤도현" />',
+  dohyun: '<img src="/assets/dohyun.png" alt="이도현" />',
 };
 
 function renderCharacterCards(characters) {

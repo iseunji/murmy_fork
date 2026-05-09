@@ -687,6 +687,7 @@ body::before {
   color: var(--text-secondary);
   margin-top: 8px;
   letter-spacing: 0.15em;
+  text-indent: 0.15em;
 }
 
 .game-meta {
@@ -695,6 +696,7 @@ body::before {
   opacity: 0.6;
   margin-top: 8px;
   letter-spacing: 0.2em;
+  text-indent: 0.2em;
   text-transform: uppercase;
 }
 
@@ -798,6 +800,7 @@ body::before {
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.15em;
+  text-indent: 0.15em;
   margin-bottom: 8px;
 }
 
@@ -880,6 +883,7 @@ body::before {
   opacity: 0.7;
   text-transform: uppercase;
   letter-spacing: 0.15em;
+  text-indent: 0.15em;
 }
 
 .room-code-large {
@@ -1883,6 +1887,7 @@ body::before {
   font-size: 0.85rem;
   color: var(--text-secondary);
   letter-spacing: 0.2em;
+  text-indent: 0.2em;
   margin-top: 8px;
 }
 
@@ -2013,6 +2018,7 @@ body::before {
   .room-code-display {
     font-size: 1.8rem;
     letter-spacing: 0.3em;
+    text-indent: 0.3em;
   }
 
   .room-code-large {

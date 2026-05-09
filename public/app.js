@@ -51,6 +51,8 @@ const state = {
   briefingText: '',        // Secret briefing text
   phase1Evidence: [],      // [{id, title, type}] cards collected in investigation1
   phase2Evidence: [],      // [{id, title, type}] cards collected in investigation2
+  phase1Narrative: '',     // Investigation1 narrative text for tab review
+  phase2Narrative: '',     // Investigation2 narrative text for tab review
   allCollectedEvidence: [],// [{id, title, type, phase}] all cards across phases
   comboCards: [],          // [{id, title, type, content}] successfully combined cards
   reachedPhases: new Set(),// Phase IDs the player has entered
@@ -153,6 +155,12 @@ function showScreen(screenId) {
       currentScreenId = screenId;
       saveStateToSession();
     }
+    // Highlight 사건 개요 tab when on screen-intro
+    document.querySelectorAll('.game-tab').forEach((t) => t.classList.remove('active'));
+    if (screenId === 'screen-intro') {
+      const introTab = $('tab-intro');
+      if (introTab) introTab.classList.add('active');
+    }
     // Play transition sound effect.
     SFX.whoosh();
   }, 300);
@@ -184,6 +192,8 @@ function saveStateToSession() {
       briefingText: state.briefingText,
       phase1Evidence: state.phase1Evidence,
       phase2Evidence: state.phase2Evidence,
+      phase1Narrative: state.phase1Narrative,
+      phase2Narrative: state.phase2Narrative,
       allCollectedEvidence: state.allCollectedEvidence,
       comboCards: state.comboCards,
       reachedPhases: [...state.reachedPhases],
@@ -227,6 +237,8 @@ function restoreStateFromSession() {
     state.briefingText = data.briefingText || '';
     state.phase1Evidence = data.phase1Evidence || [];
     state.phase2Evidence = data.phase2Evidence || [];
+    state.phase1Narrative = data.phase1Narrative || '';
+    state.phase2Narrative = data.phase2Narrative || '';
     state.allCollectedEvidence = data.allCollectedEvidence || [];
     state.comboCards = data.comboCards || [];
     state.allCharacters = data.allCharacters || [];
@@ -248,6 +260,13 @@ function restoreStateFromSession() {
     if (target) {
       target.classList.add('active');
       currentScreenId = data.currentScreenId;
+    }
+
+    // Highlight 사건 개요 tab when restoring to screen-intro
+    if (data.currentScreenId === 'screen-intro') {
+      document.querySelectorAll('.game-tab').forEach((t) => t.classList.remove('active'));
+      const introTab = $('tab-intro');
+      if (introTab) introTab.classList.add('active');
     }
 
     return true;
@@ -1417,6 +1436,26 @@ let _previousScreenId = null;
  * @param {'intro'|'characters'|'phase1'|'phase2'|'combo'} tabId
  */
 function openTabPanel(tabId) {
+  // 'intro' tab maps directly to screen-intro
+  if (tabId === 'intro') {
+    if (currentScreenId === 'screen-intro') return; // already there
+    // Remember current screen, then switch to screen-intro
+    _previousScreenId = currentScreenId;
+    const allScreens = document.querySelectorAll('.screen');
+    allScreens.forEach((s) => s.classList.remove('active'));
+    const introScreen = $('screen-intro');
+    if (introScreen) {
+      introScreen.classList.add('active');
+      introScreen.scrollTop = 0;
+    }
+    currentScreenId = 'screen-intro';
+    // Highlight active tab
+    document.querySelectorAll('.game-tab').forEach((t) => t.classList.remove('active'));
+    const introTab = $('tab-intro');
+    if (introTab) introTab.classList.add('active');
+    return;
+  }
+
   const title = $('tab-panel-title');
   const body = $('tab-panel-body');
   if (!title || !body) return;
@@ -1424,21 +1463,17 @@ function openTabPanel(tabId) {
   body.innerHTML = '';
 
   switch (tabId) {
-    case 'intro':
-      title.textContent = '사건 개요' + charSuffix();
-      renderIntroTabContent(body);
-      break;
     case 'characters':
       title.textContent = '인물 정보';
       renderCharacterInfoTab(body);
       break;
     case 'phase1':
       title.textContent = '조사 단계 1: 현장 조사';
-      renderEvidenceTabContent(body, state.phase1Evidence);
+      renderEvidenceTabContent(body, state.phase1Evidence, state.phase1Narrative);
       break;
     case 'phase2':
       title.textContent = '조사 단계 2: 디지털 흔적';
-      renderEvidenceTabContent(body, state.phase2Evidence);
+      renderEvidenceTabContent(body, state.phase2Evidence, state.phase2Narrative);
       break;
     case 'combo':
       title.textContent = '조합 카드';
@@ -1449,7 +1484,9 @@ function openTabPanel(tabId) {
   }
 
   // Remember the current screen so we can return to it
-  _previousScreenId = currentScreenId;
+  if (currentScreenId !== 'tab-panel-screen') {
+    _previousScreenId = currentScreenId;
+  }
 
   // Show the tab panel as a full-screen page
   const allScreens = document.querySelectorAll('.screen');
@@ -1459,6 +1496,7 @@ function openTabPanel(tabId) {
     tabScreen.classList.add('active');
     tabScreen.scrollTop = 0;
   }
+  currentScreenId = 'tab-panel-screen';
 
   // Highlight active tab
   document.querySelectorAll('.game-tab').forEach((t) => t.classList.remove('active'));
@@ -1577,9 +1615,25 @@ function renderCharacterInfoTab(container) {
 /**
  * Render evidence cards for a tab panel (phase 1, phase 2).
  */
-function renderEvidenceTabContent(container, evidenceList) {
+function renderEvidenceTabContent(container, evidenceList, narrativeText) {
+  // Show narrative text above evidence cards if available
+  if (narrativeText) {
+    const narrativeDiv = document.createElement('div');
+    narrativeDiv.className = 'tab-panel-narrative';
+    narrativeDiv.textContent = narrativeText;
+    container.appendChild(narrativeDiv);
+
+    const separator = document.createElement('hr');
+    separator.style.borderColor = 'var(--border)';
+    separator.style.margin = '20px 0';
+    container.appendChild(separator);
+  }
+
   if (!evidenceList || evidenceList.length === 0) {
-    container.innerHTML = '<p class="tab-panel-empty">수집된 증거가 없습니다.</p>';
+    const emptyMsg = document.createElement('p');
+    emptyMsg.className = 'tab-panel-empty';
+    emptyMsg.textContent = '수집된 증거가 없습니다.';
+    container.appendChild(emptyMsg);
     return;
   }
 
@@ -1955,37 +2009,11 @@ socket.on('game-start', async (data) => {
     }
   }, 3000);
 
-  await sleep(500);
+  await sleep(1300);
 
-  // Display role label with character name.
-  const roleEl = $('intro-role');
-  if (roleEl) {
-    const roleName = data.role === 'culprit' ? '\uC6A9\uC758\uC790' : '\uC870\uC0AC\uAD00';
-    const charName = state.character ? state.character.name : '';
-    roleEl.textContent = charName ? `${charName} \xB7 ${roleName}` : roleName;
-    roleEl.classList.add('fade-in');
-  }
-
-  await sleep(800);
-
-  // Dissolve-in for general narrative intro.
+  // Dissolve-in for general narrative intro (use prologue from server).
   const narrativeEl = $('intro-narrative');
-  const introText =
-    '(하진이 읽어주세요) S 대학교 인공지능학과 자율시스템 연구실. 국내 최상위 AI 연구 그룹으로, 최근 \'실제 인간 수준의 가치판단과 자율성을 가진 AI 시스템\' 연구로 학계 안팎의 큰 주목을 받고 있다.\n\n그 연구의 중심에는 ARIA가 있다. 연구실이 자체 개발한 자율 추론 인공지능. 로봇 팔과 연결되어 물리적 세계에도 개입할 수 있는, embodied AI 시스템이다.'
-    + '\n\n'
-    + '간만에 찾아온 긴 연휴. 캠퍼스는 텅 비었다. 대부분의 학생들은 떠났지만, 당신은 학교 근처 자취방에 남아 교수의 업무를 처리하고 있었다.'
-    + '\n\n'
-    + '오후 10시, 교수에게서 갑자기 전화가 왔다. "AI 시스템의 응답 패턴이 이상하니까, 얼른 연구실로 와서 점검을 좀 해봐라."'
-    + '\n\n'
-    + '어쩐 일로 일찍 퇴근을 시켜준다고 했더니만... 치밀어오르는 분노를 참고 부랴부랴 연구실로 출발하여 도착한 시간은 밤 11시 가량.'
-    + '\n\n'
-    + '연구실 안에는 불이 켜져 있었고, 문 앞에는 동료가 기다리고 있었다.'
-    + '\n\n'
-    + '도현: "형도 올 줄 알았어요. 저도 교수님이 오라고 하셔서 방금 도착했는데, 문이 잠겨있어서 기다리고 있었거든요. 열쇠 형한테 있죠?"'
-    + '\n\n'
-    + '하진: "응, 내가 가지고 있어."'
-    + '\n\n'
-    + '(도현이 읽어주세요) 문을 열고 들어간 곳에는, 교수가 AI 어시스턴트 화면이 켜진 컴퓨터 책상 옆에 쓰러져 있었다.';
+  const introText = data.prologueNarrative || '';
 
   // Save intro text for tab access
   state.introNarrative = introText;
@@ -2087,6 +2115,14 @@ socket.on('phase-data', async (data) => {
 
     const subtitleEl = $('phase-subtitle');
     if (subtitleEl) subtitleEl.textContent = data.subtitle || '';
+
+    // Save narrative for tab review
+    if (data.phaseId === 'investigation1') {
+      state.phase1Narrative = data.narrative || '';
+    } else if (data.phaseId === 'investigation2') {
+      state.phase2Narrative = data.narrative || '';
+    }
+    saveStateToSession();
 
     // Phase narrative with LLM-style streaming.
     const narrativeEl = $('phase-narrative');
@@ -2430,7 +2466,12 @@ socket.on('game-ending', async (data) => {
 // ---- Partner Disconnected ----
 
 socket.on('partner-disconnected', () => {
-  showToast('\uC0C1\uB300 \uD50C\uB808\uC774\uC5B4\uAC00 \uC5F0\uACB0\uC774 \uB04A\uC5B4\uC84C\uC2B5\uB2C8\uB2E4.', 'error'); // The other player disconnected.
+  showToast('상대 플레이어가 연결이 끊어졌습니다. 처음으로 돌아갑니다.', 'error');
+  // Reset game and return to title screen
+  setTimeout(() => {
+    resetGameState();
+    showScreen('screen-title');
+  }, 1500);
 });
 
 // ---- Generic Error ----
@@ -2473,21 +2514,6 @@ function bindEvents() {
       openTabPanel(tabId);
     });
   });
-
-  const tabPanelClose = $('tab-panel-close');
-  if (tabPanelClose) {
-    tabPanelClose.addEventListener('click', () => {
-      SFX.click();
-      closeTabPanel();
-    });
-  }
-
-  const tabPanelOverlay = $('tab-panel-overlay');
-  if (tabPanelOverlay) {
-    tabPanelOverlay.addEventListener('click', (e) => {
-      if (e.target === tabPanelOverlay) closeTabPanel();
-    });
-  }
 
   // ---- Combo Modal ----
 
@@ -2868,6 +2894,8 @@ function resetGameState() {
   state.briefingText = '';
   state.phase1Evidence = [];
   state.phase2Evidence = [];
+  state.phase1Narrative = '';
+  state.phase2Narrative = '';
   state.allCollectedEvidence = [];
   state.comboCards = [];
   state.reachedPhases = new Set();

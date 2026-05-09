@@ -521,7 +521,8 @@ io.on('connection', (socket) => {
     if (role && room.gameState !== 'lobby') {
       // Re-send game-start info
       const briefing = gameData.roles?.[role]?.briefing || '';
-      socket.emit('game-start', { role, briefing, playerNum });
+      const prologueNarrative = buildNarrative('prologue', role);
+      socket.emit('game-start', { role, briefing, playerNum, prologueNarrative });
 
       // Re-send current phase data if applicable
       if (room.gameState !== 'intro' && room.gameState !== 'ending') {
@@ -669,11 +670,13 @@ io.on('connection', (socket) => {
         const pIdx = room.players.indexOf(s);
         const charId = room.characterSelections[s.id];
         const character = (gameData.characters || []).find((c) => c.id === charId);
+        const prologueNarrative = buildNarrative('prologue', role);
         s.emit('game-start', {
           role,
           briefing,
           playerNum: pIdx + 1,
           character: character || null,
+          prologueNarrative,
         });
       });
     }

@@ -375,7 +375,7 @@ async function streamText(element, text, opts = {}) {
  * @param {string} message - Text to display.
  * @param {'error'|'info'} [type='error'] - Visual style of the toast.
  */
-function showToast(message, type = 'error') {
+function showToast(message, type = 'error', duration = 3000) {
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
   toast.textContent = message;
@@ -390,7 +390,7 @@ function showToast(message, type = 'error') {
     toast.classList.remove('toast-visible');
     // Remove from DOM after fade-out transition completes.
     setTimeout(() => toast.remove(), 400);
-  }, 3000);
+  }, duration);
 }
 
 /* ==========================================================================
@@ -1616,6 +1616,11 @@ socket.on('phase-data', async (data) => {
       narrativeEl.classList.remove('collapsed');
       narrativeCollapsed = false;
       await streamText(narrativeEl, data.narrative, { wordDelay: 25, paragraphPause: 300 });
+    }
+
+    // Show turn order guidance for investigation2
+    if (data.turnOrderGuidance) {
+      showToast(data.turnOrderGuidance, 'info', 5000);
     }
 
     // Evidence collection setup.

@@ -137,6 +137,25 @@ function sendPhaseData(room) {
     if (!socket) return;
     const role = room.roles[socket.id];
 
+    // Build turn order guidance for investigation2
+    let turnOrderGuidance = null;
+    if (phaseId === 'investigation2' && room.firstCollectorPhase1) {
+      const firstInPhase1 = room.firstCollectorPhase1;
+      const isThisPlayerFirst = firstInPhase1 === socket.id;
+      turnOrderGuidance = isThisPlayerFirst
+        ? '이번 조사에서는 상대방이 먼저 조사를 시작합니다.'
+        : '이번 조사에서는 당신이 먼저 조사를 시작합니다.';
+    }
+
+    // Build discussion rules for discussion phases
+    let discussionRules = null;
+    if (phaseId === 'discussion1' || phaseId === 'discussion2') {
+      discussionRules = {
+        maxTrades: 2,
+        maxDonationsPerPlayer: 1,
+      };
+    }
+
     socket.emit('phase-data', {
       phaseId,
       title: phase.title || phaseId,
@@ -145,6 +164,8 @@ function sendPhaseData(room) {
       evidenceList: [],
       hasEvidence,
       duration: phase.duration || 120,
+      turnOrderGuidance,
+      discussionRules,
     });
 
     // Auto-send AI greeting when entering the aria (AI chat) phase
@@ -241,6 +262,14 @@ function advancePhase(room) {
     sharedPool: [],
     picked: {},
     active: false,
+  };
+
+  // Reset discussion state for new discussion phases
+  room.discussion = {
+    tradeCount: 0,
+    maxTrades: 2,
+    donations: {},
+    maxDonationsPerPlayer: 1,
   };
 
   const currentPhase = room.gameState;
@@ -351,6 +380,13 @@ io.on('connection', (socket) => {
         sharedPool: [],        // [{id, title, type}, ...] single shared pool for both players
         picked: {},            // socketId -> [evidenceId, ...] picked evidence IDs
         active: false,         // whether collection is in progress
+      },
+      firstCollectorPhase1: null, // socketId of the player who started first in investigation1
+      discussion: {
+        tradeCount: 0,         // number of card exchanges performed in current discussion
+        maxTrades: 2,          // max card exchanges per discussion phase
+        donations: {},         // socketId -> number of cards donated this discussion
+        maxDonationsPerPlayer: 1, // max cards a player can donate per discussion phase
       },
     };
 
@@ -674,11 +710,27 @@ io.on('connection', (socket) => {
       socket.emit('evidence-waiting', {});
     } else if (ec.readyToCollect.length >= 2) {
       // Both players are ready — start the collection
-      ec.turnOrder = [ec.readyToCollect[0], ec.readyToCollect[1]];
+      const phaseId = room.gameState;
+
+      // Determine turn order: in investigation2, swap from investigation1's order
+      if (phaseId === 'investigation2' && room.firstCollectorPhase1) {
+        // The player who did NOT go first in investigation1 goes first now
+        const secondPlayer = ec.readyToCollect.find((sid) => sid !== room.firstCollectorPhase1)
+          || ec.readyToCollect[1];
+        const firstPlayer = ec.readyToCollect.find((sid) => sid !== secondPlayer)
+          || ec.readyToCollect[0];
+        ec.turnOrder = [secondPlayer, firstPlayer];
+      } else {
+        ec.turnOrder = [ec.readyToCollect[0], ec.readyToCollect[1]];
+      }
+
+      // Track who goes first in investigation1 for future swap
+      if (phaseId === 'investigation1') {
+        room.firstCollectorPhase1 = ec.turnOrder[0];
+      }
+
       ec.currentTurnIndex = 0;
       ec.active = true;
-
-      const phaseId = room.gameState;
 
       // Build a single shared pool from both roles' evidence
       ec.sharedPool = buildSharedEvidenceList(phaseId);
@@ -767,6 +819,63 @@ io.on('connection', (socket) => {
           pickedCount: (ec.picked[s.id] || []).length,
         });
       });
+    }
+  });
+
+  // ------------------------------------------
+  // TRADE CARDS (discussion phase — exchange)
+  // ------------------------------------------
+  socket.on('trade-cards', ({ offeredCardId, requestedCardId, partnerId }) => {
+    const roomCode = socketToRoom[socket.id];
+    const room = rooms[roomCode];
+    if (!room) return;
+
+    const disc = room.discussion;
+
+    // Validate trade limit
+    if (disc.tradeCount >= disc.maxTrades) {
+      socket.emit('trade-rejected', { reason: '이번 토론에서 교환 횟수를 모두 사용했습니다. (최대 2회)' });
+      return;
+    }
+
+    disc.tradeCount += 1;
+
+    // Notify both players of the trade
+    socket.emit('trade-completed', { gave: offeredCardId, received: requestedCardId });
+    const partner = getPartnerSocket(room, socket.id);
+    if (partner) {
+      partner.emit('trade-completed', { gave: requestedCardId, received: offeredCardId });
+    }
+  });
+
+  // ------------------------------------------
+  // DONATE CARD (discussion phase — one-way transfer)
+  // ------------------------------------------
+  socket.on('donate-card', ({ cardId }) => {
+    const roomCode = socketToRoom[socket.id];
+    const room = rooms[roomCode];
+    if (!room) return;
+
+    const disc = room.discussion;
+
+    // Initialize donation count for this player
+    if (!disc.donations[socket.id]) {
+      disc.donations[socket.id] = 0;
+    }
+
+    // Validate donation limit
+    if (disc.donations[socket.id] >= disc.maxDonationsPerPlayer) {
+      socket.emit('donate-rejected', { reason: '이번 토론에서 양도 횟수를 모두 사용했습니다. (1인당 최대 1장)' });
+      return;
+    }
+
+    disc.donations[socket.id] += 1;
+
+    // Notify both players of the donation
+    socket.emit('donate-completed', { cardId, direction: 'gave' });
+    const partner = getPartnerSocket(room, socket.id);
+    if (partner) {
+      partner.emit('donate-completed', { cardId, direction: 'received' });
     }
   });
 

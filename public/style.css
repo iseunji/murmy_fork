@@ -1111,6 +1111,13 @@ body::before {
   margin-bottom: 16px;
 }
 
+.intro-private-notice {
+  color: var(--accent-red);
+  font-weight: 500;
+  margin-top: 24px;
+  line-height: 1.8;
+}
+
 /* Secret Briefing */
 .secret-briefing {
   margin-top: 32px;
@@ -2238,7 +2245,7 @@ body.tabs-visible .chat-topbar {
 /* Sound toggle bar below tab nav */
 .game-sound-bar {
   position: fixed;
-  top: calc(var(--safe-top) + 44px);
+  top: calc(var(--safe-top) + 45px);
   left: 50%;
   transform: translateX(-50%);
   width: 100%;

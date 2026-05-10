@@ -2070,6 +2070,13 @@ socket.on('game-start', async (data) => {
 
   if (narrativeEl) {
     await streamText(narrativeEl, introText, { wordDelay: 30, paragraphPause: 400 });
+
+    // Red notice between prologue and briefing
+    await sleep(600);
+    const notice = document.createElement('p');
+    notice.className = 'intro-private-notice';
+    notice.textContent = '여기서부터는 각 플레이어별로 숙지해야하는 정보입니다. 상대 플레이어에게 공유하지 않고, 혼자 읽어주세요. 권장 시간은 15분 정도이나, 서로의 협의를 통해 조정할 수 있습니다. 두 플레이어 모두 숙지가 완료되면 넘어가주세요.';
+    narrativeEl.appendChild(notice);
   }
 
   // Show the secret briefing after a pause.

@@ -880,8 +880,8 @@ body::before {
 }
 
 .waiting-status {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
+  font-size: 1.3rem;
+  color: #fff;
 }
 
 .waiting-label {

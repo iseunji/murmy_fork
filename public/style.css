@@ -879,6 +879,11 @@ body::before {
   color: var(--text-secondary);
 }
 
+.waiting-status {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
 .waiting-label {
   font-size: 0.8rem;
   color: var(--text-secondary);

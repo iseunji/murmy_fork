@@ -1905,6 +1905,16 @@ socket.on('ready-update', (data) => {
   if (indicator) {
     indicator.classList.add('is-ready');
   }
+
+  // Show message and change button to "시작" when partner is ready
+  const waitingStatus = $('waiting-status');
+  if (waitingStatus) {
+    waitingStatus.textContent = '상대방이 준비를 완료했습니다. 시작을 눌러주세요!';
+  }
+  const btnReady = $('btn-ready');
+  if (btnReady && !btnReady.disabled) {
+    btnReady.textContent = '시작';
+  }
 });
 
 socket.on('phase-ready-count', (data) => {

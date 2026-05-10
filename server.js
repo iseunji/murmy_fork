@@ -536,7 +536,8 @@ io.on('connection', (socket) => {
     if (role && room.gameState !== 'lobby') {
       // Re-send game-start info
       const briefing = gameData.roles?.[role]?.briefing || '';
-      const prologueNarrative = buildNarrative('prologue', role);
+      const prologuePhase = findPhase('prologue');
+      const prologueNarrative = prologuePhase?.narrative?.shared || '';
       socket.emit('game-start', { role, briefing, playerNum, prologueNarrative });
 
       // Re-send current phase data if applicable
@@ -685,7 +686,8 @@ io.on('connection', (socket) => {
         const pIdx = room.players.indexOf(s);
         const charId = room.characterSelections[s.id];
         const character = (gameData.characters || []).find((c) => c.id === charId);
-        const prologueNarrative = buildNarrative('prologue', role);
+        const prologuePhase = findPhase('prologue');
+        const prologueNarrative = prologuePhase?.narrative?.shared || '';
         s.emit('game-start', {
           role,
           briefing,

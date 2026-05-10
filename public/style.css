@@ -1758,6 +1758,11 @@ body::before {
   color: var(--text-secondary);
 }
 
+.verdict-timer-display {
+  justify-content: center;
+  margin-top: 12px;
+}
+
 /* Verdict Choices */
 .verdict-choices {
   display: flex;

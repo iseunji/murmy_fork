@@ -61,6 +61,7 @@ const state = {
   currentEvidenceId: null, // ID of the evidence currently open in modal
   isDiscussion: false,     // Whether current phase is a discussion phase
   allCharacters: [],       // All character objects for "인물 정보" tab
+  phaseDuration: 0,        // Total duration (seconds) for the current phase
 };
 
 /**
@@ -831,13 +832,15 @@ function formatTime(seconds) {
  */
 function updateTimers(remaining) {
   const formatted = formatTime(remaining);
+  const total = state.phaseDuration ? ` / ${formatTime(state.phaseDuration)}` : '';
 
   const phaseTimer = $('phase-timer');
   const aiTimer = $('ai-chat-timer');
+  const verdictTimer = $('verdict-timer');
 
-  [phaseTimer, aiTimer].forEach((el) => {
+  [phaseTimer, aiTimer, verdictTimer].forEach((el) => {
     if (el) {
-      el.textContent = formatted;
+      el.textContent = formatted + total;
       if (remaining < 60) {
         el.classList.add('warning');
       } else {
@@ -2091,6 +2094,7 @@ socket.on('phase-data', async (data) => {
   state.currentPhase = data.phaseId;
   state.isReady = false;
   state.isDiscussion = data.isDiscussion || false;
+  state.phaseDuration = data.duration || 0;
   state.reachedPhases.add(data.phaseId);
   saveStateToSession();
 
@@ -2206,15 +2210,19 @@ socket.on('phase-data', async (data) => {
       renderEvidenceCards(data.evidenceList);
     }
 
-    // Reset ready button state.
+    // Show ready button only in investigation phases (not discussion/accusation).
+    const isInvestigation = data.phaseId === 'investigation1' || data.phaseId === 'investigation2';
     const readyBtn = $('btn-phase-ready');
+    const readyCount = $('phase-ready-count');
     if (readyBtn) {
+      readyBtn.hidden = !isInvestigation;
       readyBtn.disabled = false;
       readyBtn.classList.remove('active');
     }
-
-    const readyCount = $('phase-ready-count');
-    if (readyCount) readyCount.textContent = '0/2';
+    if (readyCount) {
+      readyCount.hidden = !isInvestigation;
+      readyCount.textContent = '0/2';
+    }
 
     // Update phase progress dots.
     updatePhaseProgress(data.phaseId);
@@ -3051,7 +3059,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const phaseSubtitle = $('phase-subtitle');
       if (phaseSubtitle) phaseSubtitle.textContent = '현장 조사';
       const phaseTimer = $('phase-timer');
-      if (phaseTimer) phaseTimer.textContent = '08:00';
+      if (phaseTimer) phaseTimer.textContent = '15:00 / 15:00';
       showGameTabs();
     }
 

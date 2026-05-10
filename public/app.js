@@ -28,6 +28,8 @@
 /**
  * Central application state — the single source of truth for all runtime data.
  */
+let devMode = false;
+
 const state = {
   roomCode: null,
   playerNum: null,
@@ -2545,6 +2547,9 @@ socket.on('disconnect', () => {
 socket.on('connect', () => {
   hideDisconnectOverlay();
 
+  // Dev mode에서는 소켓 재접속 무시
+  if (devMode) return;
+
   // If we were in a room, attempt to re-join on reconnect.
   if (state.roomCode) {
     socket.emit('join-room', { roomCode: state.roomCode });
@@ -3007,14 +3012,78 @@ document.addEventListener('DOMContentLoaded', () => {
   // Inject minimal toast and overlay styles if not already present.
   injectDynamicStyles();
 
-  // Try to restore session state (normal refresh). If no saved state,
-  // show the title screen as usual.
-  const restored = restoreStateFromSession();
-  if (!restored) {
-    showScreen('screen-title');
+  // Dev mode: ?dev=screen-waiting 등으로 더미 데이터와 함께 특정 화면 바로 열기
+  const devScreen = new URLSearchParams(window.location.search).get('dev');
+  if (devScreen) {
+    devMode = true;
+    // 더미 state 세팅 (2인 접속 상태 시뮬레이션)
+    state.playerNum = 1;
+    state.roomCode = '1234';
+    state.role = 'culprit';
+
+    document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
+
+    // 화면별 더미 데이터 주입
+    if (devScreen === 'screen-waiting') {
+      const waitingCode = $('waiting-room-code');
+      if (waitingCode) waitingCode.textContent = '1234';
+      const waitingStatus = $('waiting-status');
+      if (waitingStatus) waitingStatus.textContent = '상대방이 준비를 완료했습니다. 시작을 눌러주세요!';
+      const myIndicator = $('ready-indicator-1');
+      if (myIndicator) myIndicator.classList.add('is-self');
+      const partnerIndicator = $('ready-indicator-2');
+      if (partnerIndicator) partnerIndicator.classList.add('is-ready');
+      const btnReady = $('btn-ready');
+      if (btnReady) { btnReady.disabled = false; btnReady.textContent = '시작'; }
+    }
+
+    if (devScreen === 'screen-intro') {
+      const introTitle = document.querySelector('.intro-title');
+      if (introTitle) introTitle.textContent = '사건 개요';
+      const narrativeEl = $('intro-narrative');
+      if (narrativeEl) narrativeEl.textContent = '(더미) 사건 개요 텍스트가 여기에 표시됩니다.';
+      showGameTabs();
+    }
+
+    if (devScreen === 'screen-investigation') {
+      const phaseTitle = $('phase-title');
+      if (phaseTitle) phaseTitle.textContent = '조사단계 1';
+      const phaseSubtitle = $('phase-subtitle');
+      if (phaseSubtitle) phaseSubtitle.textContent = '현장 조사';
+      const phaseTimer = $('phase-timer');
+      if (phaseTimer) phaseTimer.textContent = '08:00';
+      showGameTabs();
+    }
+
+    if (devScreen === 'screen-verdict') {
+      showGameTabs();
+    }
+
+    if (devScreen === 'screen-ending') {
+      const endingTitle = $('ending-title');
+      if (endingTitle) endingTitle.textContent = 'END 01';
+      const endingSubtitle = $('ending-subtitle');
+      if (endingSubtitle) endingSubtitle.textContent = 'Forked';
+      showGameTabs();
+    }
+
+    const target = $(devScreen);
+    if (target) {
+      target.classList.add('active');
+      console.log('[murmy] Dev mode: showing', devScreen, 'with dummy data');
+    } else {
+      showScreen('screen-title');
+    }
   } else {
-    // Reconnect to room — the socket 'connect' handler will re-join.
-    console.log('[murmy] Session restored. Reconnecting to room:', state.roomCode);
+    // Try to restore session state (normal refresh). If no saved state,
+    // show the title screen as usual.
+    const restored = restoreStateFromSession();
+    if (!restored) {
+      showScreen('screen-title');
+    } else {
+      // Reconnect to room — the socket 'connect' handler will re-join.
+      console.log('[murmy] Session restored. Reconnecting to room:', state.roomCode);
+    }
   }
 
   console.log('[murmy] Client initialized.');

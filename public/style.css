@@ -708,10 +708,10 @@ body::before {
   border-color: #5a4d3e;
 }
 
-.title-heading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.title-logo {
+  width: min(68vw, 290px);
+  height: auto;
+  margin-left: 8px;
 }
 
 .title-content {

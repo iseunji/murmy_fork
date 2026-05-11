@@ -2184,17 +2184,17 @@ socket.on('phase-data', async (data) => {
       renderEvidenceCards(data.evidenceList);
     }
 
-    // Show ready button only in investigation phases (not discussion/accusation).
-    const isInvestigation = data.phaseId === 'investigation1' || data.phaseId === 'investigation2';
+    // Show ready button in investigation and discussion phases (not accusation).
+    const hasReadyBtn = data.phaseId !== 'accusation';
     const readyBtn = $('btn-phase-ready');
     const readyCount = $('phase-ready-count');
     if (readyBtn) {
-      readyBtn.hidden = !isInvestigation;
+      readyBtn.hidden = !hasReadyBtn;
       readyBtn.disabled = false;
       readyBtn.classList.remove('active');
     }
     if (readyCount) {
-      readyCount.hidden = !isInvestigation;
+      readyCount.hidden = !hasReadyBtn;
       readyCount.textContent = '0/2';
     }
 

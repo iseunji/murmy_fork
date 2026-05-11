@@ -352,12 +352,7 @@ async function terminalTypewriter(element, text, speed = 45) {
  * @param {string[]} [opts.dangerPhrases=[]] - Phrases to highlight in red.
  */
 async function streamText(element, text, opts = {}) {
-  const { wordDelay = 30, paragraphPause = 300, dangerPhrases = [] } = opts;
-
-  const existing = typewriterAborts.get(element);
-  if (existing) existing.abort();
-  const controller = new AbortController();
-  typewriterAborts.set(element, controller);
+  const { dangerPhrases = [] } = opts;
 
   element.innerHTML = '';
 
@@ -368,11 +363,6 @@ async function streamText(element, text, opts = {}) {
     guide.textContent = '파란색 대사는 각자 역할을 맡은 사람이 소리내어 읽어주세요.';
     element.appendChild(guide);
   }
-
-  // Streaming cursor
-  const cursor = document.createElement('span');
-  cursor.className = 'stream-cursor';
-  cursor.textContent = '\u258C';
 
   // Filter out ---RED---/---WHITE--- markers and track zone boundaries
   const rawParagraphs = text.split('\n\n');
@@ -390,8 +380,6 @@ async function streamText(element, text, opts = {}) {
   }
 
   for (let pi = 0; pi < paragraphs.length; pi++) {
-    if (controller.signal.aborted) return;
-
     const p = document.createElement('p');
     p.className = 'stream-paragraph';
     element.appendChild(p);
@@ -416,49 +404,30 @@ async function streamText(element, text, opts = {}) {
       p.classList.add('text-dialogue');
     }
 
-    // Split paragraph into lines (single \n) then words
+    // Split paragraph into lines (single \n)
     const lines = paragraphs[pi].split('\n');
 
     for (let li = 0; li < lines.length; li++) {
-      if (controller.signal.aborted) return;
       if (li > 0) p.appendChild(document.createElement('br'));
 
       // Split line into segments: reading guides like (도현이 읽어주세요) get special styling
       const segments = lines[li].split(/(\([^)]*읽어주세요\))/);
       for (const seg of segments) {
-        if (controller.signal.aborted) return;
         const isGuide = /^\([^)]*읽어주세요\)$/.test(seg);
-        const words = seg.split(/(\s+)/);
-        for (const word of words) {
-          if (controller.signal.aborted) return;
-          if (isGuide && word.trim()) {
-            const span = document.createElement('span');
-            span.className = 'text-reading-guide';
-            span.textContent = word;
-            p.appendChild(span);
-          } else {
-            p.appendChild(document.createTextNode(word));
-          }
-          p.appendChild(cursor);
-          if (word.trim()) {
-            await new Promise((r) => setTimeout(r, wordDelay));
-          }
+        if (isGuide) {
+          const span = document.createElement('span');
+          span.className = 'text-reading-guide';
+          span.textContent = seg;
+          p.appendChild(span);
+        } else {
+          p.appendChild(document.createTextNode(seg));
         }
       }
     }
-
-    // Pause between paragraphs
-    if (pi < paragraphs.length - 1) {
-      await new Promise((r) => setTimeout(r, paragraphPause));
-    }
   }
 
-  // Remove cursor when done
-  if (cursor.parentNode) cursor.remove();
-
-  if (typewriterAborts.get(element) === controller) {
-    typewriterAborts.delete(element);
-  }
+  // Fade in the entire element
+  element.classList.add('fade-in-text');
 }
 
 /* ==========================================================================
@@ -1126,19 +1095,12 @@ async function addChatMessage(sender, text, useTypewriter = false) {
   const content = document.createElement('div');
   content.className = 'chat-content';
 
+  content.textContent = text;
   if (useTypewriter) {
-    content.textContent = '';
-    bubble.appendChild(content);
-    container.appendChild(bubble);
-    scrollChatToBottom();
-    // Typewriter with slight speed variation for natural feel.
-    const speed = 20 + randomBetween(-5, 5);
-    await typewriter(content, text, speed);
-  } else {
-    content.textContent = text;
-    bubble.appendChild(content);
-    container.appendChild(bubble);
+    content.classList.add('fade-in-text');
   }
+  bubble.appendChild(content);
+  container.appendChild(bubble);
 
   scrollChatToBottom();
   return bubble;
@@ -1222,25 +1184,18 @@ async function showEnding(data) {
 
   await sleep(1500);
 
-  // --- Narrative paragraphs (one at a time) ---
+  // --- Narrative paragraphs (all at once, fade in) ---
   const narrativeContainer = $('ending-narrative');
   if (narrativeContainer) {
     narrativeContainer.innerHTML = '';
 
     for (const paragraph of (data.narrative || [])) {
       const p = document.createElement('p');
-      p.className = 'ending-paragraph';
+      p.className = 'ending-paragraph visible';
       p.textContent = paragraph;
       narrativeContainer.appendChild(p);
-
-      // Trigger reflow, then add class for CSS fade-in transition.
-      // eslint-disable-next-line no-unused-expressions
-      p.offsetHeight;
-      p.classList.add('visible');
-
-      // Pause between paragraphs for dramatic pacing.
-      await sleep(randomBetween(2000, 3000));
     }
+    narrativeContainer.classList.add('fade-in-text');
   }
 
   await sleep(2000);
@@ -1279,9 +1234,11 @@ async function showEnding(data) {
   const epilogueBody = $('epilogue-terminal-body');
   if (epilogueWrapper && epilogueBody && data.epilogue) {
     epilogueWrapper.classList.add('visible');
-    epilogueBody.innerHTML = ''; // Clear any existing content
+    epilogueBody.innerHTML = '';
     await sleep(500);
-    await terminalTypewriter(epilogueBody, data.epilogue, 40);
+    epilogueBody.classList.add('terminal-text');
+    epilogueBody.textContent = data.epilogue;
+    epilogueBody.classList.add('fade-in-text');
   }
 
   // --- Show restart button ---
@@ -2058,9 +2015,9 @@ socket.on('game-start', async (data) => {
     }
   }, 3000);
 
-  await sleep(1300);
+  await sleep(500);
 
-  // Dissolve-in for general narrative intro (use prologue from server).
+  // Fade-in for general narrative intro (use prologue from server).
   const narrativeEl = $('intro-narrative');
   const introText = data.prologueNarrative || '';
 
@@ -2069,28 +2026,23 @@ socket.on('game-start', async (data) => {
   state.briefingText = data.briefing || '';
 
   if (narrativeEl) {
-    await streamText(narrativeEl, introText, { wordDelay: 30, paragraphPause: 400 });
+    await streamText(narrativeEl, introText);
 
     // Red notice between prologue and briefing
-    await sleep(600);
     const notice = document.createElement('p');
     notice.className = 'intro-private-notice';
     notice.textContent = '※ 여기서부터는 각 플레이어별 숙지해야하는 정보입니다. 상대 플레이어에게 공유하지 않고 혼자 읽어주세요. 권장 시간은 15분 정도이나, 서로의 협의를 통해 조정할 수 있습니다. 두 플레이어 모두 숙지가 완료되면 넘어가주세요.';
     narrativeEl.appendChild(notice);
   }
 
-  // Show the secret briefing after a pause.
+  // Show the secret briefing.
   const briefingEl = $('intro-briefing');
   const briefingContent = $('briefing-content');
   if (briefingEl && briefingContent && data.briefing) {
-    await sleep(800);
     briefingEl.style.display = 'block';
     briefingEl.classList.add('visible');
-    await sleep(300);
     await streamText(briefingContent, data.briefing, {
-      wordDelay: 30,
-      paragraphPause: 350,
-      dangerPhrases: ['\uB2F9\uC2E0\uC740 \uBC94\uC778\uC785\uB2C8\uB2E4.'],
+      dangerPhrases: ['당신은 범인입니다.', '당신은 직접적인 범인은 아닙니다.'],
     });
   }
 });
@@ -2185,7 +2137,7 @@ socket.on('phase-data', async (data) => {
     const narrativeEl = $('phase-narrative');
     if (narrativeEl && data.narrative) {
       narrativeEl.scrollTop = 0;
-      await streamText(narrativeEl, data.narrative, { wordDelay: 25, paragraphPause: 300 });
+      await streamText(narrativeEl, data.narrative);
       updateNarrativeScrollHint();
     }
 

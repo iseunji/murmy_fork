@@ -3,6 +3,20 @@
    Visual Style: Dark, atmospheric, pencil sketch + colored pencil
    ============================================================ */
 
+@font-face {
+  font-family: 'BookkMyungjo';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2302@1.0/BookkMyungjo-Lt.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'BookkMyungjo';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2302@1.0/BookkMyungjo-Bd.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+
 /* ---- CSS Custom Properties ---- */
 :root {
   /* Colors — GPT-dark-mode inspired, atmospheric murder mystery */
@@ -706,6 +720,7 @@ body::before {
   background: #3d342a;
   color: #d4c8b8;
   border-color: #5a4d3e;
+  font-family: 'BookkMyungjo', serif;
 }
 
 .title-logo {
@@ -790,7 +805,8 @@ body::before {
   color: #3d342a;
   opacity: 1;
   font-size: calc(1rem - 1px);
-  font-weight: 500;
+  font-weight: 700;
+  font-family: 'BookkMyungjo', serif;
 }
 
 .game-subtitle {

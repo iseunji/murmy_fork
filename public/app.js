@@ -1895,11 +1895,23 @@ socket.on('ready-update', (data) => {
 });
 
 socket.on('phase-ready-count', (data) => {
-  // Update ready count display on both investigation and AI chat screens.
+  // Update ready count display on all screens.
+  const introReadyCount = $('intro-ready-count');
   const phaseReadyCount = $('phase-ready-count');
   const aiReadyCount = $('ai-ready-count');
+  if (introReadyCount) introReadyCount.textContent = `${data.count}/2`;
   if (phaseReadyCount) phaseReadyCount.textContent = `${data.count}/2`;
   if (aiReadyCount) aiReadyCount.textContent = `${data.count}/2`;
+
+  // If the other player is ready and I'm not, change my button to "넘어가기".
+  if (data.count >= 1 && !state.isReady) {
+    const btnIntro = $('btn-intro-next');
+    const btnPhase = $('btn-phase-ready');
+    const btnAi = $('btn-ai-ready');
+    if (btnIntro && !btnIntro.disabled) btnIntro.textContent = '넘어가기';
+    if (btnPhase && !btnPhase.disabled) btnPhase.textContent = '넘어가기';
+    if (btnAi && !btnAi.disabled) btnAi.textContent = '넘어가기';
+  }
 });
 
 // ---- Character Selection ----
@@ -2007,6 +2019,17 @@ socket.on('game-start', async (data) => {
     ambient.start();
     state.ambientStarted = true;
   }
+
+  // Reset ready state for intro screen.
+  state.isReady = false;
+  const introReadyBtn = $('btn-intro-next');
+  if (introReadyBtn) {
+    introReadyBtn.disabled = false;
+    introReadyBtn.classList.remove('active');
+    introReadyBtn.textContent = '준비 완료';
+  }
+  const introReadyCount = $('intro-ready-count');
+  if (introReadyCount) introReadyCount.textContent = '0/2';
 
   // Show the intro screen with role and briefing.
   showScreen('screen-intro');
@@ -2124,6 +2147,7 @@ socket.on('phase-data', async (data) => {
     if (aiReadyBtn) {
       aiReadyBtn.disabled = false;
       aiReadyBtn.classList.remove('active');
+      aiReadyBtn.textContent = '대화 종료 & 준비';
     }
 
     const aiReadyCount = $('ai-ready-count');
@@ -2192,6 +2216,7 @@ socket.on('phase-data', async (data) => {
       readyBtn.hidden = !hasReadyBtn;
       readyBtn.disabled = false;
       readyBtn.classList.remove('active');
+      readyBtn.textContent = '준비 완료';
     }
     if (readyCount) {
       readyCount.hidden = !hasReadyBtn;
@@ -2733,8 +2758,9 @@ function bindEvents() {
   if (btnIntroNext) {
     btnIntroNext.addEventListener('click', () => {
       SFX.click();
-      // The server will send phase-data to advance the game.
-      // We signal readiness to move on.
+      state.isReady = true;
+      btnIntroNext.disabled = true;
+      btnIntroNext.classList.add('active');
       socket.emit('phase-ready', {});
     });
   }
@@ -2816,6 +2842,7 @@ function bindEvents() {
   if (btnAiReady) {
     btnAiReady.addEventListener('click', () => {
       SFX.click();
+      state.isReady = true;
       btnAiReady.disabled = true;
       btnAiReady.classList.add('active');
       socket.emit('phase-ready', {});

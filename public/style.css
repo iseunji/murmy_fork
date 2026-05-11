@@ -691,7 +691,7 @@ body::before {
   min-height: calc(100dvh - 32px - var(--safe-top) - var(--safe-bottom));
   text-align: center;
   gap: 0;
-  padding: 44px 12px 60px;
+  padding: 30px 12px 50px;
   box-sizing: border-box;
 }
 
@@ -731,6 +731,7 @@ body::before {
   align-items: center;
   justify-content: center;
   transform: scale(0.92);
+  margin: -20px 0;
 }
 
 .title-illustration-wrap::before {

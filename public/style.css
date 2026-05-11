@@ -2373,11 +2373,15 @@ body.tabs-visible .investigation-topbar {
 body.tabs-visible .chat-topbar {
   top: calc(var(--safe-top) + 44px + 30px);
 }
+body.tabs-visible .modal-overlay {
+  top: calc(var(--safe-top) + 44px + 30px);
+  height: calc(100% - var(--safe-top) - 44px - 30px);
+}
 
 /* Sound toggle bar below tab nav */
 .game-sound-bar {
   position: fixed;
-  top: calc(var(--safe-top) + 45px);
+  top: calc(var(--safe-top) + 44px);
   left: 50%;
   transform: translateX(-50%);
   width: 100%;

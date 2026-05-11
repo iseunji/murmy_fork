@@ -655,20 +655,80 @@ body::before {
    SCREEN 1: TITLE
    ============================================================ */
 
+#screen-title {
+  background: var(--bg) url('/assets/kraft-texture.png') center / cover no-repeat;
+}
+
+#screen-title::before {
+  content: '';
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+  border: 2.5px solid #5a4d3e;
+  pointer-events: none;
+  z-index: 20;
+}
+
+#screen-title::after {
+  content: '';
+  position: fixed;
+  top: 26px;
+  left: 26px;
+  right: 26px;
+  bottom: 26px;
+  border: 1.7px solid rgba(90, 77, 62, 0.8);
+  pointer-events: none;
+  z-index: 20;
+}
+
 .title-layout {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   min-height: calc(100dvh - 32px - var(--safe-top) - var(--safe-bottom));
   text-align: center;
-  gap: 40px;
+  gap: 0;
+  padding: 44px 12px 60px;
+  box-sizing: border-box;
+}
+
+.title-bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+#screen-title .btn-start {
+  background: #3d342a;
+  color: #d4c8b8;
+  border-color: #5a4d3e;
+}
+
+.title-heading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .title-content {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+#screen-title .sketch-divider {
+  display: none;
+}
+
+.title-illustration {
+  width: min(75vw, 340px);
+  height: auto;
 }
 
 .game-title {
@@ -680,6 +740,27 @@ body::before {
   text-indent: 0.08em;
   line-height: 1.1;
   animation: flicker 8s infinite;
+}
+
+#screen-title .game-title {
+  color: #2a2520;
+  font-size: clamp(3.5rem, 12vw, 6.5rem);
+  line-height: 0.85;
+  margin-bottom: -4px;
+}
+
+#screen-title .game-subtitle {
+  color: #4a4035;
+  font-size: clamp(1.6rem, 4.5vw, 2.4rem);
+  margin-top: 0;
+  line-height: 1;
+}
+
+#screen-title .game-meta {
+  color: #3d342a;
+  opacity: 1;
+  font-size: calc(1rem - 1px);
+  font-weight: 500;
 }
 
 .game-subtitle {
@@ -704,6 +785,11 @@ body::before {
 .btn-start {
   padding: 14px 48px;
   font-size: 1.05rem;
+}
+
+#screen-title .btn-start:hover {
+  background: #5a4d3e;
+  color: #ece4d8;
 }
 
 

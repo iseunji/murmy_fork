@@ -1034,9 +1034,9 @@ function renderEvidencePool(pool, isMyTurn) {
 /**
  * Render only the evidence the player has collected (review mode).
  *
- * @param {Array<string>} collectedIds - IDs of collected evidence.
+ * @param {Array<{id: string, title: string, type: string}>} collectedList - Full evidence objects.
  */
-function renderCollectedEvidence(collectedIds) {
+function renderCollectedEvidence(collectedList) {
   const grid = $('evidence-grid');
   const turnIndicator = $('evidence-turn-indicator');
   const heading = $('evidence-heading');
@@ -1048,24 +1048,24 @@ function renderCollectedEvidence(collectedIds) {
   grid.innerHTML = '';
   grid.classList.remove('disabled');
 
-  collectedIds.forEach((evId) => {
+  collectedList.forEach((ev) => {
     const card = document.createElement('div');
     card.className = 'evidence-card collected';
-    card.dataset.id = evId;
+    card.dataset.id = ev.id;
 
     const icon = document.createElement('span');
     icon.className = 'evidence-icon';
-    icon.textContent = DEFAULT_EVIDENCE_ICON;
+    icon.textContent = EVIDENCE_ICONS[ev.type] || DEFAULT_EVIDENCE_ICON;
 
     const title = document.createElement('span');
     title.className = 'evidence-title';
-    title.textContent = evId; // Will be replaced when detail is fetched
+    title.textContent = ev.title;
 
     card.appendChild(icon);
     card.appendChild(title);
 
     card.addEventListener('click', () => {
-      openEvidenceModal(evId);
+      openEvidenceModal(ev.id);
     });
 
     grid.appendChild(card);
@@ -2337,7 +2337,7 @@ socket.on('evidence-collection-complete', (data) => {
   // Update tab states (phase1/phase2 tabs now have content)
   updateTabStates();
 
-  renderCollectedEvidence(state.collectedEvidence);
+  renderCollectedEvidence(collectedFull);
   showToast('증거 수집이 완료되었습니다.', 'info');
 });
 

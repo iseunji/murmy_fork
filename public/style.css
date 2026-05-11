@@ -1588,6 +1588,18 @@ body::before {
   box-shadow: 0 0 6px rgba(139, 37, 0, 0.6);
 }
 
+/* Evidence trade/donate tag */
+.evidence-tag {
+  margin-left: auto;
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 /* Evidence Detail */
 .evidence-detail-type {
   font-family: var(--font-mono);

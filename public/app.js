@@ -872,6 +872,14 @@ function renderEvidenceCards(evidenceList) {
       card.appendChild(badge);
     }
 
+    // Add trade/donate tag if present.
+    if (ev.tag) {
+      const tag = document.createElement('span');
+      tag.className = 'evidence-tag';
+      tag.textContent = ev.tag;
+      card.appendChild(tag);
+    }
+
     // Click handler: request full evidence details from the server.
     card.addEventListener('click', () => {
       openEvidenceModal(ev.id);
@@ -1063,6 +1071,13 @@ function renderCollectedEvidence(collectedList) {
 
     card.appendChild(icon);
     card.appendChild(title);
+
+    if (ev.tag) {
+      const tag = document.createElement('span');
+      tag.className = 'evidence-tag';
+      tag.textContent = ev.tag;
+      card.appendChild(tag);
+    }
 
     card.addEventListener('click', () => {
       openEvidenceModal(ev.id);
@@ -2382,7 +2397,7 @@ socket.on('trade-completed', (data) => {
     state.phase2Evidence = state.phase2Evidence.filter((e) => e.id !== data.gave.id);
 
     // Add the received card
-    const receivedCard = { id: data.received.id, title: data.received.title, type: data.received.type };
+    const receivedCard = { id: data.received.id, title: data.received.title, type: data.received.type, tag: '교환' };
     state.allCollectedEvidence.push(receivedCard);
     // Determine which phase list to add to based on ID prefix
     if (data.received.id.includes('inv1')) {
@@ -2420,6 +2435,7 @@ socket.on('donate-completed', (data) => {
   } else {
     // Received a card
     const card = data.card || { id: data.cardId, title: data.cardId, type: 'unknown' };
+    card.tag = '양도';
     state.allCollectedEvidence.push(card);
     if (card.id.includes('inv1')) {
       state.phase1Evidence.push(card);

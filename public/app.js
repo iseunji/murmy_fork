@@ -58,6 +58,7 @@ const state = {
   allCollectedEvidence: [],// [{id, title, type, phase}] all cards across phases
   comboCards: [],          // [{id, title, type, content}] successfully combined cards
   reachedPhases: new Set(),// Phase IDs the player has entered
+  completedPhases: new Set(),// Phase IDs that have been completed
   currentEvidenceId: null, // ID of the evidence currently open in modal
   isDiscussion: false,     // Whether current phase is a discussion phase
   allCharacters: [],       // All character objects for "인물 정보" tab
@@ -200,6 +201,7 @@ function saveStateToSession() {
       allCollectedEvidence: state.allCollectedEvidence,
       comboCards: state.comboCards,
       reachedPhases: [...state.reachedPhases],
+      completedPhases: [...state.completedPhases],
       allCharacters: state.allCharacters,
     };
     sessionStorage.setItem('murmy_state', JSON.stringify(data));
@@ -247,6 +249,9 @@ function restoreStateFromSession() {
     state.allCharacters = data.allCharacters || [];
     if (data.reachedPhases) {
       state.reachedPhases = new Set(data.reachedPhases);
+    }
+    if (data.completedPhases) {
+      state.completedPhases = new Set(data.completedPhases);
     }
     // Show tabs only if game is on a screen where tabs should be visible
     // (사건 개요 이후 화면에서만 탭 표시)
@@ -1423,14 +1428,14 @@ function updateTabStates() {
   // Intro tab is always enabled after game starts
   if (tabIntro) tabIntro.disabled = false;
 
-  // Phase 1 tab — enabled once investigation1 has been entered
+  // Phase 1 tab — enabled only after investigation1 has been completed
   if (tabPhase1) {
-    tabPhase1.disabled = !state.reachedPhases.has('investigation1');
+    tabPhase1.disabled = !state.completedPhases.has('investigation1');
   }
 
-  // Phase 2 tab — enabled once investigation2 has been entered
+  // Phase 2 tab — enabled only after investigation2 has been completed
   if (tabPhase2) {
-    tabPhase2.disabled = !state.reachedPhases.has('investigation2');
+    tabPhase2.disabled = !state.completedPhases.has('investigation2');
   }
 
   // Combo tab — enabled once at least one combo card exists
@@ -2088,6 +2093,10 @@ socket.on('game-start', async (data) => {
 // ---- Phase Data (Investigation) ----
 
 socket.on('phase-data', async (data) => {
+  // Mark the previous phase as completed before switching.
+  if (state.currentPhase) {
+    state.completedPhases.add(state.currentPhase);
+  }
   state.currentPhase = data.phaseId;
   state.isReady = false;
   state.isDiscussion = data.isDiscussion || false;
@@ -2966,6 +2975,7 @@ function resetGameState() {
   state.allCollectedEvidence = [];
   state.comboCards = [];
   state.reachedPhases = new Set();
+  state.completedPhases = new Set();
   state.currentEvidenceId = null;
   state.isDiscussion = false;
   state.allCharacters = [];

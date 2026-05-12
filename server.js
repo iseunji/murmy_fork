@@ -1233,6 +1233,14 @@ io.on('connection', (socket) => {
     const room = rooms[roomCode];
     if (!room) return;
 
+    // Validate: only culprit with professor's smartphone can choose eliminatePartner
+    if (target === 'eliminatePartner') {
+      if (room.roles[socket.id] !== 'culprit') return;
+      const hasPhone = (room.allCollectedEvidence[socket.id] || [])
+        .some((e) => e.id === 'ev_inv1_07');
+      if (!hasPhone) return;
+    }
+
     // Store accusation
     room.accusations[socket.id] = target;
 

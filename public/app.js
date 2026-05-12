@@ -3251,7 +3251,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const phaseTitle = $('phase-title');
       if (phaseTitle) phaseTitle.textContent = '조사단계 1';
       const phaseSubtitle = $('phase-subtitle');
-      if (phaseSubtitle) phaseSubtitle.textContent = '현장 조사';
+      if (phaseSubtitle) phaseSubtitle.textContent = '';
       const phaseTimer = $('phase-timer');
       if (phaseTimer) phaseTimer.textContent = '15:00 / 15:00';
       showGameTabs();

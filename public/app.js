@@ -3044,6 +3044,16 @@ function bindEvents() {
     });
   }
 
+  // Evidence body scroll hint: hide gradient when scrolled to bottom.
+  const evidenceBody = $('evidence-modal-content');
+  const evidenceBodyWrap = $('evidence-modal-body-wrap');
+  if (evidenceBody && evidenceBodyWrap) {
+    evidenceBody.addEventListener('scroll', () => {
+      const atBottom = evidenceBody.scrollHeight - evidenceBody.scrollTop - evidenceBody.clientHeight < 5;
+      evidenceBodyWrap.classList.toggle('scrolled-bottom', atBottom);
+    });
+  }
+
   const btnPhaseReady = $('btn-phase-ready');
   if (btnPhaseReady) {
     btnPhaseReady.addEventListener('click', () => {

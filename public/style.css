@@ -1695,16 +1695,40 @@ body::before {
 
 .evidence-detail-image {
   width: 100%;
-  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
   display: block;
   border-radius: 8px;
+}
+
+.evidence-detail-body-wrap {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.evidence-detail-body-wrap::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+  background: linear-gradient(to bottom, transparent, var(--surface));
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.evidence-detail-body-wrap.scrolled-bottom::after {
+  opacity: 0;
 }
 
 .evidence-detail-body {
   font-size: 0.9rem;
   line-height: 2;
   color: var(--text-primary);
-  flex: 1;
+  height: 100%;
   overflow-y: auto;
 }
 

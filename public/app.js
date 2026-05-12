@@ -1639,7 +1639,9 @@ function renderCharacterInfoTab(container) {
     card.className = 'character-info-card' + (isMe ? ' is-me' : '');
 
     const badge = isMe ? '<span class="character-badge">나</span>' : '';
-    card.innerHTML =
+    const row = document.createElement('div');
+    row.className = 'character-info-row';
+    row.innerHTML =
       '<div class="character-info-portrait">' +
         '<img src="/assets/' + char.id + '.png" alt="' + char.name + '" />' +
       '</div>' +
@@ -1649,6 +1651,7 @@ function renderCharacterInfoTab(container) {
         '<span class="character-info-trait">' + char.trait + '</span>' +
         '<p class="character-info-desc">' + char.desc + '</p>' +
       '</div>';
+    card.appendChild(row);
 
     // Append goals inside the player's own character card
     if (isMe && state.briefingText) {

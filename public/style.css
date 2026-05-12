@@ -2493,12 +2493,6 @@ body.tabs-visible .chat-topbar {
 .tab-panel-screen {
   z-index: 50 !important;
 }
-.tab-panel-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-}
 .tab-panel-back {
   background: none;
   border: 1px solid var(--border);
@@ -2507,11 +2501,14 @@ body.tabs-visible .chat-topbar {
   font-size: 13px;
   padding: 6px 10px;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
   transition: color 0.2s, border-color 0.2s;
   white-space: nowrap;
+  margin-bottom: 12px;
+}
+.tab-panel-header {
+  margin-bottom: 20px;
 }
 .tab-panel-back:hover {
   color: var(--text-primary);
@@ -2548,15 +2545,17 @@ body.tabs-visible .chat-topbar {
 .character-info-grid {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 16px;
 }
 .character-info-card {
-  display: flex;
-  gap: 16px;
   padding: 16px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: rgba(255,255,255,0.02);
+}
+.character-info-row {
+  display: flex;
+  gap: 16px;
 }
 .character-info-card.is-me {
   border-color: var(--accent-amber);

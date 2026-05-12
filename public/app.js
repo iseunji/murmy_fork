@@ -57,6 +57,7 @@ const state = {
   phase2Narrative: '',     // Investigation2 narrative text for tab review
   allCollectedEvidence: [],// [{id, title, type, phase}] all cards across phases
   comboCards: [],          // [{id, title, type, content}] successfully combined cards
+  unseenComboCount: 0,     // Number of new combo cards not yet viewed in combo tab
   reachedPhases: new Set(),// Phase IDs the player has entered
   completedPhases: new Set(),// Phase IDs that have been completed
   currentEvidenceId: null, // ID of the evidence currently open in modal
@@ -1479,6 +1480,20 @@ function updateTabStates() {
   }
 }
 
+/**
+ * Update the red badge on the combo tab showing unseen combo card count.
+ */
+function updateComboBadge() {
+  const badge = $('combo-badge');
+  if (!badge) return;
+  if (state.unseenComboCount > 0) {
+    badge.textContent = state.unseenComboCount;
+    badge.hidden = false;
+  } else {
+    badge.hidden = true;
+  }
+}
+
 /** Screen ID that was active before opening a tab page. */
 let _previousScreenId = null;
 
@@ -1500,6 +1515,11 @@ function openTabPanel(tabId) {
       introScreen.scrollTop = 0;
     }
     currentScreenId = 'screen-intro';
+    // Show back button and hide the ready bar (reviewing from tab)
+    const backBtn = $('btn-intro-back');
+    if (backBtn) backBtn.hidden = false;
+    const readyBar = document.querySelector('.intro-ready-bar');
+    if (readyBar) readyBar.hidden = true;
     // Highlight active tab
     document.querySelectorAll('.game-tab').forEach((t) => t.classList.remove('active'));
     const introTab = $('tab-intro');
@@ -1529,6 +1549,9 @@ function openTabPanel(tabId) {
     case 'combo':
       title.textContent = '조합 카드';
       renderComboTabContent(body);
+      // Clear unseen badge when viewing combo tab
+      state.unseenComboCount = 0;
+      updateComboBadge();
       break;
     default:
       return;
@@ -1827,10 +1850,19 @@ function showComboSuccessModal(data) {
 
   if (titleEl) titleEl.textContent = data.title || '';
   if (typeEl) {
-    const icon = EVIDENCE_ICONS[data.type] || DEFAULT_EVIDENCE_ICON;
-    typeEl.textContent = `${icon} ${data.type || ''}`;
+    typeEl.textContent = `조합카드(추가증거 ${data.comboIndex || ''})`;
   }
   if (contentEl) contentEl.textContent = data.content || '';
+
+  // Show combo card image if available
+  const imgWrap = $('combo-modal-image-wrap');
+  const imgEl = $('combo-modal-image');
+  if (imgWrap && imgEl && data.image) {
+    imgEl.src = `/assets/evidence/${data.image}`;
+    imgWrap.hidden = false;
+  } else if (imgWrap) {
+    imgWrap.hidden = true;
+  }
 
   modal.removeAttribute('hidden');
   modal.classList.add('active');
@@ -2273,10 +2305,16 @@ socket.on('phase-data', async (data) => {
 
     // Phase narrative with LLM-style streaming.
     const narrativeEl = $('phase-narrative');
+    const narrativeSection = $('narrative-section');
     if (narrativeEl && data.narrative) {
       narrativeEl.scrollTop = 0;
+      if (narrativeSection) narrativeSection.hidden = false;
       await streamText(narrativeEl, data.narrative);
       updateNarrativeScrollHint();
+    } else {
+      // No narrative for this phase – hide the box entirely
+      if (narrativeEl) narrativeEl.textContent = '';
+      if (narrativeSection) narrativeSection.hidden = true;
     }
 
     // Show turn order guidance below evidence heading
@@ -2349,7 +2387,7 @@ socket.on('evidence-detail', (data) => {
 
   if (titleEl) titleEl.textContent = data.title || '';
   if (typeEl) {
-    typeEl.textContent = data.isComboCard ? '조합카드' : '증거카드';
+    typeEl.textContent = data.isComboCard ? `조합카드(추가증거 ${data.comboIndex || ''})` : '증거카드';
   }
   if (contentEl) contentEl.textContent = data.content || '';
 
@@ -2509,6 +2547,10 @@ socket.on('combo-success', (data) => {
     type: data.type,
     content: data.content,
   });
+
+  // Update unseen combo badge
+  state.unseenComboCount += 1;
+  updateComboBadge();
 
   // Update tab states (combo tab now active)
   updateTabStates();
@@ -2710,6 +2752,27 @@ function bindEvents() {
     btnTabBack.addEventListener('click', () => {
       SFX.click();
       closeTabPanel();
+    });
+  }
+
+  // ---- Intro Back Button (when viewing intro from tab during game) ----
+  const btnIntroBack = $('btn-intro-back');
+  if (btnIntroBack) {
+    btnIntroBack.addEventListener('click', () => {
+      SFX.click();
+      btnIntroBack.hidden = true;
+      const readyBar = document.querySelector('.intro-ready-bar');
+      if (readyBar) readyBar.hidden = false;
+      // Return to the previous game screen
+      const introScreen = $('screen-intro');
+      if (introScreen) introScreen.classList.remove('active');
+      if (_previousScreenId) {
+        const prev = $(_previousScreenId);
+        if (prev) prev.classList.add('active');
+        currentScreenId = _previousScreenId;
+      }
+      _previousScreenId = null;
+      document.querySelectorAll('.game-tab').forEach((t) => t.classList.remove('active'));
     });
   }
 

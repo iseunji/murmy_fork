@@ -784,6 +784,12 @@ io.on('connection', (socket) => {
     const canDonate = isDiscussion && (disc.donations[socket.id] || 0) < disc.maxDonationsPerPlayer;
     const canExchange = isDiscussion && disc.tradeCount < disc.maxTrades;
 
+    // If this is a combo card, include its 1-based index for display
+    let comboIndex;
+    if (hasInCombo) {
+      comboIndex = (gameData.combinations || []).findIndex((c) => c.id === evidenceId) + 1;
+    }
+
     socket.emit('evidence-detail', {
       id: evidence.id,
       title: evidence.title,
@@ -797,6 +803,7 @@ io.on('connection', (socket) => {
       canDonate,
       canExchange,
       isComboCard: hasInCombo,
+      comboIndex,
     });
   });
 
@@ -1088,13 +1095,15 @@ io.on('connection', (socket) => {
       type: combo.type,
     });
 
-    // Send combo card details
+    // Send combo card details (include 1-based combo index for display)
+    const comboIndex = (gameData.combinations || []).findIndex((c) => c.id === comboId) + 1;
     socket.emit('combo-success', {
       id: combo.id,
       title: combo.title,
       type: combo.type,
       content: combo.content,
       image: combo.image || undefined,
+      comboIndex,
     });
   });
 

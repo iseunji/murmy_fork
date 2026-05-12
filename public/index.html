@@ -35,7 +35,7 @@
     <button class="game-tab" data-tab="characters" id="tab-characters">인물/목표</button>
     <button class="game-tab" data-tab="phase1" id="tab-phase1">조사 1</button>
     <button class="game-tab" data-tab="phase2" id="tab-phase2" disabled>조사 2</button>
-    <button class="game-tab" data-tab="combo" id="tab-combo" disabled>조합</button>
+    <button class="game-tab" data-tab="combo" id="tab-combo" disabled>조합<span class="tab-badge" id="combo-badge" hidden></span></button>
   </nav>
   <div class="game-sound-bar" id="game-sound-bar" hidden>
     <button class="game-sound-btn" id="tab-sound-toggle" aria-label="소리 켜기/끄기">
@@ -169,6 +169,7 @@
   <!-- ===== SCREEN 4: INTRO ===== -->
   <section id="screen-intro" class="screen">
     <div class="screen-inner">
+      <button class="tab-panel-back" id="btn-intro-back" hidden>&larr; 돌아가기</button>
       <div class="intro-narrative-section">
         <div class="intro-header">
           <h2 class="intro-title">사건 개요</h2>
@@ -427,11 +428,13 @@
 
   <!-- Combo Success Modal -->
   <div class="modal-overlay" id="combo-modal" hidden>
-    <div class="modal-content combo-detail">
+    <div class="modal-content evidence-detail">
       <button class="modal-close" id="btn-close-combo" aria-label="닫기">&times;</button>
-      <div class="combo-success-badge">조합 성공!</div>
       <div class="evidence-detail-type" id="combo-modal-type"></div>
       <h3 class="evidence-detail-title" id="combo-modal-title"></h3>
+      <div class="evidence-detail-image-wrap" id="combo-modal-image-wrap" hidden>
+        <img class="evidence-detail-image" id="combo-modal-image" alt="" />
+      </div>
       <div class="evidence-detail-body" id="combo-modal-content"></div>
     </div>
   </div>

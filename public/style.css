@@ -1468,9 +1468,9 @@ body::before {
   animation: pulse-scroll-arrow 1.5s ease-in-out infinite;
 }
 
-/* Fade out when fully scrolled */
+/* Hide when no more content to scroll */
 .narrative-toggle:not(.has-more) {
-  opacity: 0.15;
+  opacity: 0;
   pointer-events: none;
 }
 
@@ -2404,6 +2404,7 @@ body::before {
 .game-tabs[hidden] { display: none; }
 
 .game-tab {
+  position: relative;
   flex: 1;
   min-width: 0;
   padding: 11px 8px;
@@ -2418,6 +2419,22 @@ body::before {
   transition: color 0.2s, border-color 0.2s, background 0.2s;
   white-space: nowrap;
 }
+.tab-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background: var(--accent-red);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  border-radius: 8px;
+}
+.tab-badge[hidden] { display: none; }
 .game-tab:hover:not(:disabled) {
   color: var(--text-primary);
   background: rgba(255, 255, 255, 0.04);
@@ -2684,28 +2701,7 @@ body.tabs-visible .chat-topbar {
 .btn-action[hidden] { display: none; }
 
 /* ---- Combo Success Modal ---- */
-.combo-detail {
-  text-align: center;
-}
-.combo-success-badge {
-  display: inline-block;
-  background: linear-gradient(135deg, var(--accent-red), var(--accent-amber));
-  color: #fff;
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 700;
-  padding: 6px 20px;
-  border-radius: 20px;
-  margin-bottom: 16px;
-  letter-spacing: 1px;
-  text-indent: 1px;
-}
-.combo-detail .evidence-detail-title {
-  color: var(--accent-amber);
-}
-.combo-detail .evidence-detail-body {
-  text-align: left;
-}
+/* Uses same .evidence-detail layout as regular evidence cards */
 
 /* ---- Action Confirm Modal ---- */
 .action-confirm-content {

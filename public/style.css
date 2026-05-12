@@ -663,7 +663,6 @@ body::before {
 /* ---- Condition / Yellow highlight ---- */
 .text-highlight-condition {
   color: #ffc200;
-  font-size: 0.85em;
 }
 
 /* ---- Dialogue reading guide ---- */

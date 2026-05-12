@@ -1502,6 +1502,7 @@ body::before {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 12px;
+  padding-bottom: 24px;
 }
 
 /* Evidence Card */

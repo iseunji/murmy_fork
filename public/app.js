@@ -2438,6 +2438,16 @@ socket.on('evidence-detail', (data) => {
   } else if (actionButtons) {
     actionButtons.hidden = true;
   }
+
+  // Check if body content overflows; only show scroll gradient when needed.
+  const bodyWrap = $('evidence-modal-body-wrap');
+  const bodyEl = $('evidence-modal-content');
+  if (bodyWrap && bodyEl) {
+    requestAnimationFrame(() => {
+      const hasOverflow = bodyEl.scrollHeight > bodyEl.clientHeight + 5;
+      bodyWrap.classList.toggle('scrolled-bottom', !hasOverflow);
+    });
+  }
 });
 
 // ---- Evidence Collection (Turn-Based) ----
@@ -2498,6 +2508,16 @@ socket.on('evidence-picked', (data) => {
   }
 
   SFX.reveal();
+
+  // Check if body content overflows; only show scroll gradient when needed.
+  const bodyWrap2 = $('evidence-modal-body-wrap');
+  const bodyEl2 = $('evidence-modal-content');
+  if (bodyWrap2 && bodyEl2) {
+    requestAnimationFrame(() => {
+      const hasOverflow = bodyEl2.scrollHeight > bodyEl2.clientHeight + 5;
+      bodyWrap2.classList.toggle('scrolled-bottom', !hasOverflow);
+    });
+  }
 });
 
 socket.on('partner-picked', () => {

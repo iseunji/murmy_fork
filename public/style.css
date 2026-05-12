@@ -58,6 +58,29 @@
 }
 
 
+/* ---- Screen Capture Protection ---- */
+.capture-blackout {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 99999;
+}
+
+body.capture-protected .capture-blackout {
+  display: none; /* shown via JS on visibilitychange */
+}
+
+body.capture-blacked .capture-blackout {
+  display: block;
+}
+
+body.capture-protected {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
 /* ---- Reset & Base ---- */
 *, *::before, *::after {
   box-sizing: border-box;

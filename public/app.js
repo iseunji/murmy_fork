@@ -145,6 +145,10 @@ function showScreen(screenId) {
   const allScreens = document.querySelectorAll('.screen');
   allScreens.forEach((s) => s.classList.remove('active'));
 
+  // Screen capture protection: active on all game screens except title/lobby/waiting
+  const unprotectedScreens = ['screen-title', 'screen-lobby', 'screen-waiting'];
+  document.body.classList.toggle('capture-protected', !unprotectedScreens.includes(screenId));
+
   // Tabs should only be visible on in-game screens (not lobby/title/waiting/character-select)
   const tabScreens = ['screen-intro', 'screen-investigation', 'screen-ai-chat', 'screen-verdict', 'screen-ending'];
   if (tabScreens.includes(screenId)) {
@@ -3323,6 +3327,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Inject minimal toast and overlay styles if not already present.
   injectDynamicStyles();
+
+  // Screen capture protection: black out content when app loses visibility.
+  document.addEventListener('visibilitychange', () => {
+    if (!document.body.classList.contains('capture-protected')) return;
+    document.body.classList.toggle('capture-blacked', document.hidden);
+  });
+  window.addEventListener('blur', () => {
+    if (!document.body.classList.contains('capture-protected')) return;
+    document.body.classList.add('capture-blacked');
+  });
+  window.addEventListener('focus', () => {
+    document.body.classList.remove('capture-blacked');
+  });
 
   // Dev mode: ?dev=screen-waiting 등으로 더미 데이터와 함께 특정 화면 바로 열기
   const devScreen = new URLSearchParams(window.location.search).get('dev');

@@ -1494,8 +1494,10 @@ function openTabPanel(tabId) {
   // 'intro' tab maps directly to screen-intro
   if (tabId === 'intro') {
     if (currentScreenId === 'screen-intro') return; // already there
-    // Remember current screen, then switch to screen-intro
-    _previousScreenId = currentScreenId;
+    // Remember the real game screen (not another tab) so we can return to it
+    if (!_previousScreenId) {
+      _previousScreenId = currentScreenId;
+    }
     const allScreens = document.querySelectorAll('.screen');
     allScreens.forEach((s) => s.classList.remove('active'));
     const introScreen = $('screen-intro');
@@ -1546,8 +1548,8 @@ function openTabPanel(tabId) {
       return;
   }
 
-  // Remember the current screen so we can return to it
-  if (currentScreenId !== 'tab-panel-screen') {
+  // Remember the real game screen (not another tab) so we can return to it
+  if (!_previousScreenId) {
     _previousScreenId = currentScreenId;
   }
 
@@ -1578,6 +1580,7 @@ function closeTabPanel() {
   if (_previousScreenId) {
     const prev = $(_previousScreenId);
     if (prev) prev.classList.add('active');
+    currentScreenId = _previousScreenId;
   }
   _previousScreenId = null;
 

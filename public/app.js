@@ -2237,10 +2237,11 @@ socket.on('phase-data', async (data) => {
     if (verdictButtons) verdictButtons.style.display = '';
     if (verdictWaiting) verdictWaiting.style.display = 'none';
     state.hasAccused = false;
-    // Show the "ARIA에게 명령" button only for the culprit
+    // Show the "ARIA를 이용해 상대를 제거" button only for the culprit who has the professor's smartphone
     const btnEliminate = $('btn-eliminate-partner');
     if (btnEliminate) {
-      btnEliminate.hidden = state.role !== 'culprit';
+      const hasPhone = state.phase1Evidence.some((e) => e.id === 'ev_inv1_07');
+      btnEliminate.hidden = state.role !== 'culprit' || !hasPhone;
     }
     return;
   }

@@ -303,40 +303,36 @@
 
   <!-- ===== SCREEN 7: VERDICT ===== -->
   <section id="screen-verdict" class="screen">
-    <div class="screen-inner verdict-layout">
-      <div class="verdict-header">
-        <div class="verdict-title-row">
-          <h2 class="verdict-title">최종 판결</h2>
-          <div class="timer-display verdict-timer-display">
-            <span class="timer-icon">&#x23F1;</span>
-            <span class="timer-value" id="verdict-timer">06:00</span>
-          </div>
-        </div>
-        <p class="verdict-instruction">당신의 판단을 내려주세요.</p>
+    <header class="investigation-topbar">
+      <div class="phase-info">
+        <h2 class="phase-title verdict-title">최종 판결</h2>
+        <p class="phase-subtitle">당신의 판단을 내려주세요.</p>
       </div>
+      <div class="timer-display">
+        <span class="timer-icon">&#x23F1;</span>
+        <span class="timer-value" id="verdict-timer">06:00</span>
+      </div>
+    </header>
 
+    <div class="screen-inner verdict-layout">
       <div class="verdict-choices" id="verdict-buttons">
         <button class="verdict-card" id="btn-accuse-partner" data-verdict="partner">
-          <span class="verdict-card-icon">&#x1F464;</span>
           <span class="verdict-card-label">상대 조교</span>
           <span class="verdict-card-desc">상대방이 범인이라고 고발합니다.</span>
         </button>
 
         <button class="verdict-card" id="btn-accuse-ai" data-verdict="aria">
-          <span class="verdict-card-icon">&#x1F916;</span>
           <span class="verdict-card-label">ARIA</span>
           <span class="verdict-card-desc">인공지능 ARIA가 범인이라고 고발합니다.</span>
         </button>
 
         <button class="verdict-card" id="btn-accuse-self" data-verdict="self">
-          <span class="verdict-card-icon">&#x1F4A0;</span>
           <span class="verdict-card-label">자백</span>
           <span class="verdict-card-desc">스스로 범행을 인정합니다.</span>
         </button>
 
         <button class="verdict-card verdict-card--culprit-only" id="btn-eliminate-partner" data-verdict="eliminate" hidden>
-          <span class="verdict-card-icon">&#x2620;&#xFE0F;</span>
-          <span class="verdict-card-label">ARIA에게 명령</span>
+          <span class="verdict-card-label">ARIA를 이용해 상대를 제거</span>
           <span class="verdict-card-desc">ARIA를 시켜 목격자를 제거하고, 모든 죄를 AI에게 뒤집어씌웁니다.</span>
         </button>
       </div>
@@ -349,11 +345,14 @@
 
   <!-- ===== SCREEN 8: ENDING ===== -->
   <section id="screen-ending" class="screen">
-    <div class="screen-inner ending-layout">
-      <div class="ending-header">
-        <h2 class="ending-title" id="ending-title">END 01</h2>
-        <p class="ending-subtitle" id="ending-subtitle">Forked</p>
+    <header class="investigation-topbar">
+      <div class="phase-info">
+        <h2 class="phase-title ending-title" id="ending-title">END 01</h2>
+        <p class="phase-subtitle ending-subtitle" id="ending-subtitle">Forked</p>
       </div>
+    </header>
+
+    <div class="screen-inner ending-layout">
 
       <div class="ending-narrative" id="ending-narrative">
         <!-- Ending paragraphs injected by JS, revealed sequentially -->

@@ -1484,7 +1484,7 @@ function openTabPanel(tabId) {
 
   switch (tabId) {
     case 'characters':
-      title.textContent = '인물 정보';
+      title.textContent = '인물/목표';
       renderCharacterInfoTab(body);
       break;
     case 'phase1':
@@ -1644,6 +1644,31 @@ function renderCharacterInfoTab(container) {
       '</div>';
 
     grid.appendChild(card);
+
+    // Show objectives under the player's own character card
+    if (isMe && state.briefingText) {
+      const goalMatch = state.briefingText.match(/🎯 당신의 목표\n\n([\s\S]*?)$/);
+      if (goalMatch) {
+        const goalsSection = document.createElement('div');
+        goalsSection.className = 'character-goals-section';
+
+        const goalsTitle = document.createElement('h4');
+        goalsTitle.className = 'character-goals-title';
+        goalsTitle.textContent = '🎯 나의 목표';
+        goalsSection.appendChild(goalsTitle);
+
+        const lines = goalMatch[1].split('\n');
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          const p = document.createElement('p');
+          p.className = 'character-goal-item';
+          appendHighlightedText(p, line);
+          goalsSection.appendChild(p);
+        }
+
+        grid.appendChild(goalsSection);
+      }
+    }
   }
 
   container.appendChild(grid);

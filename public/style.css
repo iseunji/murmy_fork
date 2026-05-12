@@ -2586,12 +2586,12 @@ body.tabs-visible .chat-topbar {
 }
 .character-goals-title {
   font-family: var(--font-display);
-  font-size: 15px;
+  font-size: 14px;
   color: var(--accent-amber);
   margin: 0 0 10px;
 }
 .character-goal-item {
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.7;
   color: var(--text-primary);
   margin: 0;

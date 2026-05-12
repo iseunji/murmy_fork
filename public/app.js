@@ -2077,7 +2077,7 @@ socket.on('game-start', async (data) => {
   if (introReadyBtn) {
     introReadyBtn.disabled = false;
     introReadyBtn.classList.remove('active');
-    introReadyBtn.textContent = '준비 완료';
+    introReadyBtn.textContent = '다음으로 넘어가기';
   }
   const introReadyCount = $('intro-ready-count');
   if (introReadyCount) introReadyCount.textContent = '0/2';
@@ -2276,9 +2276,11 @@ socket.on('phase-data', async (data) => {
     const readyCount = $('phase-ready-count');
     if (readyBtn) {
       readyBtn.hidden = !hasReadyBtn;
-      readyBtn.disabled = false;
+      // In investigation phases, disable until all evidence is collected
+      const isInvestigation = data.phaseId === 'investigation1' || data.phaseId === 'investigation2';
+      readyBtn.disabled = isInvestigation;
       readyBtn.classList.remove('active');
-      readyBtn.textContent = '준비 완료';
+      readyBtn.textContent = '다음으로 넘어가기';
     }
     if (readyCount) {
       readyCount.hidden = !hasReadyBtn;
@@ -2441,6 +2443,12 @@ socket.on('evidence-collection-complete', (data) => {
 
   renderCollectedEvidence(collectedFull);
   showToast('증거 수집이 완료되었습니다.', 'info');
+
+  // Enable the ready button now that all evidence is collected
+  const readyBtn = $('btn-phase-ready');
+  if (readyBtn && !state.isReady) {
+    readyBtn.disabled = false;
+  }
 });
 
 // ---- Combo Success ----

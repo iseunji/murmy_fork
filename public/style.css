@@ -512,6 +512,9 @@ body::before {
 
 .timer-value {
   letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  min-width: max-content;
 }
 
 .timer-value.warning {
@@ -1539,7 +1542,7 @@ body::before {
 .evidence-collect-prompt {
   display: flex;
   justify-content: center;
-  padding: 24px 0;
+  padding: 16px 0;
 }
 
 .btn-collect {
@@ -1693,11 +1696,12 @@ body::before {
   align-items: center;
   justify-content: space-between;
   padding:
-    12px
+    14px
     calc(var(--safe-right) + var(--page-px))
-    calc(var(--safe-bottom) + 12px)
+    calc(var(--safe-bottom) + 14px)
     calc(var(--safe-left) + var(--page-px));
-  background: linear-gradient(transparent, var(--bg) 30%);
+  background: var(--bg);
+  border-top: 1px solid var(--border);
   z-index: 20;
 }
 
@@ -2507,7 +2511,7 @@ body.tabs-visible .chat-topbar {
 .character-info-grid {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 0;
 }
 .character-info-card {
   display: flex;
@@ -2579,7 +2583,7 @@ body.tabs-visible .chat-topbar {
 /* ---- Character Goals Section ---- */
 .character-goals-section {
   margin-top: 4px;
-  margin-bottom: 24px;
+  margin-bottom: 15px;
   padding: 12px 14px 12px 16px;
   background: rgba(218, 165, 32, 0.04);
   border-left: 2px solid var(--accent-amber-dim);

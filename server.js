@@ -155,14 +155,12 @@ function sendPhaseData(room) {
     if (!socket) return;
     const role = room.roles[socket.id];
 
-    // Build turn order guidance for investigation2
+    // Build turn order guidance for investigation phases
     let turnOrderGuidance = null;
-    if (phaseId === 'investigation2' && room.firstCollectorPhase1) {
-      const firstInPhase1 = room.firstCollectorPhase1;
-      const isThisPlayerFirst = firstInPhase1 === socket.id;
-      turnOrderGuidance = isThisPlayerFirst
-        ? '이번 조사에서는 상대방이 먼저 조사를 시작합니다.'
-        : '이번 조사에서는 당신이 먼저 조사를 시작합니다.';
+    if (phaseId === 'investigation1') {
+      turnOrderGuidance = '조사 1 단계에서는 하진이 먼저 증거 수집을 시작합니다.';
+    } else if (phaseId === 'investigation2') {
+      turnOrderGuidance = '조사 2 단계에서는 도현이 먼저 증거 수집을 시작합니다.';
     }
 
     // Build discussion rules for discussion phases
@@ -802,21 +800,15 @@ io.on('connection', (socket) => {
       // Both players are ready — start the collection
       const phaseId = room.gameState;
 
-      // Determine turn order: in investigation2, swap from investigation1's order
-      if (phaseId === 'investigation2' && room.firstCollectorPhase1) {
-        // The player who did NOT go first in investigation1 goes first now
-        const secondPlayer = ec.readyToCollect.find((sid) => sid !== room.firstCollectorPhase1)
-          || ec.readyToCollect[1];
-        const firstPlayer = ec.readyToCollect.find((sid) => sid !== secondPlayer)
-          || ec.readyToCollect[0];
-        ec.turnOrder = [secondPlayer, firstPlayer];
+      // Determine turn order: investigation1 → culprit(하진) first, investigation2 → innocent(도현) first
+      const culpritSid = ec.readyToCollect.find((sid) => room.roles[sid] === 'culprit');
+      const innocentSid = ec.readyToCollect.find((sid) => room.roles[sid] === 'innocent');
+      if (phaseId === 'investigation1' && culpritSid && innocentSid) {
+        ec.turnOrder = [culpritSid, innocentSid];
+      } else if (phaseId === 'investigation2' && culpritSid && innocentSid) {
+        ec.turnOrder = [innocentSid, culpritSid];
       } else {
         ec.turnOrder = [ec.readyToCollect[0], ec.readyToCollect[1]];
-      }
-
-      // Track who goes first in investigation1 for future swap
-      if (phaseId === 'investigation1') {
-        room.firstCollectorPhase1 = ec.turnOrder[0];
       }
 
       ec.currentTurnIndex = 0;

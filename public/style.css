@@ -660,6 +660,12 @@ body::before {
   color: #6cb4ee;
 }
 
+/* ---- Condition / Yellow highlight ---- */
+.text-highlight-condition {
+  color: #e8c84a;
+  font-size: 0.85em;
+}
+
 /* ---- Dialogue reading guide ---- */
 .dialogue-guide {
   color: #6cb4ee;

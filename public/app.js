@@ -415,14 +415,18 @@ async function streamText(element, text, opts = {}) {
     for (let li = 0; li < lines.length; li++) {
       if (li > 0) p.appendChild(document.createElement('br'));
 
-      // Split line into segments: reading guides like (도현이 읽어주세요) get special styling
-      const segments = lines[li].split(/(\([^)]*읽어주세요\))/);
+      // Split line into segments: reading guides and <<condition>> highlights
+      const segments = lines[li].split(/(\([^)]*읽어주세요\)|<<.+?>>)/);
       for (const seg of segments) {
-        const isGuide = /^\([^)]*읽어주세요\)$/.test(seg);
-        if (isGuide) {
+        if (/^\([^)]*읽어주세요\)$/.test(seg)) {
           const span = document.createElement('span');
           span.className = 'text-reading-guide';
           span.textContent = seg;
+          p.appendChild(span);
+        } else if (/^<<.+>>$/.test(seg)) {
+          const span = document.createElement('span');
+          span.className = 'text-highlight-condition';
+          span.textContent = seg.slice(2, -2);
           p.appendChild(span);
         } else {
           p.appendChild(document.createTextNode(seg));
@@ -1538,6 +1542,23 @@ function closeTabPanel() {
 }
 
 /**
+ * Append text to a parent element, parsing <<...>> markers into highlighted spans.
+ */
+function appendHighlightedText(parent, text) {
+  const parts = text.split(/(<<.+?>>)/);
+  for (const part of parts) {
+    if (/^<<.+>>$/.test(part)) {
+      const span = document.createElement('span');
+      span.className = 'text-highlight-condition';
+      span.textContent = part.slice(2, -2);
+      parent.appendChild(span);
+    } else {
+      parent.appendChild(document.createTextNode(part));
+    }
+  }
+}
+
+/**
  * Render the intro narrative content in the tab panel.
  */
 function renderIntroTabContent(container) {
@@ -1570,7 +1591,7 @@ function renderIntroTabContent(container) {
     const briefingSections = state.briefingText.split('\n\n---RED---\n\n');
     if (briefingSections.length > 1) {
       const normalSpan = document.createElement('span');
-      normalSpan.textContent = briefingSections[0];
+      appendHighlightedText(normalSpan, briefingSections[0]);
       briefingDiv.appendChild(normalSpan);
 
       const afterRed = briefingSections.slice(1).join('\n\n');
@@ -1578,16 +1599,16 @@ function renderIntroTabContent(container) {
 
       const redSpan = document.createElement('span');
       redSpan.style.color = 'var(--accent-red)';
-      redSpan.textContent = '\n\n' + whiteSections[0];
+      appendHighlightedText(redSpan, '\n\n' + whiteSections[0]);
       briefingDiv.appendChild(redSpan);
 
       if (whiteSections.length > 1) {
         const whiteSpan = document.createElement('span');
-        whiteSpan.textContent = '\n\n' + whiteSections.slice(1).join('\n\n');
+        appendHighlightedText(whiteSpan, '\n\n' + whiteSections.slice(1).join('\n\n'));
         briefingDiv.appendChild(whiteSpan);
       }
     } else {
-      briefingDiv.textContent = state.briefingText;
+      appendHighlightedText(briefingDiv, state.briefingText);
     }
     container.appendChild(briefingDiv);
   }

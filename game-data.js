@@ -101,7 +101,7 @@ module.exports = {
           title: 'USB 드라이브',
           type: 'physical',
           image: 'ev_p1_usb.png',
-          comboHint: "'이도현의 메신저' 카드와 조합하면 'USB의 주인' 카드를 추가로 획득할 수 있습니다.",
+          comboHint: "'이도현의 모바일 메신저' 카드와 조합하면 'USB의 주인' 카드를 추가로 획득할 수 있습니다.",
           content: "서버 본체 뒷면의 USB 포트에 검은색 USB 드라이브가 꽂혀 있다. 라벨은 붙어 있지 않다. 먼지가 쌓인 케이블 다발 사이로 USB가 숨겨져 있는 형태라 쉽게 찾기 어렵다."
         },
         {
@@ -114,7 +114,7 @@ module.exports = {
         },
         {
           id: 'ev_inv1_06',
-          title: '처방전과 약봉지',
+          title: '도현의 책상 서랍',
           type: 'document',
           image: 'ev_p1_prescription.png',
           comboHint: "'CCTV 영상: 복도' 카드와 조합하면 '이도현의 소지품' 카드를 추가로 획득할 수 있습니다.",
@@ -130,7 +130,7 @@ module.exports = {
         },
         {
           id: 'ev_inv1_08',
-          title: '출입 기록',
+          title: '연구실 출입 기록',
           type: 'digital',
           image: 'ev_p1_access.png',
 
@@ -138,7 +138,7 @@ module.exports = {
         },
         {
           id: 'ev_inv1_09',
-          title: '책상 위 틴 케이스',
+          title: '하진의 책상 위',
           type: 'personal',
           image: 'ev_p1_tincase.png',
 
@@ -184,7 +184,7 @@ module.exports = {
           title: 'CCTV 영상: 복도',
           type: 'video',
           image: 'ev_p2_cctv_corridor.png',
-          comboHint: "'처방전과 약봉지' 카드와 조합하면 '이도현의 소지품' 카드를 추가로 획득할 수 있습니다.",
+          comboHint: "'도현의 책상 서랍' 카드와 조합하면 '이도현의 소지품' 카드를 추가로 획득할 수 있습니다.",
           content: "연구실 층의 복도 끝에서 남성인 듯한 인물의 실루엣이 걸어오고 있다. 얼굴과 옷차림은 식별 불가. 화면 하단에 \"20:02\" 타임스탬프가 찍혀 있다. 우리 층의 구조는 복도를 기준으로 공동 연구실이 먼저 나온 후, 조금 더 가면 교수의 연구실이 있는 구조이다. 어쩐 일인지, 녹화 영상은 해당 화면에서 멈춘 채 재생되지 않는다."
         },
         {
@@ -220,7 +220,7 @@ module.exports = {
         },
         {
           id: 'ev_inv2_06',
-          title: '이도현의 메신저',
+          title: '이도현의 모바일 메신저',
           type: 'personal',
           image: 'ev_p2_dohyun_texts.png',
           comboHint: "'USB 드라이브' 카드와 조합하면 'USB의 주인' 카드를 추가로 획득할 수 있습니다.",
@@ -229,7 +229,7 @@ module.exports = {
         },
         {
           id: 'ev_inv2_07',
-          title: '최종 시스템 로그',
+          title: 'ARIA 최종 시스템 로그',
           type: 'log',
           image: 'ev_p2_syslog.png',
           content: "터미널 화면에 타임스탬프가 찍힌 시스템 로그가 나열되어 있다. 20:30:01 자율 활성화, \"AUTONOMOUS MODE\"라는 텍스트가 경고하듯 빨간색으로 표시되어 있고, 22:15:22 \"작업 완료\"와 뒤이은 \"로그 자동 삭제 프로토콜 실행\" 라인도 눈에 띈다."

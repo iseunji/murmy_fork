@@ -1189,7 +1189,7 @@ body::before {
   overflow: hidden;
 }
 
-.character-card:hover:not(.taken):not(.selected) {
+.character-card:hover:not(.taken):not(.selected):not(.npc) {
   border-color: var(--accent-amber-dim);
 }
 
@@ -1208,10 +1208,7 @@ body::before {
   cursor: default;
   opacity: 0.85;
   border-style: dashed;
-}
-
-.character-card.npc:hover {
-  border-color: var(--border);
+  pointer-events: none;
 }
 
 .character-npc-label {

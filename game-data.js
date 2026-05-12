@@ -7,11 +7,12 @@ module.exports = {
 
   characters: [
     {
-      id: 'hajin',
-      name: '서하진',
-      age: 28,
+      id: 'professor',
+      name: '황준석',
+      age: 57,
       gender: '남',
-      desc: '연구실 3년차. 체계적이고 과묵하다. 오랜 기간 교수 밑에서 일한 만큼, 연구실의 모든 시스템에 능통하다.',
+      desc: '자율시스템 연구실 지도교수. 괴팍하고 예민하기로 유명하다. 다른 공대 교수들에 비해 체격이 좋은 편이다.',
+      selectable: false,
     },
     {
       id: 'dohyun',
@@ -21,12 +22,11 @@ module.exports = {
       desc: '연구실 1년차. 직관적이고 예민하다. ARIA 시스템에 남다른 관심과 애착을 보인다.',
     },
     {
-      id: 'professor',
-      name: '황준석',
-      age: 57,
+      id: 'hajin',
+      name: '서하진',
+      age: 28,
       gender: '남',
-      desc: '자율시스템 연구실 지도교수. 괴팍하고 예민하기로 유명하다. 다른 공대 교수들에 비해 체격이 좋은 편이다.',
-      selectable: false,
+      desc: '연구실 3년차. 체계적이고 과묵하다. 오랜 기간 교수 밑에서 일한 만큼, 연구실의 모든 시스템에 능통하다.',
     },
   ],
 

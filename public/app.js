@@ -1673,18 +1673,28 @@ function renderCharacterInfoTab(container) {
   const grid = document.createElement('div');
   grid.className = 'character-info-grid';
 
-  for (const char of state.allCharacters) {
+  const sorted = [...state.allCharacters].sort((a, b) => {
+    const aIsNpc = a.selectable === false;
+    const bIsNpc = b.selectable === false;
+    const aIsMe = state.character && state.character.id === a.id;
+    const bIsMe = state.character && state.character.id === b.id;
+    if (aIsNpc !== bIsNpc) return aIsNpc ? -1 : 1;
+    if (aIsMe !== bIsMe) return aIsMe ? -1 : 1;
+    return 0;
+  });
+
+  for (const char of sorted) {
     const isMe = state.character && state.character.id === char.id;
     const isNpc = char.selectable === false;
     const card = document.createElement('div');
     card.className = 'character-info-card' + (isMe ? ' is-me' : '') + (isNpc ? ' is-npc' : '');
 
-    const badge = isMe ? '<span class="character-badge">나</span>' : (isNpc ? '<span class="character-npc-label">NPC</span>' : '');
+    const badge = isMe ? '<span class="character-badge">나</span>' : (isNpc ? '<span class="character-npc-label">피해자·선택불가</span>' : '');
     const row = document.createElement('div');
     row.className = 'character-info-row';
     row.innerHTML =
       '<div class="character-info-portrait">' +
-        '<img src="/assets/' + char.id + '.png" alt="' + char.name + '" />' +
+        '<img src="/assets/' + char.id + '.png?v=2" alt="' + char.name + '" />' +
       '</div>' +
       '<div class="character-info-details">' +
         '<h3 class="character-info-name">' + char.name + badge + '</h3>' +
@@ -2042,9 +2052,9 @@ const SKETCH_FILTER = '<defs><filter id="pencil"><feTurbulence type="turbulence"
 const SK = 'filter="url(#pencil)"'; // shorthand
 
 const CHARACTER_SILHOUETTES = {
-  hajin: '<img src="/assets/hajin.png" alt="서하진" />',
-  dohyun: '<img src="/assets/dohyun.png" alt="이도현" />',
-  professor: '<img src="/assets/professor.png" alt="황준석" />',
+  hajin: '<img src="/assets/hajin.png?v=2" alt="서하진" />',
+  dohyun: '<img src="/assets/dohyun.png?v=2" alt="이도현" />',
+  professor: '<img src="/assets/professor.png?v=2" alt="황준석" />',
 };
 
 function renderCharacterCards(characters) {
@@ -2060,7 +2070,7 @@ function renderCharacterCards(characters) {
     card.innerHTML =
       '<div class="character-silhouette">' + (CHARACTER_SILHOUETTES[char.id] || '') + '</div>' +
       '<div class="character-info">' +
-        '<h3 class="character-name">' + char.name + (isNpc ? '<span class="character-npc-label">NPC</span>' : '') + '</h3>' +
+        '<h3 class="character-name">' + char.name + (isNpc ? '<span class="character-npc-label">피해자·선택불가</span>' : '') + '</h3>' +
         '<span class="character-age">' + char.age + '\uC138, ' + (char.gender || '') + '</span>' +
         '<p class="character-desc">' + char.desc + '</p>' +
       '</div>';

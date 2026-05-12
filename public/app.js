@@ -2237,11 +2237,19 @@ socket.on('phase-data', async (data) => {
     if (verdictButtons) verdictButtons.style.display = '';
     if (verdictWaiting) verdictWaiting.style.display = 'none';
     state.hasAccused = false;
-    // Show the "ARIA를 이용해 상대를 제거" button only for the culprit who has the professor's smartphone
+    // Culprit: show ARIA 제거 (if has smartphone)
+    // Innocent: show 범인 없음
     const btnEliminate = $('btn-eliminate-partner');
-    if (btnEliminate) {
-      const hasPhone = state.phase1Evidence.some((e) => e.id === 'ev_inv1_07');
-      btnEliminate.hidden = state.role !== 'culprit' || !hasPhone;
+    const btnNone = $('btn-accuse-none');
+    if (state.role === 'culprit') {
+      if (btnEliminate) {
+        const hasPhone = state.phase1Evidence.some((e) => e.id === 'ev_inv1_07');
+        btnEliminate.hidden = !hasPhone;
+      }
+      if (btnNone) btnNone.hidden = true;
+    } else {
+      if (btnEliminate) btnEliminate.hidden = true;
+      if (btnNone) btnNone.hidden = false;
     }
     return;
   }
@@ -3150,10 +3158,10 @@ function bindEvents() {
     });
   }
 
-  const btnAccuseSelf = $('btn-accuse-self');
-  if (btnAccuseSelf) {
-    btnAccuseSelf.addEventListener('click', () => {
-      submitAccusation('self');
+  const btnAccuseNone = $('btn-accuse-none');
+  if (btnAccuseNone) {
+    btnAccuseNone.addEventListener('click', () => {
+      submitAccusation('none');
     });
   }
 

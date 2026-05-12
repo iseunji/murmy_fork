@@ -2030,10 +2030,6 @@ body::before {
   border-color: var(--accent-blue-dim);
 }
 
-.verdict-card[data-verdict="self"]:hover {
-  border-color: var(--accent-red-dim);
-}
-
 .verdict-card.selected {
   pointer-events: none;
 }
@@ -2046,11 +2042,6 @@ body::before {
 .verdict-card.selected[data-verdict="aria"] {
   border-color: var(--accent-blue);
   background: var(--accent-blue-glow);
-}
-
-.verdict-card.selected[data-verdict="self"] {
-  border-color: var(--accent-red);
-  background: rgba(139, 37, 0, 0.08);
 }
 
 .verdict-card[data-verdict="eliminate"] {

@@ -378,31 +378,23 @@ function advancePhase(room) {
 function determineEnding(accusations, roles) {
   const accEntries = Object.entries(accusations);
 
-  // Check if the culprit chose to eliminate their partner via ARIA
+  // Check if the culprit chose to eliminate their partner via ARIA (highest priority)
   const culpritEntry = accEntries.find(([sid]) => roles[sid] === 'culprit');
   if (culpritEntry && culpritEntry[1] === 'eliminatePartner') {
     return 'soleSurvivor';
   }
 
-  const accValues = Object.values(accusations);
+  // Ending is determined solely by the innocent's choice
+  const innocentEntry = accEntries.find(([sid]) => roles[sid] === 'innocent');
+  if (!innocentEntry) return 'inherited'; // fallback
 
-  // Both accuse AI
-  if (accValues.every((a) => a === 'aria')) {
-    return 'forked';
-  }
+  const innocentChoice = innocentEntry[1];
 
-  // Both accuse their partner (the other human)
-  if (accValues.every((a) => a === 'partnerHuman')) {
-    return 'mutual';
-  }
+  if (innocentChoice === 'aria') return 'forked';          // AI를 지목
+  if (innocentChoice === 'partnerHuman') return 'inherited'; // 하진을 지목
+  if (innocentChoice === 'none') return 'mutual';           // 범인 없음 / 자살
 
-  // Anyone accuses a human (partner or self)
-  if (accValues.some((a) => a === 'partnerHuman' || a === 'self')) {
-    return 'inherited';
-  }
-
-  // Fallback (should not normally be reached)
-  return 'inherited';
+  return 'inherited'; // fallback
 }
 
 // ---------------------------------------------------------------------------

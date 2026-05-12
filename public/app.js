@@ -1578,7 +1578,7 @@ function renderIntroTabContent(container) {
     container.appendChild(separator);
 
     const briefingLabel = document.createElement('h4');
-    briefingLabel.textContent = '비밀 지령' + charSuffix();
+    briefingLabel.textContent = '당신의 비밀' + charSuffix();
     briefingLabel.style.color = 'var(--accent-red)';
     briefingLabel.style.marginBottom = '8px';
     briefingLabel.style.fontFamily = 'var(--font-display)';

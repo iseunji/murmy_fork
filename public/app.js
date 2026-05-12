@@ -946,24 +946,8 @@ function openEvidenceModal(evidenceId) {
   const modal = $('evidence-modal');
   if (!modal) return;
 
-  // Show modal with loading placeholder.
-  modal.removeAttribute('hidden');
-  modal.classList.add('active');
-  $('evidence-modal-title').textContent = '...';
-  $('evidence-modal-type').textContent = '';
-  $('evidence-modal-content').textContent = '';
-  const imgWrap = $('evidence-modal-image-wrap');
-  if (imgWrap) imgWrap.hidden = true;
-  const comboEl = $('evidence-modal-combo-hint');
-  if (comboEl) comboEl.hidden = true;
-
-  // Play a reveal sound.
-  SFX.reveal();
-
-  // Small dramatic delay before the content appears.
-  setTimeout(() => {
-    socket.emit('request-evidence', { evidenceId });
-  }, 200);
+  // Request evidence detail from server (modal opens when response arrives).
+  socket.emit('request-evidence', { evidenceId });
 
   // Mark evidence as viewed in local state.
   state.viewedEvidence.add(evidenceId);
@@ -2386,6 +2370,7 @@ socket.on('phase-data', async (data) => {
 // ---- Evidence Detail ----
 
 socket.on('evidence-detail', (data) => {
+  const modal = $('evidence-modal');
   const titleEl = $('evidence-modal-title');
   const typeEl = $('evidence-modal-type');
   const contentEl = $('evidence-modal-content');
@@ -2394,11 +2379,18 @@ socket.on('evidence-detail', (data) => {
   state.currentEvidenceTitle = data.title || '';
   state.currentComboPartnerTitle = data.comboPartnerTitle || '';
 
+  // Populate content first, then show modal so it appears fully loaded.
   if (titleEl) titleEl.textContent = data.title || '';
   if (typeEl) {
     typeEl.textContent = data.isComboCard ? `조합카드(추가증거 ${data.comboIndex || ''})` : '증거카드';
   }
   if (contentEl) contentEl.textContent = data.content || '';
+
+  if (modal) {
+    modal.removeAttribute('hidden');
+    modal.classList.add('active');
+  }
+  SFX.reveal();
 
   // Show evidence image if available
   const imgWrap = $('evidence-modal-image-wrap');

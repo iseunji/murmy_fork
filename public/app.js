@@ -2293,7 +2293,11 @@ socket.on('phase-data', async (data) => {
     if (titleEl) titleEl.textContent = (data.title || '') + charSuffix();
 
     const subtitleEl = $('phase-subtitle');
-    if (subtitleEl) subtitleEl.textContent = data.subtitle || '';
+    if (subtitleEl) {
+      subtitleEl.textContent = data.subtitle || '';
+      const isInvestigation = data.phaseId && data.phaseId.startsWith('investigation');
+      subtitleEl.classList.toggle('warning', isInvestigation);
+    }
 
     // Save narrative for tab review
     if (data.phaseId === 'investigation1') {

@@ -1411,6 +1411,10 @@ body::before {
   grid-row: 2;
 }
 
+.phase-subtitle.warning {
+  color: #e53935;
+}
+
 .investigation-topbar > .timer-display {
   grid-column: 2;
   grid-row: 1;

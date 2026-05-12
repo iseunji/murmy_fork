@@ -2235,9 +2235,16 @@ socket.on('phase-data', async (data) => {
       updateNarrativeScrollHint();
     }
 
-    // Show turn order guidance for investigation2
-    if (data.turnOrderGuidance) {
-      showToast(data.turnOrderGuidance, 'info', 5000);
+    // Show turn order guidance below evidence heading
+    const turnGuidance = $('evidence-turn-guidance');
+    if (turnGuidance) {
+      if (data.turnOrderGuidance) {
+        turnGuidance.textContent = data.turnOrderGuidance;
+        turnGuidance.hidden = false;
+      } else {
+        turnGuidance.textContent = '';
+        turnGuidance.hidden = true;
+      }
     }
 
     // Evidence collection setup.

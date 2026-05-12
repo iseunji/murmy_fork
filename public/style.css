@@ -1417,7 +1417,7 @@ body::before {
 }
 
 .text-notice {
-  color: #ffc200;
+  color: var(--accent-amber);
 }
 
 .investigation-topbar > .timer-display {

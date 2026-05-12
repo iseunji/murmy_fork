@@ -474,6 +474,7 @@ body::before {
   max-height: calc(100dvh - 32px);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .modal-close {

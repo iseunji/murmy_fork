@@ -159,6 +159,7 @@ function showScreen(screenId) {
     const target = $(screenId);
     if (target) {
       target.classList.add('active');
+      target.scrollTop = 0;
       currentScreenId = screenId;
       saveStateToSession();
     }

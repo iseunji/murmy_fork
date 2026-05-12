@@ -1650,19 +1650,18 @@ function renderCharacterInfoTab(container) {
         '<p class="character-info-desc">' + char.desc + '</p>' +
       '</div>';
 
-    grid.appendChild(card);
-
-    // Show objectives under the player's own character card
+    // Append goals inside the player's own character card
     if (isMe && state.briefingText) {
       const goalMatch = state.briefingText.match(/🎯 당신의 목표\n\n([\s\S]*?)$/);
       if (goalMatch) {
-        const goalsSection = document.createElement('div');
-        goalsSection.className = 'character-goals-section';
+        const divider = document.createElement('hr');
+        divider.className = 'character-goals-divider';
+        card.appendChild(divider);
 
         const goalsTitle = document.createElement('h4');
         goalsTitle.className = 'character-goals-title';
         goalsTitle.textContent = '🎯 나의 목표';
-        goalsSection.appendChild(goalsTitle);
+        card.appendChild(goalsTitle);
 
         const lines = goalMatch[1].split('\n');
         for (const line of lines) {
@@ -1670,12 +1669,12 @@ function renderCharacterInfoTab(container) {
           const p = document.createElement('p');
           p.className = 'character-goal-item';
           appendHighlightedText(p, line);
-          goalsSection.appendChild(p);
+          card.appendChild(p);
         }
-
-        grid.appendChild(goalsSection);
       }
     }
+
+    grid.appendChild(card);
   }
 
   container.appendChild(grid);
@@ -2676,6 +2675,14 @@ function bindEvents() {
       openTabPanel(tabId);
     });
   });
+
+  const btnTabBack = $('btn-tab-back');
+  if (btnTabBack) {
+    btnTabBack.addEventListener('click', () => {
+      SFX.click();
+      closeTabPanel();
+    });
+  }
 
   // ---- Combo Modal ----
 

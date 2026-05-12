@@ -2504,12 +2504,14 @@ body.tabs-visible .chat-topbar {
   border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--text-secondary);
-  padding: 6px;
+  font-size: 13px;
+  padding: 6px 10px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: color 0.2s, border-color 0.2s;
+  white-space: nowrap;
 }
 .tab-panel-back:hover {
   color: var(--text-primary);
@@ -2615,14 +2617,11 @@ body.tabs-visible .chat-topbar {
   color: var(--text-secondary);
 }
 
-/* ---- Character Goals Section ---- */
-.character-goals-section {
-  margin-top: 4px;
-  margin-bottom: 15px;
-  padding: 12px 14px 12px 16px;
-  background: rgba(218, 165, 32, 0.04);
-  border-left: 2px solid var(--accent-amber-dim);
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+/* ---- Character Goals (inside card) ---- */
+.character-goals-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 12px 0;
 }
 .character-goals-title {
   font-family: var(--font-display);

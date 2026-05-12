@@ -1495,11 +1495,11 @@ function openTabPanel(tabId) {
       renderCharacterInfoTab(body);
       break;
     case 'phase1':
-      title.textContent = '조사 단계 1: 현장 조사';
+      title.textContent = '조사 단계 1';
       renderEvidenceTabContent(body, state.phase1Evidence, state.phase1Narrative);
       break;
     case 'phase2':
-      title.textContent = '조사 단계 2: 디지털 흔적';
+      title.textContent = '조사 단계 2';
       renderEvidenceTabContent(body, state.phase2Evidence, state.phase2Narrative);
       break;
     case 'combo':

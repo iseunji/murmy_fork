@@ -436,8 +436,10 @@ body::before {
 .modal-overlay {
   position: fixed;
   top: 0;
-  left: 0;
+  left: 50%;
+  transform: translateX(-50%);
   width: 100%;
+  max-width: var(--container-max);
   height: 100%;
   background: var(--modal-backdrop);
   backdrop-filter: blur(8px);
@@ -459,7 +461,7 @@ body::before {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  max-width: 600px;
+  max-width: calc(var(--container-max) - 32px);
   width: 100%;
   max-height: calc(100dvh - 32px);
   overflow-y: auto;
@@ -868,15 +870,18 @@ body::before {
    SCREEN 2: LOBBY
    ============================================================ */
 
+#screen-lobby.active {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 #screen-lobby > .screen-inner {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  min-height: 100dvh;
-  padding-top: 12dvh;
-  padding-bottom: 0;
   box-sizing: border-box;
+  transform: translateY(-3%);
 }
 
 .screen-heading {
@@ -888,49 +893,53 @@ body::before {
 }
 
 #screen-lobby .screen-heading {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .lobby-desc {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
   text-align: center;
   line-height: 1.6;
   margin-bottom: 12px;
+  padding: 0 20px;
 }
 
 .lobby-phases {
   font-size: 0.8rem;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   line-height: 1.8;
   margin: 0 auto 8px;
-  padding-left: 20px;
+  padding-left: 40px;
+  padding-right: 20px;
   width: fit-content;
 }
 
 .lobby-note {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
   text-align: center;
   margin-bottom: 6px;
+  padding: 0 20px;
 }
 
 .lobby-note:last-of-type {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
+  color: var(--accent-blue);
 }
 
 .lobby-options {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: 12px;
+  width: 100%;
 }
 
 .lobby-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 20px 16px 16px;
+  padding: 20px 20px 16px;
   text-align: center;
 }
 
@@ -1372,7 +1381,6 @@ body::before {
   grid-template-columns: 1fr auto;
   align-items: center;
   padding: 4px 0 8px;
-  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 

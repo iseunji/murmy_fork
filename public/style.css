@@ -1404,7 +1404,7 @@ body::before {
 }
 
 .phase-subtitle {
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   color: var(--text-secondary);
   margin-top: 2px;
   grid-column: 1 / -1;

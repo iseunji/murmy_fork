@@ -459,6 +459,30 @@ async function streamText(element, text, opts = {}) {
  * @param {string} message - Text to display.
  * @param {'error'|'info'} [type='error'] - Visual style of the toast.
  */
+/**
+ * Show a center-screen announcement overlay that auto-dismisses.
+ */
+function showCenterAnnouncement(title, subtitle, onDismiss, duration = 2000) {
+  const overlay = document.createElement('div');
+  overlay.className = 'center-announcement';
+  overlay.innerHTML =
+    '<div class="center-announcement-box">' +
+      '<h3 class="center-announcement-title">' + title + '</h3>' +
+      (subtitle ? '<p class="center-announcement-sub">' + subtitle + '</p>' : '') +
+    '</div>';
+  document.body.appendChild(overlay);
+
+  requestAnimationFrame(() => overlay.classList.add('visible'));
+
+  setTimeout(() => {
+    overlay.classList.remove('visible');
+    setTimeout(() => {
+      overlay.remove();
+      if (onDismiss) onDismiss();
+    }, 400);
+  }, duration);
+}
+
 function showToast(message, type = 'error', duration = 3000) {
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
@@ -2463,8 +2487,10 @@ socket.on('evidence-collection-complete', (data) => {
   // Update tab states (phase1/phase2 tabs now have content)
   updateTabStates();
 
-  renderCollectedEvidence(collectedFull);
-  showToast('증거 수집이 완료되었습니다.', 'info');
+  // Show full-screen announcement before showing collected evidence
+  showCenterAnnouncement('증거 수집 완료', '수집된 증거를 확인해보세요.', () => {
+    renderCollectedEvidence(collectedFull);
+  });
 
   // Enable the ready button now that all evidence is collected
   const readyBtn = $('btn-phase-ready');
@@ -3304,6 +3330,36 @@ function injectDynamicStyles() {
     .toast-visible {
       opacity: 1;
       transform: translateX(-50%) translateY(0);
+    }
+
+    /* ---- Center Announcement ---- */
+    .center-announcement {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9000;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    .center-announcement.visible {
+      opacity: 1;
+    }
+    .center-announcement-box {
+      text-align: center;
+      padding: 32px 40px;
+    }
+    .center-announcement-title {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      color: var(--accent-amber);
+      margin-bottom: 8px;
+    }
+    .center-announcement-sub {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
     }
 
     /* ---- Disconnect Overlay ---- */

@@ -1717,6 +1717,8 @@ body::before {
   flex: 1;
   overflow: hidden;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .evidence-detail-body-wrap::after {
@@ -1739,7 +1741,8 @@ body::before {
   font-size: 0.9rem;
   line-height: 2;
   color: var(--text-primary);
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 

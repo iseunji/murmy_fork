@@ -887,6 +887,38 @@ body::before {
   color: var(--text-primary);
 }
 
+#screen-lobby .screen-heading {
+  margin-bottom: 16px;
+}
+
+.lobby-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.lobby-phases {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.8;
+  margin: 0 auto 8px;
+  padding-left: 20px;
+  width: fit-content;
+}
+
+.lobby-note {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.lobby-note:last-of-type {
+  margin-bottom: 24px;
+}
+
 .lobby-options {
   display: grid;
   grid-template-columns: 1fr;
@@ -1336,17 +1368,16 @@ body::before {
 
 /* Top Bar */
 .investigation-topbar {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto;
   align-items: center;
-  justify-content: space-between;
-  padding: 8px 0 12px;
+  padding: 4px 0 8px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
 .phase-info {
-  display: flex;
-  flex-direction: column;
+  display: contents;
 }
 
 .phase-title {
@@ -1354,40 +1385,23 @@ body::before {
   font-size: 1rem;
   color: var(--accent-amber);
   line-height: 1.2;
+  grid-column: 1;
+  grid-row: 1;
 }
 
 .phase-subtitle {
   font-size: 0.75rem;
   color: var(--text-secondary);
   margin-top: 2px;
+  grid-column: 1 / -1;
+  grid-row: 2;
 }
 
-/* Phase Progress */
-.phase-progress {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  padding: 12px 0;
-  flex-shrink: 0;
+.investigation-topbar > .timer-display {
+  grid-column: 2;
+  grid-row: 1;
 }
 
-.phase-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  border: 1.5px solid var(--border-light);
-  transition: all 0.3s;
-}
-
-.phase-dot.completed {
-  background: var(--accent-amber);
-  border-color: var(--accent-amber);
-}
-
-.phase-dot.current {
-  border-color: var(--accent-amber);
-  box-shadow: 0 0 6px rgba(196, 149, 106, 0.4);
-}
 
 /* Investigation Body */
 .investigation-body {
@@ -1542,7 +1556,7 @@ body::before {
 .evidence-collect-prompt {
   display: flex;
   justify-content: center;
-  padding: 16px 0;
+  padding: 10px 0 24px;
 }
 
 .btn-collect {
@@ -1929,21 +1943,27 @@ body::before {
   text-align: center;
 }
 
+.verdict-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
 .verdict-title {
   font-family: var(--font-display);
   font-size: clamp(1.7rem, 5vw, 2.6rem);
   color: var(--accent-red);
-  margin-bottom: 8px;
 }
 
 .verdict-instruction {
   font-size: 0.9rem;
   color: var(--text-secondary);
+  margin-top: 8px;
 }
 
 .verdict-timer-display {
   justify-content: center;
-  margin-top: 12px;
 }
 
 /* Verdict Choices */

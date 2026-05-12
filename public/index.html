@@ -72,6 +72,15 @@
   <section id="screen-lobby" class="screen">
     <div class="screen-inner">
       <h2 class="screen-heading">로비</h2>
+      <p class="lobby-desc">2인용 머더 미스터리 추리 게임. 각자 역할과 미션을 부여받고, 증거를 수집하며, 토론을 통해 진실을 밝혀냅니다.</p>
+      <ol class="lobby-phases">
+        <li>사건 개요 열람</li>
+        <li>조사 1 (15분) → 토론 1 (10분)</li>
+        <li>조사 2 (15분) → 토론 2 (10분)</li>
+        <li>범인 투표 및 행동 단계 (10분)</li>
+      </ol>
+      <p class="lobby-note">각 단계는 상대방과 협의하여 빠르게 넘어갈 수 있지만, 충분히 숙지한 뒤 넘어가는 것을 권장합니다.</p>
+      <p class="lobby-note">배정된 인물이 본인이라고 생각하고 몰입해서 진행하면 더 즐겁습니다.</p>
 
       <div class="lobby-options">
         <!-- Create Room -->
@@ -200,14 +209,6 @@
       </div>
     </header>
 
-    <!-- Phase Progress -->
-    <div class="phase-progress" id="phase-progress" aria-label="단계 진행도">
-      <span class="phase-dot" aria-label="단계"></span>
-      <span class="phase-dot" aria-label="단계"></span>
-      <span class="phase-dot" aria-label="단계"></span>
-      <span class="phase-dot" aria-label="단계"></span>
-      <span class="phase-dot" aria-label="단계"></span>
-    </div>
 
     <div class="screen-inner investigation-body">
       <!-- Narrative Section -->
@@ -303,12 +304,14 @@
   <section id="screen-verdict" class="screen">
     <div class="screen-inner verdict-layout">
       <div class="verdict-header">
-        <h2 class="verdict-title">최종 판결</h2>
-        <p class="verdict-instruction">당신의 판단을 내려주세요.</p>
-        <div class="timer-display verdict-timer-display">
-          <span class="timer-icon">&#x23F1;</span>
-          <span class="timer-value" id="verdict-timer">06:00</span>
+        <div class="verdict-title-row">
+          <h2 class="verdict-title">최종 판결</h2>
+          <div class="timer-display verdict-timer-display">
+            <span class="timer-icon">&#x23F1;</span>
+            <span class="timer-value" id="verdict-timer">06:00</span>
+          </div>
         </div>
+        <p class="verdict-instruction">당신의 판단을 내려주세요.</p>
       </div>
 
       <div class="verdict-choices" id="verdict-buttons">

@@ -397,6 +397,11 @@ async function streamText(element, text, opts = {}) {
       p.classList.add('text-danger');
     }
 
+    // ※ notice paragraphs get yellow highlight
+    if (paragraphs[pi].startsWith('※')) {
+      p.classList.add('text-notice');
+    }
+
     // Check if this paragraph contains a danger phrase
     let isDanger = false;
     for (const phrase of dangerPhrases) {

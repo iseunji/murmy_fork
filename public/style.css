@@ -1413,6 +1413,11 @@ body::before {
 
 .phase-subtitle.warning {
   color: #e53935;
+  animation: none;
+}
+
+.text-notice {
+  color: #ffc200;
 }
 
 .investigation-topbar > .timer-display {

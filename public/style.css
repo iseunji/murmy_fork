@@ -1245,17 +1245,6 @@ body::before {
   font-weight: 300;
 }
 
-.character-trait {
-  display: inline-block;
-  margin-top: 4px;
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: var(--accent-blue);
-  letter-spacing: 0.05em;
-  padding: 2px 8px;
-  border: 1px solid var(--accent-blue-dim);
-  border-radius: var(--radius-sm);
-}
 
 .character-waiting {
   padding: 16px;
@@ -2593,10 +2582,6 @@ body.tabs-visible .chat-topbar {
   font-size: 13px;
   color: var(--text-secondary);
   margin-right: 8px;
-}
-.character-info-trait {
-  font-size: 13px;
-  color: var(--accent-amber);
 }
 .character-info-desc {
   margin: 8px 0 0;

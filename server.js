@@ -18,7 +18,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Dev API: return ending data for preview
 app.get('/api/dev/endings', (_req, res) => {
-  const endingKeys = ['forked', 'inherited', 'mutual', 'soleSurvivor'];
+  const endingKeys = ['forked', 'inherited', 'soleSurvivor'];
   const result = {};
   for (const key of endingKeys) {
     const e = gameData.endings[key];
@@ -375,24 +375,30 @@ function advancePhase(room) {
 // ---------------------------------------------------------------------------
 // Helper: determine ending from accusations
 // ---------------------------------------------------------------------------
+// 우선순위:
+//   1. 하진=eliminatePartner AND 도현≠partnerHuman → END 03 (soleSurvivor)
+//   2. 도현=partnerHuman → END 02 (inherited) — 하진 선택 무관
+//   3. 도현=aria → END 01 (forked)
+// ---------------------------------------------------------------------------
 function determineEnding(accusations, roles) {
   const accEntries = Object.entries(accusations);
 
-  // Check if the culprit chose to eliminate their partner via ARIA (highest priority)
   const culpritEntry = accEntries.find(([sid]) => roles[sid] === 'culprit');
-  if (culpritEntry && culpritEntry[1] === 'eliminatePartner') {
+  const innocentEntry = accEntries.find(([sid]) => roles[sid] === 'innocent');
+
+  const culpritChoice = culpritEntry ? culpritEntry[1] : null;
+  const innocentChoice = innocentEntry ? innocentEntry[1] : null;
+
+  // Priority 1: 하진이 제거 선택 AND 도현이 하진을 지목하지 않음 → Sole Survivor
+  if (culpritChoice === 'eliminatePartner' && innocentChoice !== 'partnerHuman') {
     return 'soleSurvivor';
   }
 
-  // Ending is determined solely by the innocent's choice
-  const innocentEntry = accEntries.find(([sid]) => roles[sid] === 'innocent');
-  if (!innocentEntry) return 'inherited'; // fallback
+  // Priority 2: 도현이 하진을 지목 → Inherited Process (하진의 제거 시도 무효)
+  if (innocentChoice === 'partnerHuman') return 'inherited';
 
-  const innocentChoice = innocentEntry[1];
-
-  if (innocentChoice === 'aria') return 'forked';          // AI를 지목
-  if (innocentChoice === 'partnerHuman') return 'inherited'; // 하진을 지목
-  if (innocentChoice === 'none') return 'mutual';           // 범인 없음 / 자살
+  // Priority 3: 도현이 ARIA를 지목 → Residual
+  if (innocentChoice === 'aria') return 'forked';
 
   return 'inherited'; // fallback
 }

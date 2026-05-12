@@ -1687,8 +1687,7 @@ function renderCharacterInfoTab(container) {
       '</div>' +
       '<div class="character-info-details">' +
         '<h3 class="character-info-name">' + char.name + badge + '</h3>' +
-        '<span class="character-info-age">' + char.age + '세</span>' +
-        '<span class="character-info-trait">' + char.trait + '</span>' +
+        '<span class="character-info-age">' + char.age + '세, ' + (char.gender || '') + '</span>' +
         '<p class="character-info-desc">' + char.desc + '</p>' +
       '</div>';
     card.appendChild(row);
@@ -2059,9 +2058,8 @@ function renderCharacterCards(characters) {
       '<div class="character-silhouette">' + (CHARACTER_SILHOUETTES[char.id] || '') + '</div>' +
       '<div class="character-info">' +
         '<h3 class="character-name">' + char.name + '</h3>' +
-        '<span class="character-age">' + char.age + '\uC138</span>' +
+        '<span class="character-age">' + char.age + '\uC138, ' + (char.gender || '') + '</span>' +
         '<p class="character-desc">' + char.desc + '</p>' +
-        '<span class="character-trait">' + char.trait + '</span>' +
       '</div>';
     card.addEventListener('click', () => {
       if (card.classList.contains('taken')) return;
@@ -2238,18 +2236,14 @@ socket.on('phase-data', async (data) => {
     if (verdictWaiting) verdictWaiting.style.display = 'none';
     state.hasAccused = false;
     // Culprit: show ARIA 제거 (if has smartphone)
-    // Innocent: show 범인 없음
     const btnEliminate = $('btn-eliminate-partner');
-    const btnNone = $('btn-accuse-none');
     if (state.role === 'culprit') {
       if (btnEliminate) {
-        const hasPhone = state.phase1Evidence.some((e) => e.id === 'ev_inv1_07');
+        const hasPhone = state.allCollectedEvidence.some((e) => e.id === 'ev_inv1_07');
         btnEliminate.hidden = !hasPhone;
       }
-      if (btnNone) btnNone.hidden = true;
     } else {
       if (btnEliminate) btnEliminate.hidden = true;
-      if (btnNone) btnNone.hidden = false;
     }
     return;
   }
@@ -3158,12 +3152,6 @@ function bindEvents() {
     });
   }
 
-  const btnAccuseNone = $('btn-accuse-none');
-  if (btnAccuseNone) {
-    btnAccuseNone.addEventListener('click', () => {
-      submitAccusation('none');
-    });
-  }
 
   const btnEliminatePartner = $('btn-eliminate-partner');
   if (btnEliminatePartner) {
@@ -3375,7 +3363,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .then((r) => r.json())
         .then((endings) => {
           const endingParam = params.get('ending');
-          const keyMap = { '1': 'forked', '2': 'inherited', '3': 'mutual', '4': 'soleSurvivor' };
+          const keyMap = { '1': 'forked', '2': 'inherited', '3': 'soleSurvivor' };
           const selectedKey = keyMap[endingParam];
           if (selectedKey && endings[selectedKey]) {
             showEnding(endings[selectedKey]);
@@ -3385,10 +3373,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (inner) {
               inner.innerHTML = '<div style="display:flex;flex-direction:column;gap:12px;margin-top:12px;">'
                 + '<p style="color:var(--text-secondary);font-size:0.85rem;">엔딩을 선택하세요:</p>'
-                + '<a href="?dev=screen-ending&ending=1" class="verdict-card" style="text-decoration:none;"><span class="verdict-card-label">END 01: Forked</span><span class="verdict-card-desc">갈라진 선택</span></a>'
-                + '<a href="?dev=screen-ending&ending=2" class="verdict-card" style="text-decoration:none;"><span class="verdict-card-label">END 02: Inherited Process</span><span class="verdict-card-desc">물려받은 프로세스</span></a>'
-                + '<a href="?dev=screen-ending&ending=3" class="verdict-card" style="text-decoration:none;"><span class="verdict-card-label">END 03: Shared Guilt</span><span class="verdict-card-desc">공유된 죄</span></a>'
-                + '<a href="?dev=screen-ending&ending=4" class="verdict-card" style="text-decoration:none;"><span class="verdict-card-label">END 04: Sole Survivor</span><span class="verdict-card-desc">유일한 생존자</span></a>'
+                + '<a href="?dev=screen-ending&ending=1" class="verdict-card" style="text-decoration:none;"><span class="verdict-card-label">END 01: Residual</span></a>'
+                + '<a href="?dev=screen-ending&ending=2" class="verdict-card" style="text-decoration:none;"><span class="verdict-card-label">END 02: Inherited Process</span></a>'
+                + '<a href="?dev=screen-ending&ending=3" class="verdict-card" style="text-decoration:none;"><span class="verdict-card-label">END 03: Sole Survivor</span></a>'
                 + '</div>';
             }
           }

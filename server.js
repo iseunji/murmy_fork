@@ -670,6 +670,10 @@ io.on('connection', (socket) => {
       return;
     }
 
+    // Block NPC selection
+    const charData = (gameData.characters || []).find(c => c.id === characterId);
+    if (charData && charData.selectable === false) return;
+
     // Check if already taken by the other player
     const otherPlayerId = Object.keys(room.characterSelections).find(id => id !== socket.id);
     if (otherPlayerId && room.characterSelections[otherPlayerId] === characterId) {

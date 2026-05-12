@@ -1675,10 +1675,11 @@ function renderCharacterInfoTab(container) {
 
   for (const char of state.allCharacters) {
     const isMe = state.character && state.character.id === char.id;
+    const isNpc = char.selectable === false;
     const card = document.createElement('div');
-    card.className = 'character-info-card' + (isMe ? ' is-me' : '');
+    card.className = 'character-info-card' + (isMe ? ' is-me' : '') + (isNpc ? ' is-npc' : '');
 
-    const badge = isMe ? '<span class="character-badge">나</span>' : '';
+    const badge = isMe ? '<span class="character-badge">나</span>' : (isNpc ? '<span class="character-npc-label">NPC</span>' : '');
     const row = document.createElement('div');
     row.className = 'character-info-row';
     row.innerHTML =
@@ -2043,6 +2044,7 @@ const SK = 'filter="url(#pencil)"'; // shorthand
 const CHARACTER_SILHOUETTES = {
   hajin: '<img src="/assets/hajin.png" alt="서하진" />',
   dohyun: '<img src="/assets/dohyun.png" alt="이도현" />',
+  professor: '<img src="/assets/professor.png" alt="황준석" />',
 };
 
 function renderCharacterCards(characters) {
@@ -2051,32 +2053,35 @@ function renderCharacterCards(characters) {
   container.innerHTML = '';
 
   for (const char of characters) {
-    const card = document.createElement('button');
-    card.className = 'character-card';
+    const isNpc = char.selectable === false;
+    const card = document.createElement(isNpc ? 'div' : 'button');
+    card.className = 'character-card' + (isNpc ? ' npc' : '');
     card.dataset.characterId = char.id;
     card.innerHTML =
       '<div class="character-silhouette">' + (CHARACTER_SILHOUETTES[char.id] || '') + '</div>' +
       '<div class="character-info">' +
-        '<h3 class="character-name">' + char.name + '</h3>' +
+        '<h3 class="character-name">' + char.name + (isNpc ? '<span class="character-npc-label">NPC</span>' : '') + '</h3>' +
         '<span class="character-age">' + char.age + '\uC138, ' + (char.gender || '') + '</span>' +
         '<p class="character-desc">' + char.desc + '</p>' +
       '</div>';
-    card.addEventListener('click', () => {
-      if (card.classList.contains('taken')) return;
-      SFX.click();
+    if (!isNpc) {
+      card.addEventListener('click', () => {
+        if (card.classList.contains('taken')) return;
+        SFX.click();
 
-      if (card.classList.contains('selected')) {
-        // Deselect current selection
-        card.classList.remove('selected');
+        if (card.classList.contains('selected')) {
+          // Deselect current selection
+          card.classList.remove('selected');
+          socket.emit('select-character', { characterId: char.id });
+          return;
+        }
+
+        // Select (or switch to) this character
+        container.querySelectorAll('.character-card:not(.npc)').forEach((c) => c.classList.remove('selected'));
+        card.classList.add('selected');
         socket.emit('select-character', { characterId: char.id });
-        return;
-      }
-
-      // Select (or switch to) this character
-      container.querySelectorAll('.character-card').forEach((c) => c.classList.remove('selected'));
-      card.classList.add('selected');
-      socket.emit('select-character', { characterId: char.id });
-    });
+      });
+    }
     container.appendChild(card);
   }
 }

@@ -20,6 +20,14 @@ module.exports = {
       gender: '남',
       desc: '연구실 1년차. 직관적이고 예민하다. ARIA 시스템에 남다른 관심과 애착을 보인다.',
     },
+    {
+      id: 'professor',
+      name: '황준석',
+      age: 57,
+      gender: '남',
+      desc: '자율시스템 연구실 지도교수. 괴팍하고 예민하기로 유명하다. 다른 공대 교수들에 비해 체격이 좋은 편이다.',
+      selectable: false,
+    },
   ],
 
   roles: {

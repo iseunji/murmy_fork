@@ -3361,11 +3361,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (devScreen === 'screen-ending') {
-      const endingTitle = $('ending-title');
-      if (endingTitle) endingTitle.textContent = 'END 01';
-      const endingSubtitle = $('ending-subtitle');
-      if (endingSubtitle) endingSubtitle.textContent = 'Forked';
       showGameTabs();
+      // Fetch all endings and render the selected one (or show picker)
+      fetch('/api/dev/endings')
+        .then((r) => r.json())
+        .then((endings) => {
+          const endingParam = params.get('ending');
+          const keyMap = { '1': 'forked', '2': 'inherited', '3': 'mutual', '4': 'soleSurvivor' };
+          const selectedKey = keyMap[endingParam];
+          if (selectedKey && endings[selectedKey]) {
+            showEnding(endings[selectedKey]);
+          } else {
+            // Show ending picker
+            const inner = document.querySelector('#screen-ending .ending-layout');
+            if (inner) {
+              inner.innerHTML = '<div style="display:flex;flex-direction:column;gap:12px;margin-top:12px;">'
+                + '<p style="color:var(--text-secondary);font-size:0.85rem;">엔딩을 선택하세요:</p>'
+                + '<a href="?dev=screen-ending&ending=1" class="verdict-card" style="text-decoration:none;"><span class="verdict-card-label">END 01: Forked</span><span class="verdict-card-desc">갈라진 선택</span></a>'
+                + '<a href="?dev=screen-ending&ending=2" class="verdict-card" style="text-decoration:none;"><span class="verdict-card-label">END 02: Inherited Process</span><span class="verdict-card-desc">물려받은 프로세스</span></a>'
+                + '<a href="?dev=screen-ending&ending=3" class="verdict-card" style="text-decoration:none;"><span class="verdict-card-label">END 03: Shared Guilt</span><span class="verdict-card-desc">공유된 죄</span></a>'
+                + '<a href="?dev=screen-ending&ending=4" class="verdict-card" style="text-decoration:none;"><span class="verdict-card-label">END 04: Sole Survivor</span><span class="verdict-card-desc">유일한 생존자</span></a>'
+                + '</div>';
+            }
+          }
+        });
     }
 
     const target = $(devScreen);

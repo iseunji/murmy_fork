@@ -16,6 +16,23 @@ const PORT = process.env.PORT || 4567;
 // Serve static files from ./public
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Dev API: return ending data for preview
+app.get('/api/dev/endings', (_req, res) => {
+  const endingKeys = ['forked', 'inherited', 'mutual', 'soleSurvivor'];
+  const result = {};
+  for (const key of endingKeys) {
+    const e = gameData.endings[key];
+    result[key] = {
+      title: e.title,
+      subtitle: e.subtitle,
+      narrative: e.narrative,
+      epilogue: e.epilogue,
+      truthReveal: gameData.truthReveal
+    };
+  }
+  res.json(result);
+});
+
 // SPA catch-all: serve index.html for every route
 app.get('*', (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));

@@ -924,7 +924,7 @@ body::before {
 }
 
 .lobby-note:last-of-type {
-  margin-bottom: 12px;
+  margin-bottom: 24px;
   color: var(--accent-blue);
 }
 

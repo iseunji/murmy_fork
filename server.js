@@ -110,7 +110,7 @@ function getMaskedComboHint(evidence, playerComboCards) {
   if (alreadyCombined) return evidence.comboHint;
 
   const comboIndex = gameData.combinations.indexOf(comboInfo) + 1;
-  return evidence.comboHint.replace("'" + comboInfo.title + "'", "'추가 증거 " + comboIndex + "'");
+  return evidence.comboHint.replace("\u2018" + comboInfo.title + "\u2019", "\u2018추가 증거 " + comboIndex + "\u2019");
 }
 
 // ---------------------------------------------------------------------------

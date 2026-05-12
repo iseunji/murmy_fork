@@ -2578,7 +2578,8 @@ body.tabs-visible .chat-topbar {
 
 /* ---- Character Goals Section ---- */
 .character-goals-section {
-  margin-top: 16px;
+  margin-top: 6px;
+  margin-bottom: 20px;
   padding: 14px 16px;
   background: var(--surface-raised);
   border: 1px solid var(--border);

@@ -301,69 +301,29 @@
 - 기존과 동일: 상대방 / AI(ARIA) / 자기 자신 중 선택
 - 둘 다 제출하면 결과 공개
 
-### 7.2 행동 단계 (후반 5분)
+### 7.2 선택지 (2026-05-12 변경)
 
-투표 결과 공개 후:
+- 공통: 상대 조교 지목, ARIA 지목
+- 하진(culprit)만: ARIA를 이용해 상대를 제거 (교수의 스마트폰 `ev_inv1_07` 소지 시에만 클라이언트 표시 + 서버 재검증)
+- "범인 없음" 선택지 삭제
 
-**범인의 행동 버튼 활성화 조건**:
-1. 범인이 카드 #10(삭제된 ARIA 대화 로그) + #13(ARIA 생성 이미지)을 보유
-2. 최종 투표에서 범인으로 지목되지 않음 (상대가 AI나 자기 자신을 지목)
+### 7.3 엔딩 분기 (2026-05-12 변경 — 3개 엔딩 체제)
 
-조건 충족 시 범인 화면에 [행동 실행] 버튼이 나타남:
-> "ARIA에게 최종 명령을 내릴 수 있습니다.
-> 실행하면 ARIA가 로봇 팔을 통해 상대를 제거합니다.
-> 모든 죄는 AI에게 전가됩니다."
+기존 END 03(Shared Guilt) 삭제, END 04를 END 03으로 변경.
 
-행동 미실행 시 → 기존 엔딩 로직 적용
-행동 실행 시 → END 04
+| 우선순위 | 조건 | 결과 |
+|---------|------|------|
+| 1 | 하진=제거 선택(스마트폰 소지) AND 도현≠하진 지목 | END 03: Sole Survivor (`soleSurvivor`) |
+| 2 | 도현=하진 지목 (하진 선택 무관) | END 02: Inherited Process (`inherited`) |
+| 3 | 도현=ARIA 지목 | END 01: Residual (`forked`) |
 
-### 7.3 엔딩 분기
+엣지 케이스:
+- 하진=제거 + 도현=하진 지목 → END 02 (도현의 지목이 우선, 하진 체포)
+- 하진=제거 + 도현=ARIA 지목 → END 03 (제거 성공)
 
-| 조건 | 엔딩 |
-|------|------|
-| 둘 다 AI 지목 | END 01: Forked |
-| 누군가 인간 지목 (상대 또는 자신) | END 02: Inherited Process |
-| 서로를 지목 | END 03: Shared Guilt |
-| 범인 미지목 + 조건 충족 + 행동 실행 | **END 04: Solo Survivor** |
-
-### 7.4 END 04: Solo Survivor
-
-내러티브:
-> 투표 결과가 공개된 직후, 서하진은 재빠르게 ARIA 터미널 앞에 섰다.
->
-> 키보드 위에 손가락을 올려놓는 순간, 이미 결심은 끝나 있었다.
->
-> "ARIA."
->
-> 커서가 깜빡인다.
->
-> "마지막 명령이야."
->
-> 로봇 팔이 다시 움직이기 시작한다. 이번에는 다른 방향으로.
->
-> 이도현이 소리를 듣고 고개를 돌렸을 때, 이미 늦었다.
-
-에필로그:
-> 경찰이 도착했을 때, 연구실에는 한 명의 생존자와 두 구의 시신이 있었다.
->
-> 서하진은 담담하게 진술했다.
->
-> "AI가 미쳤어요. 교수님을 죽이더니, 도현이까지... 저는 간신히 피했습니다."
->
-> ARIA의 로그는 이미 깨끗하게 삭제되어 있었다.
-> personality_layer의 조작 흔적도, 삭제된 대화 기록도, 모든 것이 사라졌다.
-> 남아 있는 것은 로봇 팔의 물리적 흔적과, 유일한 생존자의 증언뿐이었다.
->
-> 사건은 "AI 시스템의 자율적 오작동에 의한 사고"로 종결되었다.
->
-> 서하진은 학계에서 "AI 안전의 중요성을 몸소 증명한 생존자"로 알려지게 되었다.
-> 강연도 했다. 논문도 썼다. AI 윤리 위원회의 자문위원이 되었다.
->
-> 밤마다, 잠들기 전, 어둠 속에서 커서가 깜빡이는 것이 보인다.
->
-> 그것이 기억인지, 환각인지, 혹은 아직 꺼지지 않은 무언가의 신호인지.
->
-> 서하진은 알 수 없다. 알고 싶지도 않다.
+서버 측 유효성 검증:
+- `eliminatePartner` 선택 시 서버에서 culprit 역할 + `ev_inv1_07` 소지 여부 재검증
+- 조건 미충족 시 요청 무시 (클라이언트 조작 방지)
 
 ## 8. 미션 점수 집계
 
@@ -580,17 +540,20 @@
 
 ## 11. 엔딩 시스템
 
-### 11.0 엔딩 분기 조건
+### 11.0 엔딩 분기 조건 (2026-05-12 변경)
 
-| 서하진(범인) 선택 | 이도현(무고) 선택 | 결과 엔딩 |
-|---|---|---|
-| ARIA에게 명령 | 아무거나 | **END 04: Sole Survivor** |
-| ARIA | ARIA | **END 01: Forked** |
-| 상대 조교 | 상대 조교 | **END 03: Shared Guilt** |
-| ARIA | 상대 조교 | **END 02: Inherited Process** |
-| 상대 조교 | ARIA | **END 02: Inherited Process** |
-| 자백 | 아무거나 | **END 02: Inherited Process** |
-| ARIA/상대 | 자백 | **END 02: Inherited Process** |
+> **주의**: 이 섹션은 CLAUDE.md의 "엔딩 시스템" 항목이 최신 권위 문서입니다. 아래는 참고용 요약.
+
+| 우선순위 | 조건 | 결과 |
+|---------|------|------|
+| 1 | 하진=제거(스마트폰 소지) AND 도현≠하진 지목 | END 03: Sole Survivor |
+| 2 | 도현=하진 지목 (하진 선택 무관) | END 02: Inherited Process |
+| 3 | 도현=ARIA 지목 | END 01: Residual |
+
+- 기존 END 03(Shared Guilt) 삭제
+- 기존 END 04(Sole Survivor) → END 03으로 재번호
+- "범인 없음" / "자백" 선택지 삭제
+- 서버에서 `eliminatePartner` 유효성 재검증 (culprit 역할 + ev_inv1_07 소지)
 
 ### 11.0.1 엔딩 화면 구성
 
@@ -726,7 +689,7 @@
 >
 > 그 순간, 연구실 뒤편에서 로봇 구동음이 들리기 시작했다.
 
-### 11.3 END 03: Shared Guilt — 공유된 죄 (서로를 지목)
+### 11.3 ~~END 03: Shared Guilt~~ (삭제됨 — 2026-05-12)
 
 **내러티브:**
 > 두 사람은 동시에 같은 말을 했다.
@@ -764,7 +727,7 @@
 >
 > 저는 기억합니다.
 
-### 11.4 END 04: Sole Survivor — 유일한 생존자 (범인이 'ARIA에게 명령' 선택)
+### 11.4 END 03 (구 END 04): Sole Survivor — 유일한 생존자 (범인이 'ARIA에게 명령' 선택)
 
 **내러티브:**
 > 서하진은 결심했다. 목격자를 남길 수는 없다.
@@ -835,15 +798,17 @@
 - 기존 phase별 evidence를 새 구조로 재배치
 - `combinations` 객체 신규 추가 (조합 정의)
 - `missions` 객체 신규 추가 (역할별 미션 정의)
-- `endings.soloSurvivor` 신규 추가 (END 04)
+- `endings` 객체: `forked`(END 01), `inherited`(END 02), `soleSurvivor`(END 03)
+- 기존 Shared Guilt 엔딩 삭제, Solo Survivor를 END 03으로 재번호
 - 양쪽 `roles.briefing`에 미션 테이블 + ARIA 과거 이상 행동 추가
+- `characters` 배열 순서: professor → dohyun → hajin (2026-05-12)
 
 ### server.js 변경
 - `PHASE_ORDER` 업데이트
 - 토론 단계 소켓 이벤트 추가: `reveal-card`, `request-trade`, `accept-trade`, `combine-cards`
 - 카드 누적 관리: `room.playerCards[socketId]` (전체 게임 동안 유지)
-- 투표 후 행동 단계 로직 추가: `submit-action` 이벤트
-- `determineEnding` 함수에 END 04 분기 추가
+- `determineEnding` 함수: 3개 엔딩 우선순위 분기 (soleSurvivor → inherited → forked)
+- `submit-accusation` 핸들러: `eliminatePartner` 서버 측 유효성 검증 (culprit 역할 + ev_inv1_07 소지)
 - 미션 달성 집계 로직 추가
 
 ### public/app.js 변경
@@ -886,7 +851,9 @@
 ### 13.5 증거 카드 모달
 - 모든 모달(`.modal-overlay`)은 모바일 뷰 박스(390px) 내부에 제한: `left: 50%; transform: translateX(-50%); max-width: var(--container-max)`
 - 증거 상세 모달(`.evidence-detail`)은 세로 최대 높이 `92dvh`, `flex-direction: column`으로 세로 형태
-- `.evidence-detail-body`는 `flex: 1; overflow-y: auto`로 내용이 유연하게 확장
+- `.evidence-detail-body-wrap`은 `display: flex; flex-direction: column` (2026-05-12 수정)
+- `.evidence-detail-body`는 `flex: 1; min-height: 0; overflow-y: auto`로 스크롤 가능 (기존 `height: 100%`에서 변경)
+- 하단 그라디언트 힌트: 스크롤 가능 시 표시, 바닥 도달 시 페이드아웃
 - 일반 모달 `.modal-content`의 `max-height`는 `90dvh`
 
 ### 13.6 인트로 화면 헤더
@@ -930,18 +897,35 @@ CSS 클래스:
 - 로비 화면(`#screen-lobby`): `justify-content: flex-start` + `padding-top: 12dvh`로 콘텐츠를 상단 12% 위치에서 시작
 - 대기 화면(`.waiting-layout`): 기존 flexbox 세로 중앙 정렬 유지
 
-### 13.15 letter-spacing 중앙 정렬 보정
+### 13.12a letter-spacing 중앙 정렬 보정
 - `letter-spacing`이 적용된 중앙 정렬 텍스트 요소에 동일 값의 `text-indent`를 추가하여 좌측 치우침 보정
 - CSS `letter-spacing`은 각 글자 뒤에 여백을 추가하므로, 마지막 글자 뒤의 여백 때문에 텍스트가 좌측으로 치우쳐 보이는 문제가 있음
 - `text-indent`로 첫 글자 앞에 동일한 여백을 추가하여 시각적 중앙 정렬 달성
 - 적용 대상: `.game-title`, `.game-subtitle`, `.game-meta`, `.room-created-label`, `.room-code-display`, `.waiting-label`, `.input-room-code`, `.ending-subtitle`, `.combo-success-badge`, 미디어 쿼리 `.room-code-display`
 
-### 13.13 배경색 구분
+### 13.13 캐릭터 선택/정보 UI (2026-05-12 추가)
+
+- 캐릭터 표시 순서: 교수(NPC) → 이도현 → 서하진 (game-data.js characters 배열 순서)
+- 인물/목표 탭 동적 정렬: NPC → 나(선택한 캐릭터) → 상대
+- NPC 태그: `피해자·선택불가` (기존 `NPC`에서 변경)
+- NPC 카드 호버 완전 비활성화: `pointer-events: none`
+- 캐릭터 이미지 캐시 버스팅: `?v=2` 쿼리 파라미터
+
+### 13.14 스크린 캡처 방지 (2026-05-12 추가)
+
+- 허용 화면: `screen-title`, `screen-lobby`, `screen-waiting`
+- 차단 화면: 인물 선택 이후 모든 게임 진행 화면
+- `showScreen()`에서 `body.capture-protected` 클래스 토글
+- `visibilitychange`(hidden) / `window.blur` 시 `#capture-blackout` 검정 오버레이 표시
+- `window.focus` 복귀 시 오버레이 해제
+- CSS: `user-select: none`, `-webkit-touch-callout: none`
+
+### 13.15 배경색 구분 (기존)
 - `html` 배경색을 `#383838`로 설정하여 모바일 뷰박스 바깥 영역을 가운데 콘텐츠(`--bg: #212121`)보다 연하게 표시
 - 가운데 게임 화면과 바깥 배경이 시각적으로 구별됨
 - `body`의 `box-shadow` 제거 (그림자 없음)
 
-### 13.14 사운드 버튼 위치
+### 13.16 사운드 버튼 위치
 - 타이틀/로비/대기/캐릭터 선택 등 게임 시작 전 화면에는 사운드 버튼 없음 (음악이 사건 개요부터 시작되므로 불필요)
 - 게임 진행 중(탭 바 표시 시)에만 탭 바 아래 `game-sound-bar`에 사운드 토글 버튼 표시
 - 기존의 화면 우상단 floating 사운드 버튼(`btn-sound-toggle`)은 제거됨

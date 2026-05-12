@@ -99,6 +99,21 @@ function buildEvidenceList(phaseId, role) {
 }
 
 // ---------------------------------------------------------------------------
+// Helper: mask combo result name until the combo is actually unlocked
+// ---------------------------------------------------------------------------
+function getMaskedComboHint(evidence, playerComboCards) {
+  if (!evidence || !evidence.comboHint) return undefined;
+  const comboInfo = (gameData.combinations || []).find((c) => c.requires.includes(evidence.id));
+  if (!comboInfo) return evidence.comboHint;
+
+  const alreadyCombined = (playerComboCards || []).some((c) => c.id === comboInfo.id);
+  if (alreadyCombined) return evidence.comboHint;
+
+  const comboIndex = gameData.combinations.indexOf(comboInfo) + 1;
+  return evidence.comboHint.replace("'" + comboInfo.title + "'", "'추가 증거 " + comboIndex + "'");
+}
+
+// ---------------------------------------------------------------------------
 // Helper: find evidence by ID across ALL phases (global lookup)
 // ---------------------------------------------------------------------------
 function findEvidenceAnyPhase(evidenceId) {
@@ -747,6 +762,7 @@ io.on('connection', (socket) => {
     const comboInfo = (gameData.combinations || []).find((c) => c.requires.includes(evidenceId));
     let canCombine = false;
     let comboId = undefined;
+    let comboPartnerTitle = undefined;
     if (comboInfo) {
       comboId = comboInfo.id;
       const playerCards = (room.allCollectedEvidence[socket.id] || []).map((e) => e.id);
@@ -754,6 +770,12 @@ io.on('connection', (socket) => {
       // Don't allow if already combined
       const alreadyCombined = (room.comboCards[socket.id] || []).some((c) => c.id === comboInfo.id);
       if (alreadyCombined) canCombine = false;
+      // Find the partner card's title for confirmation UI
+      const partnerId = comboInfo.requires.find((r) => r !== evidenceId);
+      if (partnerId) {
+        const partnerEvidence = findEvidenceAnyPhase(partnerId);
+        if (partnerEvidence) comboPartnerTitle = partnerEvidence.title;
+      }
     }
 
     // Check if donate/exchange are available (discussion phases only)
@@ -768,9 +790,10 @@ io.on('connection', (socket) => {
       type: evidence.type,
       content: evidence.content,
       image: evidence.image || undefined,
-      comboHint: evidence.comboHint || undefined,
+      comboHint: getMaskedComboHint(evidence, room.comboCards[socket.id]),
       canCombine,
       comboId,
+      comboPartnerTitle,
       canDonate,
       canExchange,
       isComboCard: hasInCombo,
@@ -877,7 +900,7 @@ io.on('connection', (socket) => {
         type: fullEvidence.type,
         content: fullEvidence.content,
         image: fullEvidence.image || undefined,
-        comboHint: fullEvidence.comboHint || undefined,
+        comboHint: getMaskedComboHint(fullEvidence, room.comboCards[socket.id]),
         metadata: fullEvidence.metadata || undefined,
       });
     }

@@ -670,6 +670,11 @@ body::before {
   color: #ffc200;
 }
 
+.text-section-header {
+  color: var(--accent-amber);
+  font-family: var(--font-display);
+}
+
 /* ---- Dialogue reading guide ---- */
 .dialogue-guide {
   color: #6cb4ee;
@@ -2701,6 +2706,25 @@ body.tabs-visible .chat-topbar {
 }
 .combo-detail .evidence-detail-body {
   text-align: left;
+}
+
+/* ---- Action Confirm Modal ---- */
+.action-confirm-content {
+  max-width: 300px;
+  width: 85vw;
+  padding: 24px 20px;
+  text-align: center;
+}
+.action-confirm-message {
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+.action-confirm-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
 }
 
 /* ---- Trade Proposal Modal ---- */

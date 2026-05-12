@@ -60,6 +60,8 @@ const state = {
   reachedPhases: new Set(),// Phase IDs the player has entered
   completedPhases: new Set(),// Phase IDs that have been completed
   currentEvidenceId: null, // ID of the evidence currently open in modal
+  currentEvidenceTitle: '', // Title of the evidence currently open in modal
+  currentComboPartnerTitle: '', // Title of the partner card for combo
   isDiscussion: false,     // Whether current phase is a discussion phase
   allCharacters: [],       // All character objects for "인물 정보" tab
   phaseDuration: 0,        // Total duration (seconds) for the current phase
@@ -415,8 +417,8 @@ async function streamText(element, text, opts = {}) {
     for (let li = 0; li < lines.length; li++) {
       if (li > 0) p.appendChild(document.createElement('br'));
 
-      // Split line into segments: reading guides and <<condition>> highlights
-      const segments = lines[li].split(/(\([^)]*읽어주세요\)|<<.+?>>)/);
+      // Split line into segments: reading guides, <<condition>> highlights, and [section headers]
+      const segments = lines[li].split(/(\([^)]*읽어주세요\)|<<.+?>>|\[[^\]]+\])/);
       for (const seg of segments) {
         if (/^\([^)]*읽어주세요\)$/.test(seg)) {
           const span = document.createElement('span');
@@ -427,6 +429,11 @@ async function streamText(element, text, opts = {}) {
           const span = document.createElement('span');
           span.className = 'text-highlight-condition';
           span.textContent = seg.slice(2, -2);
+          p.appendChild(span);
+        } else if (/^\[.+\]$/.test(seg)) {
+          const span = document.createElement('span');
+          span.className = 'text-section-header';
+          span.textContent = seg;
           p.appendChild(span);
         } else {
           p.appendChild(document.createTextNode(seg));
@@ -1682,7 +1689,18 @@ function renderEvidenceTabContent(container, evidenceList, narrativeText) {
   if (narrativeText) {
     const narrativeDiv = document.createElement('div');
     narrativeDiv.className = 'tab-panel-narrative';
-    narrativeDiv.textContent = narrativeText;
+    // Render with [section header] highlighting
+    const parts = narrativeText.split(/(\[[^\]]+\])/);
+    for (const part of parts) {
+      if (/^\[.+\]$/.test(part)) {
+        const span = document.createElement('span');
+        span.className = 'text-section-header';
+        span.textContent = part;
+        narrativeDiv.appendChild(span);
+      } else {
+        narrativeDiv.appendChild(document.createTextNode(part));
+      }
+    }
     container.appendChild(narrativeDiv);
 
     const separator = document.createElement('hr');
@@ -2300,6 +2318,8 @@ socket.on('evidence-detail', (data) => {
   const contentEl = $('evidence-modal-content');
 
   state.currentEvidenceId = data.id;
+  state.currentEvidenceTitle = data.title || '';
+  state.currentComboPartnerTitle = data.comboPartnerTitle || '';
 
   if (titleEl) titleEl.textContent = data.title || '';
   if (typeEl) {
@@ -2697,12 +2717,62 @@ function bindEvents() {
 
   // ---- Evidence Action Buttons ----
 
+  // ---- Action Confirm Popup ----
+
+  let pendingActionConfirm = null;
+
+  function showActionConfirm(message, onConfirm) {
+    const modal = $('action-confirm-modal');
+    const msgEl = $('action-confirm-message');
+    if (!modal || !msgEl) return;
+    msgEl.textContent = message;
+    pendingActionConfirm = onConfirm;
+    modal.removeAttribute('hidden');
+    modal.classList.add('active');
+  }
+
+  function closeActionConfirm() {
+    const modal = $('action-confirm-modal');
+    if (modal) {
+      modal.setAttribute('hidden', '');
+      modal.classList.remove('active');
+    }
+    pendingActionConfirm = null;
+  }
+
+  const btnActionConfirm = $('btn-action-confirm');
+  if (btnActionConfirm) {
+    btnActionConfirm.addEventListener('click', () => {
+      SFX.click();
+      if (pendingActionConfirm) pendingActionConfirm();
+      closeActionConfirm();
+    });
+  }
+
+  const btnActionCancel = $('btn-action-cancel');
+  if (btnActionCancel) {
+    btnActionCancel.addEventListener('click', () => {
+      SFX.click();
+      closeActionConfirm();
+    });
+  }
+
+  const actionConfirmModal = $('action-confirm-modal');
+  if (actionConfirmModal) {
+    actionConfirmModal.addEventListener('click', (e) => {
+      if (e.target === actionConfirmModal) closeActionConfirm();
+    });
+  }
+
   const btnDonateCard = $('btn-donate-card');
   if (btnDonateCard) {
     btnDonateCard.addEventListener('click', () => {
       if (!state.currentEvidenceId) return;
       SFX.click();
-      socket.emit('donate-card', { cardId: state.currentEvidenceId });
+      showActionConfirm(
+        `'${state.currentEvidenceTitle}' 카드를 상대에게 양도하시겠습니까?`,
+        () => socket.emit('donate-card', { cardId: state.currentEvidenceId })
+      );
     });
   }
 
@@ -2711,7 +2781,10 @@ function bindEvents() {
     btnExchangeCard.addEventListener('click', () => {
       if (!state.currentEvidenceId) return;
       SFX.click();
-      socket.emit('trade-propose', { cardId: state.currentEvidenceId });
+      showActionConfirm(
+        `'${state.currentEvidenceTitle}' 카드를 교환 제안하시겠습니까?`,
+        () => socket.emit('trade-propose', { cardId: state.currentEvidenceId })
+      );
     });
   }
 
@@ -2722,7 +2795,11 @@ function bindEvents() {
       const comboId = btnCombineCard.dataset.comboId;
       if (!comboId) return;
       SFX.click();
-      socket.emit('combine-cards', { comboId });
+      const partnerName = state.currentComboPartnerTitle;
+      showActionConfirm(
+        `'${state.currentEvidenceTitle}'과(와) '${partnerName}' 카드를 조합하시겠습니까?`,
+        () => socket.emit('combine-cards', { comboId })
+      );
     });
   }
 

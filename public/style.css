@@ -1635,23 +1635,8 @@ body::before {
 .evidence-card.collected {
   border-color: var(--border-light);
 }
-.evidence-card.viewed {
-  opacity: 0.55;
-}
-.evidence-card.viewed:hover {
-  opacity: 0.8;
-}
 
-.evidence-badge {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: bold;
-  color: var(--accent-amber);
-  margin-left: auto;
-  flex-shrink: 0;
-}
-
-/* NEW badge (dot) */
+/* NEW badge */
 .evidence-badge-new {
   position: absolute;
   top: 8px;

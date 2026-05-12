@@ -864,11 +864,9 @@ function renderEvidenceCards(evidenceList) {
     card.className = 'evidence-card';
     card.dataset.id = ev.id;
 
-    // Mark as new or viewed
+    // Mark as new if the player hasn't viewed this evidence yet.
     if (!state.viewedEvidence.has(ev.id)) {
       card.classList.add('new');
-    } else {
-      card.classList.add('viewed');
     }
 
     const icon = document.createElement('span');
@@ -940,11 +938,10 @@ function openEvidenceModal(evidenceId) {
   // Mark evidence as viewed in local state.
   state.viewedEvidence.add(evidenceId);
 
-  // Update the card in the grid to remove "new" styling and mark as viewed.
+  // Update the card in the grid to remove "new" styling.
   const card = document.querySelector(`.evidence-card[data-id="${evidenceId}"]`);
   if (card) {
     card.classList.remove('new');
-    card.classList.add('viewed');
     const badge = card.querySelector('.evidence-badge');
     if (badge) badge.remove();
   }
@@ -1078,7 +1075,6 @@ function renderCollectedEvidence(collectedList) {
   collectedList.forEach((ev) => {
     const card = document.createElement('div');
     card.className = 'evidence-card collected';
-    if (state.viewedEvidence.has(ev.id)) card.classList.add('viewed');
     card.dataset.id = ev.id;
 
     const icon = document.createElement('span');
@@ -1091,14 +1087,6 @@ function renderCollectedEvidence(collectedList) {
 
     card.appendChild(icon);
     card.appendChild(title);
-
-    // Add "NEW" badge for unseen evidence
-    if (!state.viewedEvidence.has(ev.id)) {
-      const badge = document.createElement('span');
-      badge.className = 'evidence-badge';
-      badge.textContent = 'NEW';
-      card.appendChild(badge);
-    }
 
     if (ev.tag) {
       const tag = document.createElement('span');

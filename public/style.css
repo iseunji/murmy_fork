@@ -662,7 +662,7 @@ body::before {
 
 /* ---- Condition / Yellow highlight ---- */
 .text-highlight-condition {
-  color: #e8c84a;
+  color: #ffc200;
   font-size: 0.85em;
 }
 

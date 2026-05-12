@@ -2580,6 +2580,9 @@ socket.on('error', (data) => {
 
 socket.on('disconnect', () => {
   showDisconnectOverlay();
+  ambient.stop();
+  state.ambientStarted = false;
+  state.bgmStarted = false;
 });
 
 socket.on('connect', () => {
@@ -3000,6 +3003,11 @@ function resetGameState() {
   state.currentEvidenceId = null;
   state.isDiscussion = false;
   state.allCharacters = [];
+
+  // Stop all audio
+  ambient.stop();
+  state.ambientStarted = false;
+  state.bgmStarted = false;
 
   // Clear saved session so refresh goes to title screen.
   try { sessionStorage.removeItem('murmy_state'); } catch (_) {}

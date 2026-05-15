@@ -1313,6 +1313,23 @@ async function showEnding(data) {
     epilogueBody.classList.add('fade-in-text');
   }
 
+  // --- Result Summary ---
+  const summaryEl = $('result-summary');
+  if (summaryEl && data.resultSummary && data.resultSummary.length > 0) {
+    summaryEl.innerHTML = '';
+    for (let i = 0; i < data.resultSummary.length; i++) {
+      const p = document.createElement('p');
+      p.textContent = data.resultSummary[i];
+      // Last line is the winner announcement
+      if (i === data.resultSummary.length - 1) {
+        p.className = 'result-winner';
+      }
+      summaryEl.appendChild(p);
+    }
+    await sleep(1500);
+    summaryEl.classList.add('visible');
+  }
+
   // --- Show restart button ---
   const restartBtn = $('btn-restart');
   if (restartBtn) {
@@ -2267,27 +2284,25 @@ socket.on('phase-data', async (data) => {
 
   if (isVerdictPhase) {
     showScreen('screen-verdict');
-    // Append character name to verdict title.
     const verdictTitle = document.querySelector('.verdict-title');
     if (verdictTitle) verdictTitle.textContent = `최종 판결${charSuffix()}`;
-    // Reset verdict UI
-    const verdictButtons = $('verdict-buttons');
-    const verdictWaiting = $('verdict-waiting');
-    if (verdictButtons) verdictButtons.style.display = '';
-    if (verdictWaiting) verdictWaiting.style.display = 'none';
+
+    // Hide all sub-phases initially
+    hideAll('verdict-action-phase', 'verdict-action-waiting', 'verdict-vote-phase', 'verdict-vote-waiting');
+
     state.hasAccused = false;
-    // Culprit: always show ARIA 제거 button, but disable if no smartphone
-    const btnEliminate = $('btn-eliminate-partner');
-    const eliminateHint = $('eliminate-require-hint');
-    if (state.role === 'culprit') {
-      if (btnEliminate) {
-        const hasPhone = state.allCollectedEvidence.some((e) => e.id === 'ev_inv1_07');
-        btnEliminate.hidden = false;
-        btnEliminate.disabled = !hasPhone;
-        if (eliminateHint) eliminateHint.hidden = hasPhone;
-      }
+    state.hasActed = false;
+
+    // Start action phase based on role
+    const info = data.actionPhaseInfo;
+    if (info && info.yourTurn) {
+      // Innocent (도현): show action choices
+      showActionPhaseForInnocent(info.canConfiscate);
     } else {
-      if (btnEliminate) btnEliminate.hidden = true;
+      // Culprit (하진): wait for innocent's action
+      showEl('verdict-action-waiting');
+      const waitText = $('action-waiting-text');
+      if (waitText) waitText.textContent = '상대방의 행동을 기다리는 중...';
     }
     return;
   }
@@ -2733,13 +2748,35 @@ socket.on('timer-update', (data) => {
   updateTimers(data.remaining);
 });
 
-// ---- Accusations ----
+// ---- Action Phase Events ----
+
+socket.on('action-turn', (data) => {
+  // It's this player's turn to act (culprit receiving turn after innocent acted)
+  hideAll('verdict-action-waiting');
+  state.hasActed = false;
+  showActionPhaseForCulprit(data.canEliminate);
+});
+
+socket.on('action-waiting', () => {
+  // This player should wait (innocent waiting for culprit's action)
+  hideAll('verdict-action-phase');
+  showEl('verdict-action-waiting');
+  const waitText = $('action-waiting-text');
+  if (waitText) waitText.textContent = '상대방의 행동을 기다리는 중...';
+});
+
+socket.on('vote-phase-start', () => {
+  // Both players enter the vote phase
+  hideAll('verdict-action-phase', 'verdict-action-waiting');
+  showEl('verdict-vote-phase');
+});
+
+// ---- Vote Phase Events ----
 
 socket.on('accusation-received', (data) => {
-  // Another accusation was received; update the waiting state if needed.
-  const waitingEl = $('verdict-waiting');
+  const waitingEl = $('verdict-vote-waiting');
   if (waitingEl && state.hasAccused) {
-    waitingEl.textContent = `\uD310\uACB0 \uB300\uAE30 \uC911... (${data.count}/2)`; // Waiting for verdict...
+    waitingEl.querySelector('p').textContent = `투표 대기 중... (${data.count}/2)`;
   }
 });
 
@@ -3180,28 +3217,33 @@ function bindEvents() {
     });
   }
 
-  // ---- Verdict Screen ----
+  // ---- Verdict Screen: Action Phase ----
 
-  const btnAccusePartner = $('btn-accuse-partner');
-  if (btnAccusePartner) {
-    btnAccusePartner.addEventListener('click', () => {
-      submitAccusation('partnerHuman');
-    });
+  const btnActionConfiscate = $('btn-action-confiscate');
+  if (btnActionConfiscate) {
+    btnActionConfiscate.addEventListener('click', () => submitAction('confiscate'));
   }
 
-  const btnAccuseAi = $('btn-accuse-ai');
-  if (btnAccuseAi) {
-    btnAccuseAi.addEventListener('click', () => {
-      submitAccusation('aria');
-    });
+  const btnActionEliminate = $('btn-action-eliminate');
+  if (btnActionEliminate) {
+    btnActionEliminate.addEventListener('click', () => submitAction('eliminate'));
   }
 
+  const btnActionPass = $('btn-action-pass');
+  if (btnActionPass) {
+    btnActionPass.addEventListener('click', () => submitAction('pass'));
+  }
 
-  const btnEliminatePartner = $('btn-eliminate-partner');
-  if (btnEliminatePartner) {
-    btnEliminatePartner.addEventListener('click', () => {
-      submitAccusation('eliminatePartner');
-    });
+  // ---- Verdict Screen: Vote Phase ----
+
+  const btnVotePartner = $('btn-vote-partner');
+  if (btnVotePartner) {
+    btnVotePartner.addEventListener('click', () => submitAccusation('partnerHuman'));
+  }
+
+  const btnVoteAi = $('btn-vote-ai');
+  if (btnVoteAi) {
+    btnVoteAi.addEventListener('click', () => submitAccusation('aria'));
   }
 
   // ---- Ending Screen ----
@@ -3241,11 +3283,96 @@ function sendAiMessage() {
   input.focus();
 }
 
-/**
- * Submit the player's accusation and update the verdict UI.
- *
- * @param {'partnerHuman'|'aria'|'self'} target - Who the player is accusing.
- */
+/* ==========================================================================
+   VERDICT: Helper functions for action/vote phases
+   ========================================================================== */
+
+/** Hide multiple elements by ID */
+function hideAll(...ids) {
+  for (const id of ids) {
+    const el = $(id);
+    if (el) el.hidden = true;
+  }
+}
+
+/** Show a single element by ID */
+function showEl(id) {
+  const el = $(id);
+  if (el) el.hidden = false;
+}
+
+/** Show action phase UI for innocent (도현) */
+function showActionPhaseForInnocent(canConfiscate) {
+  hideAll('verdict-action-waiting', 'verdict-vote-phase', 'verdict-vote-waiting');
+  showEl('verdict-action-phase');
+
+  const title = $('action-phase-title');
+  const desc = $('action-phase-desc');
+  if (title) title.textContent = '행동 단계';
+  if (desc) desc.textContent = '경찰이 오기 전, 행동할 수 있는 마지막 기회입니다.';
+
+  // Show/hide confiscate button based on card ownership
+  const btnConfiscate = $('btn-action-confiscate');
+  if (btnConfiscate) btnConfiscate.hidden = !canConfiscate;
+
+  // Hide culprit-only buttons
+  const btnEliminate = $('btn-action-eliminate');
+  const btnEliminateDisabled = $('btn-action-eliminate-disabled');
+  if (btnEliminate) btnEliminate.hidden = true;
+  if (btnEliminateDisabled) btnEliminateDisabled.hidden = true;
+
+  showEl('btn-action-pass');
+}
+
+/** Show action phase UI for culprit (하진) */
+function showActionPhaseForCulprit(canEliminate) {
+  hideAll('verdict-action-waiting', 'verdict-vote-phase', 'verdict-vote-waiting');
+  showEl('verdict-action-phase');
+
+  const title = $('action-phase-title');
+  const desc = $('action-phase-desc');
+  if (title) title.textContent = '행동 단계';
+  if (desc) desc.textContent = '경찰이 오기 전, 행동할 수 있는 마지막 기회입니다.';
+
+  // Hide innocent-only button
+  const btnConfiscate = $('btn-action-confiscate');
+  if (btnConfiscate) btnConfiscate.hidden = true;
+
+  // Show eliminate button based on phone possession
+  const btnEliminate = $('btn-action-eliminate');
+  const btnEliminateDisabled = $('btn-action-eliminate-disabled');
+  if (canEliminate) {
+    if (btnEliminate) btnEliminate.hidden = false;
+    if (btnEliminateDisabled) btnEliminateDisabled.hidden = true;
+  } else {
+    if (btnEliminate) btnEliminate.hidden = true;
+    if (btnEliminateDisabled) btnEliminateDisabled.hidden = false;
+  }
+
+  showEl('btn-action-pass');
+}
+
+/** Submit action (confiscate / eliminate / pass) */
+function submitAction(action) {
+  if (state.hasActed) return;
+
+  SFX.click();
+  state.hasActed = true;
+
+  socket.emit('submit-action', { action });
+
+  // Show waiting state
+  hideAll('verdict-action-phase');
+  showEl('verdict-action-waiting');
+  const waitText = $('action-waiting-text');
+  if (waitText) {
+    waitText.textContent = action === 'pass'
+      ? '상대방의 행동을 기다리는 중...'
+      : '상대방의 행동을 기다리는 중...';
+  }
+}
+
+/** Submit vote (partnerHuman / aria) */
 function submitAccusation(target) {
   if (state.hasAccused) return;
 
@@ -3254,18 +3381,8 @@ function submitAccusation(target) {
 
   socket.emit('submit-accusation', { target });
 
-  // Disable all accusation buttons.
-  const buttonsContainer = $('verdict-buttons');
-  if (buttonsContainer) {
-    buttonsContainer.classList.add('hidden');
-  }
-
-  // Show waiting message.
-  const waitingEl = $('verdict-waiting');
-  if (waitingEl) {
-    waitingEl.classList.remove('hidden');
-    waitingEl.textContent = '\uC0C1\uB300 \uD50C\uB808\uC774\uC5B4\uC758 \uD310\uACB0\uC744 \uAE30\uB2E4\uB9AC\uB294 \uC911...'; // Waiting for the other player's verdict...
-  }
+  hideAll('verdict-vote-phase');
+  showEl('verdict-vote-waiting');
 }
 
 /**

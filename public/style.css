@@ -2120,6 +2120,56 @@ body::before {
   line-height: 1.5;
 }
 
+/* Action/Vote Phase Labels */
+.verdict-phase-label {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.verdict-phase-desc {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  line-height: 1.5;
+}
+
+.verdict-phase-notice {
+  font-size: 0.7rem;
+  color: var(--text-muted, rgba(255, 255, 255, 0.35));
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+/* Culprit-only card styling */
+.verdict-card--culprit-only {
+  border-color: rgba(139, 37, 0, 0.3);
+  background: rgba(80, 0, 0, 0.06);
+}
+
+.verdict-card--culprit-only:hover {
+  border-color: var(--accent-red);
+  background: rgba(139, 37, 0, 0.12);
+}
+
+/* Disabled action card */
+.verdict-card--disabled {
+  opacity: 0.4;
+  pointer-events: none;
+  border-style: dashed;
+}
+
+/* Pass button */
+.verdict-card--pass {
+  border-style: dashed;
+  opacity: 0.7;
+}
+
+.verdict-card--pass:hover {
+  opacity: 1;
+}
+
 /* Verdict Waiting */
 .verdict-waiting {
   text-align: center;
@@ -2328,6 +2378,36 @@ body::before {
 @keyframes cursorBlink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
+}
+
+/* Result Summary (after epilogue) */
+.result-summary {
+  opacity: 0;
+  margin-top: 24px;
+  padding: 16px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  text-align: center;
+  transition: opacity 0.8s ease;
+}
+
+.result-summary.visible {
+  opacity: 1;
+}
+
+.result-summary p {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+  line-height: 1.7;
+}
+
+.result-summary .result-winner {
+  margin-top: 8px;
+  font-weight: 700;
+  color: #ffc200;
+  font-size: 0.9rem;
 }
 
 

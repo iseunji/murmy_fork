@@ -318,27 +318,62 @@
     </header>
 
     <div class="screen-inner verdict-layout">
-      <div class="verdict-choices" id="verdict-buttons">
-        <button class="verdict-card" id="btn-accuse-partner" data-verdict="partner">
-          <span class="verdict-card-label">상대 조교</span>
-          <span class="verdict-card-desc">상대방이 범인이라고 고발합니다.</span>
-        </button>
 
-        <button class="verdict-card" id="btn-accuse-ai" data-verdict="aria">
-          <span class="verdict-card-label">ARIA</span>
-          <span class="verdict-card-desc">인공지능 ARIA가 범인이라고 고발합니다.</span>
-        </button>
-
-        <button class="verdict-card verdict-card--culprit-only" id="btn-eliminate-partner" data-verdict="eliminate" hidden disabled>
-          <span class="verdict-card-label">ARIA를 이용해 상대를 제거</span>
-          <span class="verdict-card-desc">ARIA를 시켜 목격자를 제거하고, 모든 죄를 AI에게 뒤집어씌웁니다.</span>
-          <span class="verdict-card-require" id="eliminate-require-hint">교수의 스마트폰이 필요합니다</span>
-        </button>
+      <!-- === ACTION PHASE === -->
+      <div id="verdict-action-phase" hidden>
+        <h3 class="verdict-phase-label" id="action-phase-title">행동 단계</h3>
+        <p class="verdict-phase-desc" id="action-phase-desc"></p>
+        <p class="verdict-phase-notice">각 인물의 행동은 즉각적으로 반영되거나, 엔딩의 서사에서 설명합니다.</p>
+        <div class="verdict-choices" id="action-buttons">
+          <!-- Innocent: confiscate -->
+          <button class="verdict-card" id="btn-action-confiscate" hidden>
+            <span class="verdict-card-label">교수의 스마트폰 압수</span>
+            <span class="verdict-card-desc">수사를 위해 상대가 보유한 교수의 스마트폰을 가져옵니다.</span>
+          </button>
+          <!-- Culprit: eliminate -->
+          <button class="verdict-card verdict-card--culprit-only" id="btn-action-eliminate" hidden>
+            <span class="verdict-card-label">ARIA를 이용해 상대를 제거</span>
+            <span class="verdict-card-desc">ARIA에 제거 명령을 내려 목격자를 제거하고, 모든 죄를 AI에게 뒤집어씌웁니다.</span>
+          </button>
+          <button class="verdict-card verdict-card--disabled" id="btn-action-eliminate-disabled" hidden disabled>
+            <span class="verdict-card-label">ARIA를 이용해 상대를 제거</span>
+            <span class="verdict-card-desc">ARIA에 제거 명령을 내려 목격자를 제거하고, 모든 죄를 AI에게 뒤집어씌웁니다.</span>
+            <span class="verdict-card-require">교수의 스마트폰이 필요합니다</span>
+          </button>
+          <!-- Common: pass -->
+          <button class="verdict-card verdict-card--pass" id="btn-action-pass">
+            <span class="verdict-card-label">행동하지 않음</span>
+            <span class="verdict-card-desc">아무 행동도 하지 않고 넘어갑니다.</span>
+          </button>
+        </div>
       </div>
 
-      <div class="verdict-waiting" id="verdict-waiting" hidden>
-        <p class="pulse">상대방의 판결을 기다리는 중...</p>
+      <!-- === ACTION WAITING === -->
+      <div id="verdict-action-waiting" hidden>
+        <p class="pulse" id="action-waiting-text">상대방의 행동을 기다리는 중...</p>
       </div>
+
+      <!-- === VOTE PHASE === -->
+      <div id="verdict-vote-phase" hidden>
+        <h3 class="verdict-phase-label">투표 단계</h3>
+        <p class="verdict-phase-desc">누구를 범인으로 지목하시겠습니까?</p>
+        <div class="verdict-choices" id="vote-buttons">
+          <button class="verdict-card" id="btn-vote-partner" data-verdict="partner">
+            <span class="verdict-card-label">상대 조교</span>
+            <span class="verdict-card-desc">상대방이 범인이라고 지목합니다.</span>
+          </button>
+          <button class="verdict-card" id="btn-vote-ai" data-verdict="aria">
+            <span class="verdict-card-label">ARIA</span>
+            <span class="verdict-card-desc">인공지능 ARIA가 범인이라고 지목합니다.</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- === VOTE WAITING === -->
+      <div id="verdict-vote-waiting" hidden>
+        <p class="pulse">상대방의 투표를 기다리는 중...</p>
+      </div>
+
     </div>
   </section>
 
@@ -376,6 +411,10 @@
             <span class="terminal-cursor" aria-hidden="true"></span>
           </div>
         </div>
+      </div>
+
+      <div class="result-summary" id="result-summary">
+        <!-- Result summary lines injected by JS -->
       </div>
 
       <button class="btn btn-primary btn-bottom" id="btn-restart">처음으로</button>

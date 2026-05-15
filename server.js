@@ -210,6 +210,23 @@ function sendPhaseData(room) {
       ? (room.allCollectedEvidence[socket.id] || []).map((e) => ({ id: e.id, title: e.title, type: e.type }))
       : [];
 
+    // For verdict phase, include action phase info
+    let actionPhaseInfo = null;
+    if (phaseId === 'accusation') {
+      // Initialize action sub-phase tracking
+      if (!room.actionPhase) {
+        room.actionPhase = 'action-innocent'; // 도현 acts first
+        room.actions = {};
+      }
+      const myEvidence = (room.allCollectedEvidence[socket.id] || []).map((e) => e.id);
+      if (role === 'innocent') {
+        const canConfiscate = myEvidence.includes('ev_inv1_09') && myEvidence.includes('ev_inv2_07');
+        actionPhaseInfo = { yourTurn: true, canConfiscate };
+      } else {
+        actionPhaseInfo = { yourTurn: false };
+      }
+    }
+
     socket.emit('phase-data', {
       phaseId,
       title: phase.title || phaseId,
@@ -222,6 +239,7 @@ function sendPhaseData(room) {
       discussionRules,
       isDiscussion,
       collectedEvidence,
+      actionPhaseInfo,
     });
 
     // Auto-send AI greeting when entering the aria (AI chat) phase
@@ -366,41 +384,128 @@ function advancePhase(room) {
     startPhaseTimer(room);
   } else {
     // After the last phase (verdict), move to ending
-    // Ending is triggered by accusations, not by timer, so this is a fallback
-    room.gameState = 'ending';
-    console.log(`[Room ${room.code}] Phase transition: ${currentPhase} -> ending`);
+    // If timer expired and action/vote not complete, auto-pass and auto-vote
+    if (currentPhase === 'accusation') {
+      // Auto-complete action phase if still in progress
+      if (room.actionPhase === 'action-innocent') {
+        room.actions.innocent = 'pass';
+        room.actionPhase = 'action-culprit';
+        room.actions.culprit = 'pass';
+        room.actionPhase = 'vote';
+      } else if (room.actionPhase === 'action-culprit') {
+        room.actions.culprit = 'pass';
+        room.actionPhase = 'vote';
+      }
+
+      // Auto-vote aria for any player who hasn't voted
+      for (const s of room.players) {
+        if (s && !room.accusations[s.id]) {
+          room.accusations[s.id] = 'aria';
+        }
+      }
+
+      const culpritEliminated = room.actions && room.actions.culprit === 'eliminate';
+      const endingType = determineEndingWithActions(room.accusations, room.roles, culpritEliminated);
+      const endingData = gameData.endings?.[endingType] || {};
+      const resultSummary = generateResultSummaryFull(room.accusations, room.roles, room.actions, endingType);
+
+      room.gameState = 'ending';
+      console.log(`[Room ${room.code}] Timer expired — auto-ending: ${endingType}`);
+
+      room.players.forEach((s) => {
+        if (s) {
+          s.emit('game-ending', {
+            endingType,
+            title: endingData.title || endingType,
+            subtitle: endingData.subtitle || '',
+            narrative: endingData.narrative || '',
+            truthReveal: gameData.truthReveal || [],
+            epilogue: endingData.epilogue || '',
+            resultSummary: resultSummary || [],
+          });
+        }
+      });
+    } else {
+      room.gameState = 'ending';
+      console.log(`[Room ${room.code}] Phase transition: ${currentPhase} -> ending`);
+    }
   }
 }
 
 // ---------------------------------------------------------------------------
 // Helper: determine ending from accusations
 // ---------------------------------------------------------------------------
-// 우선순위:
-//   1. 하진=eliminatePartner AND 도현≠partnerHuman → END 03 (soleSurvivor)
-//   2. 도현=partnerHuman → END 02 (inherited) — 하진 선택 무관
-//   3. 도현=aria → END 01 (forked)
+// 엔딩 분기 조건:
+//   하진=제거 AND 도현=ARIA 지목 → END 03 (soleSurvivor)
+//   하진=제거 AND 도현=하진 지목 → END 04 (fork)
+//   하진≠제거 AND 도현=하진 지목 → END 02 (inherited)
+//   하진≠제거 AND 도현=ARIA 지목 → END 01 (forked)
 // ---------------------------------------------------------------------------
-function determineEnding(accusations, roles) {
+// ---------------------------------------------------------------------------
+// Helper: determine ending from actions + votes
+// ---------------------------------------------------------------------------
+// 엔딩 분기 조건:
+//   하진=제거(행동) AND 도현=ARIA 지목(투표) → END 03 (soleSurvivor)
+//   하진=제거(행동) AND 도현=하진 지목(투표) → END 04 (fork)
+//   하진≠제거 AND 도현=하진 지목(투표) → END 02 (inherited)
+//   하진≠제거 AND 도현=ARIA 지목(투표) → END 01 (forked)
+// ---------------------------------------------------------------------------
+function determineEndingWithActions(accusations, roles, culpritEliminated) {
   const accEntries = Object.entries(accusations);
-
-  const culpritEntry = accEntries.find(([sid]) => roles[sid] === 'culprit');
   const innocentEntry = accEntries.find(([sid]) => roles[sid] === 'innocent');
+  const innocentVote = innocentEntry ? innocentEntry[1] : null;
 
-  const culpritChoice = culpritEntry ? culpritEntry[1] : null;
-  const innocentChoice = innocentEntry ? innocentEntry[1] : null;
-
-  // Priority 1: 하진이 제거 선택 AND 도현이 하진을 지목하지 않음 → Sole Survivor
-  if (culpritChoice === 'eliminatePartner' && innocentChoice !== 'partnerHuman') {
+  if (culpritEliminated) {
+    if (innocentVote === 'partnerHuman') return 'fork';
     return 'soleSurvivor';
   }
 
-  // Priority 2: 도현이 하진을 지목 → Inherited Process (하진의 제거 시도 무효)
-  if (innocentChoice === 'partnerHuman') return 'inherited';
-
-  // Priority 3: 도현이 ARIA를 지목 → Residual
-  if (innocentChoice === 'aria') return 'forked';
+  if (innocentVote === 'partnerHuman') return 'inherited';
+  if (innocentVote === 'aria') return 'forked';
 
   return 'inherited'; // fallback
+}
+
+// ---------------------------------------------------------------------------
+// Helper: generate result summary for ending screen
+// ---------------------------------------------------------------------------
+function generateResultSummaryFull(accusations, roles, actions, endingType) {
+  const accEntries = Object.entries(accusations);
+  const culpritEntry = accEntries.find(([sid]) => roles[sid] === 'culprit');
+  const innocentEntry = accEntries.find(([sid]) => roles[sid] === 'innocent');
+  const culpritVote = culpritEntry ? culpritEntry[1] : null;
+  const innocentVote = innocentEntry ? innocentEntry[1] : null;
+
+  const lines = [];
+
+  // 도현의 행동 + 투표
+  if (actions && actions.innocent === 'confiscate') {
+    lines.push('이도현은 교수의 스마트폰을 압수했습니다.');
+  }
+  if (innocentVote === 'partnerHuman') {
+    lines.push('이도현은 서하진을 범인으로 지목했습니다.');
+  } else {
+    lines.push('이도현은 ARIA를 범인으로 지목했습니다.');
+  }
+
+  // 하진의 행동 + 투표
+  if (actions && actions.culprit === 'eliminate') {
+    lines.push('서하진은 ARIA에 제거 명령을 내렸습니다.');
+  }
+  if (culpritVote === 'partnerHuman') {
+    lines.push('서하진은 이도현을 범인으로 지목했습니다.');
+  } else {
+    lines.push('서하진은 ARIA를 범인으로 지목했습니다.');
+  }
+
+  // 승패
+  if (endingType === 'inherited') {
+    lines.push('이도현의 승리입니다.');
+  } else {
+    lines.push('범인 서하진의 승리입니다.');
+  }
+
+  return lines;
 }
 
 // ---------------------------------------------------------------------------
@@ -1226,22 +1331,87 @@ io.on('connection', (socket) => {
   });
 
   // ------------------------------------------
-  // SUBMIT ACCUSATION (verdict phase)
+  // SUBMIT ACTION (verdict phase — action sub-phase)
+  // ------------------------------------------
+  socket.on('submit-action', ({ action }) => {
+    const roomCode = socketToRoom[socket.id];
+    const room = rooms[roomCode];
+    if (!room || room.gameState !== 'accusation') return;
+
+    const role = room.roles[socket.id];
+
+    // --- Innocent (도현) action: confiscate or pass ---
+    if (room.actionPhase === 'action-innocent' && role === 'innocent') {
+      room.actions.innocent = action; // 'confiscate' or 'pass'
+
+      if (action === 'confiscate') {
+        // Transfer ev_inv1_07 from culprit to innocent
+        const culpritSid = Object.keys(room.roles).find((s) => room.roles[s] === 'culprit');
+        const innocentSid = socket.id;
+        if (culpritSid) {
+          const culpritEv = room.allCollectedEvidence[culpritSid] || [];
+          const phoneIdx = culpritEv.findIndex((e) => e.id === 'ev_inv1_07');
+          if (phoneIdx !== -1) {
+            const [phone] = culpritEv.splice(phoneIdx, 1);
+            if (!room.allCollectedEvidence[innocentSid]) room.allCollectedEvidence[innocentSid] = [];
+            room.allCollectedEvidence[innocentSid].push(phone);
+            console.log(`[Room ${roomCode}] Evidence confiscated: ev_inv1_07 from culprit to innocent`);
+          }
+        }
+      }
+
+      // Move to culprit's turn
+      room.actionPhase = 'action-culprit';
+      const culpritSid = Object.keys(room.roles).find((s) => room.roles[s] === 'culprit');
+      const culpritSocket = room.players.find((s) => s && s.id === culpritSid);
+      const innocentSocket = room.players.find((s) => s && s.id === socket.id);
+
+      if (culpritSocket) {
+        const hasPhone = (room.allCollectedEvidence[culpritSid] || []).some((e) => e.id === 'ev_inv1_07');
+        culpritSocket.emit('action-turn', { canEliminate: hasPhone, wasConfiscated: action === 'confiscate' });
+      }
+      if (innocentSocket) {
+        innocentSocket.emit('action-waiting', { phase: 'culprit' });
+      }
+      return;
+    }
+
+    // --- Culprit (하진) action: eliminate or pass ---
+    if (room.actionPhase === 'action-culprit' && role === 'culprit') {
+      // Validate eliminate: must have phone
+      if (action === 'eliminate') {
+        const hasPhone = (room.allCollectedEvidence[socket.id] || []).some((e) => e.id === 'ev_inv1_07');
+        if (!hasPhone) action = 'pass'; // Force pass if no phone
+      }
+      room.actions.culprit = action; // 'eliminate' or 'pass'
+
+      // Move to vote phase
+      room.actionPhase = 'vote';
+      console.log(`[Room ${roomCode}] Action phase complete. Actions: innocent=${room.actions.innocent}, culprit=${room.actions.culprit}`);
+
+      // Do NOT reveal culprit's action to innocent — only revealed in ending
+      room.players.forEach((s) => {
+        if (s) s.emit('vote-phase-start');
+      });
+      return;
+    }
+  });
+
+  // ------------------------------------------
+  // SUBMIT ACCUSATION (verdict phase — vote sub-phase)
   // ------------------------------------------
   socket.on('submit-accusation', ({ target }) => {
     const roomCode = socketToRoom[socket.id];
     const room = rooms[roomCode];
     if (!room) return;
 
-    // Validate: only culprit with professor's smartphone can choose eliminatePartner
-    if (target === 'eliminatePartner') {
-      if (room.roles[socket.id] !== 'culprit') return;
-      const hasPhone = (room.allCollectedEvidence[socket.id] || [])
-        .some((e) => e.id === 'ev_inv1_07');
-      if (!hasPhone) return;
-    }
+    // In the new system, votes are only partnerHuman or aria
+    if (target !== 'partnerHuman' && target !== 'aria') return;
 
-    // Store accusation
+    // Must be in vote phase
+    if (room.actionPhase !== 'vote') return;
+
+    // Store vote
     room.accusations[socket.id] = target;
 
     const accusationCount = Object.keys(room.accusations).length;
@@ -1253,8 +1423,11 @@ io.on('connection', (socket) => {
 
     // When both have submitted, determine ending
     if (accusationCount >= 2) {
-      const endingType = determineEnding(room.accusations, room.roles);
+      // Merge action + vote for ending determination
+      const culpritEliminated = room.actions && room.actions.culprit === 'eliminate';
+      const endingType = determineEndingWithActions(room.accusations, room.roles, culpritEliminated);
       const endingData = gameData.endings?.[endingType] || {};
+      const resultSummary = generateResultSummaryFull(room.accusations, room.roles, room.actions, endingType);
 
       room.gameState = 'ending';
       clearPhaseTimer(room);
@@ -1270,6 +1443,7 @@ io.on('connection', (socket) => {
             narrative: endingData.narrative || '',
             truthReveal: gameData.truthReveal || [],
             epilogue: endingData.epilogue || '',
+            resultSummary: resultSummary || [],
           });
         }
       });

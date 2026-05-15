@@ -18,16 +18,38 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Dev API: return ending data for preview
 app.get('/api/dev/endings', (_req, res) => {
-  const endingKeys = ['forked', 'inherited', 'soleSurvivor'];
+  const endingKeys = ['forked', 'inherited', 'soleSurvivor', 'fork'];
   const result = {};
+  // Dummy scores for dev preview
+  const dummyCulpritScores = [
+    { label: '범인으로 지목당하지 않는다', points: 3, achieved: true, auto: true },
+    { label: "'USB'를 확보하여 종료 시점까지 가지고 있는다", points: 3, achieved: true, auto: true },
+    { label: 'AI를 이용하여 상대를 제거한다', points: 3, achieved: false, auto: true },
+    { label: '상대방이 미션 점수를 7점 이상 모으지 못하도록 한다', points: 3, achieved: true, auto: true },
+  ];
+  const dummyInnocentScores = [
+    { label: "'USB'를 확보하여 종료 시점까지 가지고 있는다", points: 3, achieved: false, auto: true },
+    { label: '수면제 투여 사실을 들키지 않는다', points: 3, achieved: false, auto: false },
+    { label: "'교수의 스마트폰'을 확보하여 종료 시점까지 가지고 있는다", points: 3, achieved: true, auto: true },
+    { label: '정확한 살해 스토리를 추론하여 맞춘다', points: 3, achieved: false, auto: false },
+  ];
   for (const key of endingKeys) {
     const e = gameData.endings[key];
+    if (!e) continue;
+    const winner = key === 'inherited' ? 'innocent' : 'culprit';
     result[key] = {
       title: e.title,
       subtitle: e.subtitle,
       narrative: e.narrative,
       epilogue: e.epilogue,
-      truthReveal: gameData.truthReveal
+      truthReveal: gameData.truthReveal,
+      resultSummary: [
+        '이도현은 서하진을 범인으로 지목했습니다.',
+        '서하진은 ARIA를 범인으로 지목했습니다.',
+      ],
+      winner,
+      myRole: winner,
+      scores: { culpritScores: dummyCulpritScores, innocentScores: dummyInnocentScores },
     };
   }
   res.json(result);
@@ -408,12 +430,15 @@ function advancePhase(room) {
       const endingType = determineEndingWithActions(room.accusations, room.roles, culpritEliminated);
       const endingData = gameData.endings?.[endingType] || {};
       const resultSummary = generateResultSummaryFull(room.accusations, room.roles, room.actions, endingType);
+      const scores = calculateScores(room.accusations, room.roles, room.actions, room.allCollectedEvidence, endingType);
+      const winner = endingType === 'inherited' ? 'innocent' : 'culprit';
 
       room.gameState = 'ending';
       console.log(`[Room ${room.code}] Timer expired — auto-ending: ${endingType}`);
 
       room.players.forEach((s) => {
         if (s) {
+          const role = room.roles[s.id];
           s.emit('game-ending', {
             endingType,
             title: endingData.title || endingType,
@@ -422,6 +447,9 @@ function advancePhase(room) {
             truthReveal: gameData.truthReveal || [],
             epilogue: endingData.epilogue || '',
             resultSummary: resultSummary || [],
+            winner,
+            myRole: role,
+            scores,
           });
         }
       });
@@ -467,6 +495,59 @@ function determineEndingWithActions(accusations, roles, culpritEliminated) {
 }
 
 // ---------------------------------------------------------------------------
+// Helper: calculate scores for each player
+// ---------------------------------------------------------------------------
+function calculateScores(accusations, roles, actions, allCollectedEvidence, endingType) {
+  const accEntries = Object.entries(accusations);
+  const culpritEntry = accEntries.find(([sid]) => roles[sid] === 'culprit');
+  const innocentEntry = accEntries.find(([sid]) => roles[sid] === 'innocent');
+  const culpritSid = culpritEntry ? culpritEntry[0] : null;
+  const innocentSid = innocentEntry ? innocentEntry[0] : null;
+  const innocentVote = innocentEntry ? innocentEntry[1] : null;
+
+  const culpritEvIds = (allCollectedEvidence[culpritSid] || []).map((e) => e.id);
+  const innocentEvIds = (allCollectedEvidence[innocentSid] || []).map((e) => e.id);
+
+  const culpritEliminated = actions && actions.culprit === 'eliminate';
+
+  // --- 하진(culprit) 점수 ---
+  const culpritScores = [];
+
+  // 1. 범인으로 지목당하지 않는다 (3점)
+  const notAccused = innocentVote !== 'partnerHuman';
+  culpritScores.push({ label: '범인으로 지목당하지 않는다', points: 3, achieved: notAccused, auto: true });
+
+  // 2. USB 확보 (3점)
+  const culpritHasUsb = culpritEvIds.includes('ev_inv1_04');
+  culpritScores.push({ label: "'USB'를 확보하여 종료 시점까지 가지고 있는다", points: 3, achieved: culpritHasUsb, auto: true });
+
+  // 3. AI를 이용하여 상대를 제거 (3점) — 범인 미지목 + 스마트폰 소지 + eliminate 실행
+  culpritScores.push({ label: 'AI를 이용하여 상대를 제거한다', points: 3, achieved: culpritEliminated, auto: true });
+
+  // 4. 상대방이 미션 점수를 7점 이상 모으지 못하도록 (3점) — 도현 점수 계산 후 결정 (placeholder)
+  culpritScores.push({ label: '상대방이 미션 점수를 7점 이상 모으지 못하도록 한다', points: 3, achieved: false, auto: true, deferred: true });
+
+  // --- 도현(innocent) 점수 ---
+  const innocentScores = [];
+
+  // 1. USB 확보 (3점)
+  const innocentHasUsb = innocentEvIds.includes('ev_inv1_04');
+  innocentScores.push({ label: "'USB'를 확보하여 종료 시점까지 가지고 있는다", points: 3, achieved: innocentHasUsb, auto: true });
+
+  // 2. 수면제 투여 사실을 들키지 않는다 (3점) — 플레이어 자가 판단
+  innocentScores.push({ label: '수면제 투여 사실을 들키지 않는다', points: 3, achieved: false, auto: false });
+
+  // 3. 교수의 스마트폰 확보 (3점)
+  const innocentHasPhone = innocentEvIds.includes('ev_inv1_07');
+  innocentScores.push({ label: "'교수의 스마트폰'을 확보하여 종료 시점까지 가지고 있는다", points: 3, achieved: innocentHasPhone, auto: true });
+
+  // 4. 정확한 살해 스토리를 추론하여 맞춘다 (3점) — 플레이어 자가 판단
+  innocentScores.push({ label: '정확한 살해 스토리를 추론하여 맞춘다', points: 3, achieved: false, auto: false });
+
+  return { culpritScores, innocentScores };
+}
+
+// ---------------------------------------------------------------------------
 // Helper: generate result summary for ending screen
 // ---------------------------------------------------------------------------
 function generateResultSummaryFull(accusations, roles, actions, endingType) {
@@ -496,13 +577,6 @@ function generateResultSummaryFull(accusations, roles, actions, endingType) {
   }
   if (actions && actions.culprit === 'eliminate') {
     lines.push('[RED]서하진은 ARIA에 제거 명령을 내렸습니다.');
-  }
-
-  // 승패
-  if (endingType === 'inherited') {
-    lines.push('이도현의 승리입니다.');
-  } else {
-    lines.push('범인 서하진의 승리입니다.');
   }
 
   return lines;
@@ -1428,6 +1502,8 @@ io.on('connection', (socket) => {
       const endingType = determineEndingWithActions(room.accusations, room.roles, culpritEliminated);
       const endingData = gameData.endings?.[endingType] || {};
       const resultSummary = generateResultSummaryFull(room.accusations, room.roles, room.actions, endingType);
+      const scores = calculateScores(room.accusations, room.roles, room.actions, room.allCollectedEvidence, endingType);
+      const winner = endingType === 'inherited' ? 'innocent' : 'culprit';
 
       room.gameState = 'ending';
       clearPhaseTimer(room);
@@ -1436,6 +1512,7 @@ io.on('connection', (socket) => {
 
       room.players.forEach((s) => {
         if (s) {
+          const role = room.roles[s.id];
           s.emit('game-ending', {
             endingType,
             title: endingData.title || endingType,
@@ -1444,6 +1521,9 @@ io.on('connection', (socket) => {
             truthReveal: gameData.truthReveal || [],
             epilogue: endingData.epilogue || '',
             resultSummary: resultSummary || [],
+            winner,
+            myRole: role,
+            scores,
           });
         }
       });

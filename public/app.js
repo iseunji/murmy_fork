@@ -1323,21 +1323,159 @@ async function showEnding(data) {
   const summaryEl = $('result-summary');
   if (summaryEl && data.resultSummary && data.resultSummary.length > 0) {
     summaryEl.innerHTML = '';
+
+    // 투표 + 행동 라인
     for (let i = 0; i < data.resultSummary.length; i++) {
       const line = data.resultSummary[i];
       const p = document.createElement('p');
-      // [RED] prefix → red action line
       if (line.startsWith('[RED]')) {
         p.textContent = line.slice(5);
         p.className = 'result-action';
-      } else if (i === data.resultSummary.length - 1) {
-        p.textContent = line;
-        p.className = 'result-winner';
       } else {
         p.textContent = line;
       }
       summaryEl.appendChild(p);
     }
+
+    // 점수 계산 섹션
+    if (data.scores && data.winner && data.myRole) {
+      const isWinner = data.myRole === data.winner;
+      const myScores = data.myRole === 'culprit' ? data.scores.culpritScores : data.scores.innocentScores;
+      const opponentScores = data.myRole === 'culprit' ? data.scores.innocentScores : data.scores.culpritScores;
+      const winnerName = data.winner === 'culprit' ? '서하진' : '이도현';
+      const winnerScores = data.winner === 'culprit' ? data.scores.culpritScores : data.scores.innocentScores;
+
+      const divider = document.createElement('div');
+      divider.className = 'score-divider';
+      summaryEl.appendChild(divider);
+
+      const scoreTitle = document.createElement('p');
+      scoreTitle.className = 'score-section-title';
+      scoreTitle.textContent = `${winnerName}의 미션 달성`;
+      summaryEl.appendChild(scoreTitle);
+
+      const scoreList = document.createElement('ul');
+      scoreList.className = 'score-list';
+
+      // 승자가 하진(culprit)인 경우: 전부 자동 계산
+      if (data.winner === 'culprit') {
+        // 도현 점수 먼저 계산 (자동 가능한 것만 — 체크박스 항목은 0점 처리)
+        const innocentAutoTotal = data.scores.innocentScores
+          .filter((s) => s.auto)
+          .reduce((sum, s) => sum + (s.achieved ? s.points : 0), 0);
+
+        // 하진 점수 계산
+        let culpritTotal = 0;
+        for (const item of data.scores.culpritScores) {
+          const li = document.createElement('li');
+          li.className = 'score-item';
+          let achieved = item.achieved;
+
+          // "상대방 미션 점수 7점 이상 방해" — 도현 자동 점수가 7 미만이면 달성
+          // (도현의 체크박스 항목은 하진 승리 시 최대 유리하게 0으로 계산)
+          if (item.deferred) {
+            achieved = innocentAutoTotal < 7;
+          }
+
+          const check = document.createElement('span');
+          check.className = achieved ? 'score-check achieved' : 'score-check';
+          check.textContent = achieved ? '✓' : '✗';
+          li.appendChild(check);
+
+          const label = document.createElement('span');
+          label.className = 'score-label';
+          label.textContent = item.label;
+          li.appendChild(label);
+
+          const pts = document.createElement('span');
+          pts.className = 'score-points';
+          pts.textContent = achieved ? `${item.points}점` : '0점';
+          li.appendChild(pts);
+
+          scoreList.appendChild(li);
+          if (achieved) culpritTotal += item.points;
+        }
+
+        summaryEl.appendChild(scoreList);
+
+        const winLine = document.createElement('p');
+        winLine.className = 'result-winner';
+        winLine.textContent = `서하진이 총 ${culpritTotal}점을 모아 승리하였습니다.`;
+        summaryEl.appendChild(winLine);
+
+      } else {
+        // 승자가 도현(innocent)인 경우: 자동 항목은 표시, 수동 항목은 체크박스
+        let autoTotal = 0;
+
+        for (const item of data.scores.innocentScores) {
+          const li = document.createElement('li');
+          li.className = 'score-item';
+
+          if (item.auto) {
+            const check = document.createElement('span');
+            check.className = item.achieved ? 'score-check achieved' : 'score-check';
+            check.textContent = item.achieved ? '✓' : '✗';
+            li.appendChild(check);
+
+            const label = document.createElement('span');
+            label.className = 'score-label';
+            label.textContent = item.label;
+            li.appendChild(label);
+
+            const pts = document.createElement('span');
+            pts.className = 'score-points';
+            pts.textContent = item.achieved ? `${item.points}점` : '0점';
+            li.appendChild(pts);
+
+            if (item.achieved) autoTotal += item.points;
+          } else {
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'score-checkbox';
+            checkbox.dataset.points = item.points;
+            checkbox.addEventListener('change', () => updateInnocentTotal());
+            li.appendChild(checkbox);
+
+            const label = document.createElement('span');
+            label.className = 'score-label';
+            label.textContent = item.label;
+            li.appendChild(label);
+
+            const pts = document.createElement('span');
+            pts.className = 'score-points score-points-manual';
+            pts.textContent = '0점';
+            li.appendChild(pts);
+          }
+
+          scoreList.appendChild(li);
+        }
+
+        summaryEl.appendChild(scoreList);
+
+        const winLine = document.createElement('p');
+        winLine.className = 'result-winner';
+        winLine.id = 'innocent-win-line';
+        winLine.textContent = `이도현이 총 ${autoTotal}점을 모아 승리하였습니다.`;
+        summaryEl.appendChild(winLine);
+
+        function updateInnocentTotal() {
+          let total = autoTotal;
+          const checkboxes = scoreList.querySelectorAll('.score-checkbox');
+          checkboxes.forEach((cb) => {
+            const ptsEl = cb.closest('.score-item').querySelector('.score-points-manual');
+            if (cb.checked) {
+              total += parseInt(cb.dataset.points, 10);
+              if (ptsEl) ptsEl.textContent = `${cb.dataset.points}점`;
+            } else {
+              if (ptsEl) ptsEl.textContent = '0점';
+            }
+          });
+          const wl = document.getElementById('innocent-win-line');
+          if (wl) wl.textContent = `이도현이 총 ${total}점을 모아 승리하였습니다.`;
+        }
+      }
+    }
+
     await sleep(1500);
     summaryEl.classList.add('visible');
   }
@@ -3795,7 +3933,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .then((r) => r.json())
         .then((endings) => {
           const endingParam = params.get('ending');
-          const keyMap = { '1': 'forked', '2': 'inherited', '3': 'soleSurvivor' };
+          const keyMap = { '1': 'forked', '2': 'inherited', '3': 'soleSurvivor', '4': 'fork' };
           const selectedKey = keyMap[endingParam];
           if (selectedKey && endings[selectedKey]) {
             showEnding(endings[selectedKey]);
@@ -3808,6 +3946,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 + '<a href="?dev=screen-ending&ending=1" class="verdict-card" style="text-decoration:none;"><span class="verdict-card-label">END 01: Residual</span></a>'
                 + '<a href="?dev=screen-ending&ending=2" class="verdict-card" style="text-decoration:none;"><span class="verdict-card-label">END 02: Inherited Process</span></a>'
                 + '<a href="?dev=screen-ending&ending=3" class="verdict-card" style="text-decoration:none;"><span class="verdict-card-label">END 03: Sole Survivor</span></a>'
+                + '<a href="?dev=screen-ending&ending=4" class="verdict-card" style="text-decoration:none;"><span class="verdict-card-label">END 04: Fork</span></a>'
                 + '</div>';
             }
           }

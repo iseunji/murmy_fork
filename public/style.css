@@ -2095,6 +2095,19 @@ body::before {
   background: rgba(139, 37, 0, 0.15);
 }
 
+.verdict-card[data-verdict="eliminate"]:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+  border-style: dashed;
+}
+
+.verdict-card-require {
+  font-size: 0.65rem;
+  color: var(--accent-red);
+  margin-top: 4px;
+  opacity: 0.85;
+}
+
 .verdict-card-label {
   font-family: var(--font-display);
   font-size: 1rem;

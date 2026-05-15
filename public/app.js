@@ -1634,6 +1634,24 @@ function closeTabPanel() {
 /**
  * Append text to a parent element, parsing <<...>> markers into highlighted spans.
  */
+/**
+ * Render evidence content into an element, highlighting time entries in amber.
+ */
+function renderEvidenceContent(el, text) {
+  el.innerHTML = '';
+  const parts = text.split(/(\d{2}:\d{2}\s+[^\s/]+(?:\([^)]*\))?)/g);
+  for (const part of parts) {
+    if (/^\d{2}:\d{2}\s+/.test(part)) {
+      const span = document.createElement('span');
+      span.style.color = 'var(--accent-amber)';
+      span.textContent = part;
+      el.appendChild(span);
+    } else {
+      el.appendChild(document.createTextNode(part));
+    }
+  }
+}
+
 function appendHighlightedText(parent, text) {
   const parts = text.split(/(<<.+?>>)/);
   for (const part of parts) {
@@ -1898,7 +1916,7 @@ function showComboSuccessModal(data) {
   if (typeEl) {
     typeEl.textContent = `조합카드(추가증거 ${data.comboIndex || ''})`;
   }
-  if (contentEl) contentEl.textContent = data.content || '';
+  if (contentEl) renderEvidenceContent(contentEl, data.content || '');
 
   // Show combo card image if available
   const imgWrap = $('combo-modal-image-wrap');
@@ -2450,7 +2468,7 @@ socket.on('evidence-detail', (data) => {
   if (typeEl) {
     typeEl.textContent = data.isComboCard ? `조합카드(추가증거 ${data.comboIndex || ''})` : '증거카드';
   }
-  if (contentEl) contentEl.textContent = data.content || '';
+  if (contentEl) renderEvidenceContent(contentEl, data.content || '');
 
   if (modal) {
     modal.removeAttribute('hidden');
@@ -2551,7 +2569,7 @@ socket.on('evidence-picked', (data) => {
   if (typeEl) {
     typeEl.textContent = '증거카드';
   }
-  if (contentEl) contentEl.textContent = data.content || '';
+  if (contentEl) renderEvidenceContent(contentEl, data.content || '');
 
   // Show evidence image if available
   const imgWrap = $('evidence-modal-image-wrap');

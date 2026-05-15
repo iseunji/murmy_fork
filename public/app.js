@@ -2993,6 +2993,17 @@ socket.on('vote-phase-start', () => {
   // Both players enter the vote phase
   hideAll('verdict-action-phase', 'verdict-action-waiting');
   showEl('verdict-vote-phase');
+
+  // Set partner name on vote card
+  const partner = (state.allCharacters || []).find(
+    (c) => c.id !== state.characterId && c.id !== 'professor'
+  );
+  if (partner) {
+    const label = document.querySelector('#btn-vote-partner .verdict-card-label');
+    const desc = document.querySelector('#btn-vote-partner .verdict-card-desc');
+    if (label) label.textContent = partner.name;
+    if (desc) desc.textContent = `연구실 조교 ${partner.name}을 범인으로 지목합니다.`;
+  }
 });
 
 // ---- Vote Phase Events ----

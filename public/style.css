@@ -2172,6 +2172,16 @@ body::before {
   transform: translateY(0);
 }
 
+.ending-reading-guide {
+  color: #6cb4ee;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.ending-dialogue {
+  color: #6cb4ee;
+}
+
 /* Truth Reveal (사건의 전말) */
 .truth-reveal {
   width: 100%;

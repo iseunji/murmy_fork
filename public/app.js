@@ -1242,7 +1242,29 @@ async function showEnding(data) {
     for (const paragraph of (data.narrative || [])) {
       const p = document.createElement('p');
       p.className = 'ending-paragraph visible';
-      p.textContent = paragraph;
+
+      // [읽어주세요] guide lines → blue
+      if (/^\[.*읽어주세요.*\]$/.test(paragraph)) {
+        p.classList.add('ending-reading-guide');
+        p.textContent = paragraph;
+      // Lines containing "dialogue" → highlight quoted parts in blue
+      } else if (/\u201c.*\u201d/.test(paragraph) || /".+?"/.test(paragraph)) {
+        // Split on "..." or \u201c...\u201d patterns
+        const parts = paragraph.split(/(\u201c[^\u201d]*\u201d|"[^"]*?")/);
+        for (const part of parts) {
+          if (/^\u201c[^\u201d]*\u201d$/.test(part) || /^"[^"]*?"$/.test(part)) {
+            const span = document.createElement('span');
+            span.className = 'ending-dialogue';
+            span.textContent = part;
+            p.appendChild(span);
+          } else {
+            p.appendChild(document.createTextNode(part));
+          }
+        }
+      } else {
+        p.textContent = paragraph;
+      }
+
       narrativeContainer.appendChild(p);
     }
     narrativeContainer.classList.add('fade-in-text');

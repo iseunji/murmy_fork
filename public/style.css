@@ -1722,9 +1722,16 @@ body::before {
 }
 
 .evidence-detail-image-wrap {
+  position: relative;
   margin-bottom: 16px;
   border-radius: 8px;
   overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+}
+
+.evidence-detail-image-wrap.is-dragging {
+  cursor: grabbing;
 }
 
 .evidence-detail-image {
@@ -1733,6 +1740,62 @@ body::before {
   object-fit: cover;
   display: block;
   border-radius: 8px;
+  transform-origin: 0 0;
+  transition: transform 0.15s ease;
+  pointer-events: none;
+}
+
+.image-zoom-controls {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 10;
+}
+
+.image-zoom-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--accent-amber-dim);
+  border-radius: 6px;
+  background: rgba(30, 27, 24, 0.85);
+  color: var(--accent-amber);
+  font-size: 18px;
+  font-family: var(--font-mono);
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.image-zoom-btn:active {
+  background: rgba(60, 54, 48, 0.9);
+}
+
+.image-zoom-hint {
+  position: absolute;
+  bottom: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(30, 27, 24, 0.88);
+  color: var(--accent-amber);
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  z-index: 10;
+}
+
+.image-zoom-hint.visible {
+  opacity: 1;
 }
 
 .evidence-detail-body-wrap {

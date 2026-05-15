@@ -975,6 +975,7 @@ function closeEvidenceModal() {
     modal.classList.remove('active');
     modal.setAttribute('hidden', '');
   }
+  resetImageZoom();
 }
 
 /* ==========================================================================
@@ -1634,6 +1635,193 @@ function closeTabPanel() {
 /**
  * Append text to a parent element, parsing <<...>> markers into highlighted spans.
  */
+/* ==========================================================================
+   EVIDENCE IMAGE ZOOM & PAN
+   ========================================================================== */
+
+const imageZoom = { scale: 1, x: 0, y: 0, minScale: 1, maxScale: 4 };
+let _zoomHintShown = false;
+
+function resetImageZoom() {
+  imageZoom.scale = 1;
+  imageZoom.x = 0;
+  imageZoom.y = 0;
+  const img = $('evidence-modal-image');
+  if (img) {
+    img.style.transform = 'none';
+    img.style.transition = 'transform 0.15s ease';
+  }
+  const wrap = $('evidence-modal-image-wrap');
+  if (wrap) wrap.classList.remove('is-dragging');
+}
+
+function applyImageZoom(animate) {
+  const img = $('evidence-modal-image');
+  if (!img) return;
+  img.style.transition = animate ? 'transform 0.15s ease' : 'none';
+  if (imageZoom.scale <= 1) {
+    imageZoom.x = 0;
+    imageZoom.y = 0;
+    img.style.transform = 'none';
+  } else {
+    clampPan();
+    img.style.transform = `translate(${imageZoom.x}px, ${imageZoom.y}px) scale(${imageZoom.scale})`;
+  }
+}
+
+function clampPan() {
+  const wrap = $('evidence-modal-image-wrap');
+  if (!wrap) return;
+  const w = wrap.clientWidth;
+  const h = wrap.clientHeight;
+  const maxX = (imageZoom.scale - 1) * w;
+  const maxY = (imageZoom.scale - 1) * h;
+  imageZoom.x = Math.max(-maxX, Math.min(0, imageZoom.x));
+  imageZoom.y = Math.max(-maxY, Math.min(0, imageZoom.y));
+}
+
+function zoomAt(delta, cx, cy) {
+  const wrap = $('evidence-modal-image-wrap');
+  if (!wrap) return;
+  const prev = imageZoom.scale;
+  imageZoom.scale = Math.max(imageZoom.minScale, Math.min(imageZoom.maxScale, prev + delta));
+  if (imageZoom.scale === prev) return;
+  // Adjust pan so the zoom centers on (cx, cy) within the wrap
+  const ratio = imageZoom.scale / prev;
+  imageZoom.x = cx - ratio * (cx - imageZoom.x);
+  imageZoom.y = cy - ratio * (cy - imageZoom.y);
+  applyImageZoom(false);
+}
+
+function showZoomHint() {
+  if (_zoomHintShown) return;
+  _zoomHintShown = true;
+  const hint = $('image-zoom-hint');
+  if (!hint) return;
+  hint.classList.add('visible');
+  setTimeout(() => hint.classList.remove('visible'), 2500);
+}
+
+function initImageZoom() {
+  const wrap = $('evidence-modal-image-wrap');
+  if (!wrap || wrap._zoomInit) return;
+  wrap._zoomInit = true;
+
+  // --- Pinch to zoom (touch) ---
+  let touches0 = null;
+  let startDist = 0;
+  let startScale = 1;
+  let panStartX = 0, panStartY = 0, panStartTx = 0, panStartTy = 0;
+  let isPinching = false;
+
+  wrap.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      isPinching = true;
+      touches0 = Array.from(e.touches);
+      startDist = Math.hypot(
+        touches0[1].clientX - touches0[0].clientX,
+        touches0[1].clientY - touches0[0].clientY
+      );
+      startScale = imageZoom.scale;
+      e.preventDefault();
+    } else if (e.touches.length === 1 && imageZoom.scale > 1) {
+      isPinching = false;
+      panStartX = e.touches[0].clientX;
+      panStartY = e.touches[0].clientY;
+      panStartTx = imageZoom.x;
+      panStartTy = imageZoom.y;
+      wrap.classList.add('is-dragging');
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  wrap.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2 && touches0) {
+      const dist = Math.hypot(
+        e.touches[1].clientX - e.touches[0].clientX,
+        e.touches[1].clientY - e.touches[0].clientY
+      );
+      const rect = wrap.getBoundingClientRect();
+      const cx = ((e.touches[0].clientX + e.touches[1].clientX) / 2) - rect.left;
+      const cy = ((e.touches[0].clientY + e.touches[1].clientY) / 2) - rect.top;
+      const newScale = Math.max(imageZoom.minScale, Math.min(imageZoom.maxScale, startScale * (dist / startDist)));
+      const ratio = newScale / imageZoom.scale;
+      imageZoom.scale = newScale;
+      imageZoom.x = cx - ratio * (cx - imageZoom.x);
+      imageZoom.y = cy - ratio * (cy - imageZoom.y);
+      applyImageZoom(false);
+      e.preventDefault();
+    } else if (e.touches.length === 1 && imageZoom.scale > 1 && !isPinching) {
+      imageZoom.x = panStartTx + (e.touches[0].clientX - panStartX);
+      imageZoom.y = panStartTy + (e.touches[0].clientY - panStartY);
+      applyImageZoom(false);
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  wrap.addEventListener('touchend', (e) => {
+    if (e.touches.length < 2) {
+      touches0 = null;
+      isPinching = false;
+    }
+    wrap.classList.remove('is-dragging');
+  });
+
+  // --- Mouse wheel zoom ---
+  wrap.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const rect = wrap.getBoundingClientRect();
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+    const delta = e.deltaY > 0 ? -0.3 : 0.3;
+    zoomAt(delta, cx, cy);
+  }, { passive: false });
+
+  // --- Mouse drag to pan ---
+  let mouseDown = false, msx = 0, msy = 0, mstx = 0, msty = 0;
+
+  wrap.addEventListener('mousedown', (e) => {
+    if (imageZoom.scale <= 1) return;
+    mouseDown = true;
+    msx = e.clientX;
+    msy = e.clientY;
+    mstx = imageZoom.x;
+    msty = imageZoom.y;
+    wrap.classList.add('is-dragging');
+    e.preventDefault();
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!mouseDown) return;
+    imageZoom.x = mstx + (e.clientX - msx);
+    imageZoom.y = msty + (e.clientY - msy);
+    applyImageZoom(false);
+  });
+
+  window.addEventListener('mouseup', () => {
+    mouseDown = false;
+    wrap.classList.remove('is-dragging');
+  });
+
+  // --- Zoom buttons ---
+  const btnIn = $('btn-zoom-in');
+  const btnOut = $('btn-zoom-out');
+  if (btnIn) {
+    btnIn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const rect = wrap.getBoundingClientRect();
+      zoomAt(0.5, rect.width / 2, rect.height / 2);
+    });
+  }
+  if (btnOut) {
+    btnOut.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const rect = wrap.getBoundingClientRect();
+      zoomAt(-0.5, rect.width / 2, rect.height / 2);
+    });
+  }
+}
+
 /**
  * Render evidence content into an element, highlighting time entries in amber.
  */
@@ -2489,14 +2677,17 @@ socket.on('evidence-detail', (data) => {
   SFX.reveal();
 
   // Show evidence image if available
-  const imgWrap = $('evidence-modal-image-wrap');
-  const imgEl = $('evidence-modal-image');
-  if (imgWrap && imgEl && data.image) {
-    imgEl.src = `/assets/evidence/${data.image}`;
-    imgEl.alt = data.title || '';
-    imgWrap.hidden = false;
-  } else if (imgWrap) {
-    imgWrap.hidden = true;
+  const imgWrap2 = $('evidence-modal-image-wrap');
+  const imgEl2 = $('evidence-modal-image');
+  if (imgWrap2 && imgEl2 && data.image) {
+    imgEl2.src = `/assets/evidence/${data.image}`;
+    imgEl2.alt = data.title || '';
+    imgWrap2.hidden = false;
+    resetImageZoom();
+    initImageZoom();
+    showZoomHint();
+  } else if (imgWrap2) {
+    imgWrap2.hidden = true;
   }
 
   // Show combo hint if available
@@ -2590,6 +2781,9 @@ socket.on('evidence-picked', (data) => {
     imgEl.src = `/assets/evidence/${data.image}`;
     imgEl.alt = data.title || '';
     imgWrap.hidden = false;
+    resetImageZoom();
+    initImageZoom();
+    showZoomHint();
   } else if (imgWrap) {
     imgWrap.hidden = true;
   }

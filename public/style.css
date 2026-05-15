@@ -120,7 +120,7 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -135,7 +135,7 @@ body {
 /* Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--border-light) var(--bg);
+  scrollbar-color: var(--border-light) transparent;
 }
 
 /*

@@ -441,6 +441,11 @@ async function streamText(element, text, opts = {}) {
           span.className = 'text-highlight-condition';
           span.textContent = seg.slice(2, -2);
           p.appendChild(span);
+        } else if (/^\[.*읽어주세요.*\]$/.test(seg)) {
+          const span = document.createElement('span');
+          span.className = 'text-reading-guide';
+          span.textContent = seg;
+          p.appendChild(span);
         } else if (/^\[.+\]$/.test(seg)) {
           const span = document.createElement('span');
           span.className = 'text-section-header';

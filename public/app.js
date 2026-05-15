@@ -1639,15 +1639,27 @@ function closeTabPanel() {
  */
 function renderEvidenceContent(el, text) {
   el.innerHTML = '';
-  const parts = text.split(/(\d{2}:\d{2}\s+[^\s/]+(?:\([^)]*\))?)/g);
-  for (const part of parts) {
-    if (/^\d{2}:\d{2}\s+/.test(part)) {
+  // First split by <<...>> markers for amber-highlighted blocks
+  const blocks = text.split(/(<<[\s\S]+?>>)/g);
+  for (const block of blocks) {
+    if (/^<<[\s\S]+>>$/.test(block)) {
       const span = document.createElement('span');
       span.style.color = 'var(--accent-amber)';
-      span.textContent = part;
+      span.textContent = block.slice(2, -2);
       el.appendChild(span);
     } else {
-      el.appendChild(document.createTextNode(part));
+      // Within normal blocks, highlight HH:MM time entries
+      const parts = block.split(/(\d{2}:\d{2}\s+[^\s/]+(?:\([^)]*\))?)/g);
+      for (const part of parts) {
+        if (/^\d{2}:\d{2}\s+/.test(part)) {
+          const span = document.createElement('span');
+          span.style.color = 'var(--accent-amber)';
+          span.textContent = part;
+          el.appendChild(span);
+        } else {
+          el.appendChild(document.createTextNode(part));
+        }
+      }
     }
   }
 }

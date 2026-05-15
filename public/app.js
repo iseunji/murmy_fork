@@ -3533,11 +3533,18 @@ function showActionPhaseForInnocent(canConfiscate) {
   const title = $('action-phase-title');
   const desc = $('action-phase-desc');
   if (title) title.textContent = '행동 단계';
-  if (desc) desc.textContent = '경찰이 오기 전, 행동할 수 있는 마지막 기회입니다.';
+  if (desc) desc.textContent = '';
 
-  // Show/hide confiscate button based on card ownership
+  // Show confiscate: enabled or disabled based on card ownership
   const btnConfiscate = $('btn-action-confiscate');
-  if (btnConfiscate) btnConfiscate.hidden = !canConfiscate;
+  const btnConfiscateDisabled = $('btn-action-confiscate-disabled');
+  if (canConfiscate) {
+    if (btnConfiscate) btnConfiscate.hidden = false;
+    if (btnConfiscateDisabled) btnConfiscateDisabled.hidden = true;
+  } else {
+    if (btnConfiscate) btnConfiscate.hidden = true;
+    if (btnConfiscateDisabled) btnConfiscateDisabled.hidden = false;
+  }
 
   // Hide culprit-only buttons
   const btnEliminate = $('btn-action-eliminate');
@@ -3556,11 +3563,13 @@ function showActionPhaseForCulprit(canEliminate) {
   const title = $('action-phase-title');
   const desc = $('action-phase-desc');
   if (title) title.textContent = '행동 단계';
-  if (desc) desc.textContent = '경찰이 오기 전, 행동할 수 있는 마지막 기회입니다.';
+  if (desc) desc.textContent = '';
 
-  // Hide innocent-only button
+  // Hide innocent-only buttons
   const btnConfiscate = $('btn-action-confiscate');
+  const btnConfiscateDisabled = $('btn-action-confiscate-disabled');
   if (btnConfiscate) btnConfiscate.hidden = true;
+  if (btnConfiscateDisabled) btnConfiscateDisabled.hidden = true;
 
   // Show eliminate button based on phone possession
   const btnEliminate = $('btn-action-eliminate');

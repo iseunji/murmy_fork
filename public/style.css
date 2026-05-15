@@ -2199,10 +2199,10 @@ body::before {
 }
 
 .verdict-phase-notice {
-  font-size: 0.7rem;
-  color: var(--text-muted, rgba(255, 255, 255, 0.35));
+  font-size: 0.8rem;
+  color: var(--text-secondary);
   margin-bottom: 12px;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 /* Culprit-only card styling */
@@ -2218,9 +2218,13 @@ body::before {
 
 /* Disabled action card */
 .verdict-card--disabled {
-  opacity: 0.4;
+  opacity: 0.55;
   pointer-events: none;
   border-style: dashed;
+}
+
+.verdict-card--disabled .verdict-card-require {
+  opacity: 1;
 }
 
 /* Pass button */

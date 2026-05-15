@@ -3470,17 +3470,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Inject minimal toast and overlay styles if not already present.
   injectDynamicStyles();
 
-  // Screen capture protection: black out content when app loses visibility.
+  // Screen capture protection: black out content when tab is hidden.
   document.addEventListener('visibilitychange', () => {
     if (!document.body.classList.contains('capture-protected')) return;
     document.body.classList.toggle('capture-blacked', document.hidden);
-  });
-  window.addEventListener('blur', () => {
-    if (!document.body.classList.contains('capture-protected')) return;
-    document.body.classList.add('capture-blacked');
-  });
-  window.addEventListener('focus', () => {
-    document.body.classList.remove('capture-blacked');
   });
 
   // Dev mode: ?dev=screen-waiting 등으로 더미 데이터와 함께 특정 화면 바로 열기

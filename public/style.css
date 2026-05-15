@@ -2171,6 +2171,13 @@ body::before {
   opacity: 0.85;
 }
 
+.verdict-card-fulfill {
+  font-size: 0.65rem;
+  color: var(--accent-amber);
+  margin-top: 4px;
+  opacity: 0.85;
+}
+
 .verdict-card-label {
   font-family: var(--font-display);
   font-size: 1rem;

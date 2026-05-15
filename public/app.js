@@ -1223,7 +1223,7 @@ async function showEnding(data) {
   // --- Title ---
   const titleEl = $('ending-title');
   if (titleEl) {
-    titleEl.textContent = (data.title || '') + charSuffix();
+    titleEl.textContent = data.title || '';
     titleEl.classList.add('fade-in');
   }
 

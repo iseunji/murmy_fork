@@ -2477,6 +2477,10 @@ body::before {
   line-height: 1.7;
 }
 
+.result-summary .result-action {
+  color: var(--accent-red);
+}
+
 .result-summary .result-winner {
   margin-top: 8px;
   font-weight: 700;

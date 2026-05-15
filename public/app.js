@@ -1324,11 +1324,17 @@ async function showEnding(data) {
   if (summaryEl && data.resultSummary && data.resultSummary.length > 0) {
     summaryEl.innerHTML = '';
     for (let i = 0; i < data.resultSummary.length; i++) {
+      const line = data.resultSummary[i];
       const p = document.createElement('p');
-      p.textContent = data.resultSummary[i];
-      // Last line is the winner announcement
-      if (i === data.resultSummary.length - 1) {
+      // [RED] prefix → red action line
+      if (line.startsWith('[RED]')) {
+        p.textContent = line.slice(5);
+        p.className = 'result-action';
+      } else if (i === data.resultSummary.length - 1) {
+        p.textContent = line;
         p.className = 'result-winner';
+      } else {
+        p.textContent = line;
       }
       summaryEl.appendChild(p);
     }

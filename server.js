@@ -478,24 +478,24 @@ function generateResultSummaryFull(accusations, roles, actions, endingType) {
 
   const lines = [];
 
-  // 도현의 행동 + 투표
-  if (actions && actions.innocent === 'confiscate') {
-    lines.push('이도현은 교수의 스마트폰을 압수했습니다.');
-  }
+  // 투표 (먼저)
   if (innocentVote === 'partnerHuman') {
     lines.push('이도현은 서하진을 범인으로 지목했습니다.');
   } else {
     lines.push('이도현은 ARIA를 범인으로 지목했습니다.');
   }
-
-  // 하진의 행동 + 투표
-  if (actions && actions.culprit === 'eliminate') {
-    lines.push('서하진은 ARIA에 제거 명령을 내렸습니다.');
-  }
   if (culpritVote === 'partnerHuman') {
     lines.push('서하진은 이도현을 범인으로 지목했습니다.');
   } else {
     lines.push('서하진은 ARIA를 범인으로 지목했습니다.');
+  }
+
+  // 행동 (빨간색 마커 [RED] 접두어)
+  if (actions && actions.innocent === 'confiscate') {
+    lines.push('[RED]이도현은 교수의 스마트폰을 압수했습니다.');
+  }
+  if (actions && actions.culprit === 'eliminate') {
+    lines.push('[RED]서하진은 ARIA에 제거 명령을 내렸습니다.');
   }
 
   // 승패

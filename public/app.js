@@ -1278,6 +1278,20 @@ async function showEnding(data) {
 
   await sleep(2000);
 
+  // --- Epilogue (terminal-style typewriter) ---
+  const epilogueWrapper = $('ending-epilogue');
+  const epilogueBody = $('epilogue-terminal-body');
+  if (epilogueWrapper && epilogueBody && data.epilogue) {
+    epilogueWrapper.classList.add('visible');
+    epilogueBody.innerHTML = '';
+    await sleep(500);
+    epilogueBody.classList.add('terminal-text');
+    epilogueBody.textContent = data.epilogue;
+    epilogueBody.classList.add('fade-in-text');
+  }
+
+  await sleep(2000);
+
   // --- Truth Reveal (사건의 전말) ---
   const truthRevealWrapper = $('truth-reveal');
   const truthRevealInner = $('truth-reveal-inner');
@@ -1303,20 +1317,6 @@ async function showEnding(data) {
 
     truthRevealWrapper.classList.add('visible');
     await sleep(2000);
-  }
-
-  await sleep(1500);
-
-  // --- Epilogue (terminal-style typewriter) ---
-  const epilogueWrapper = $('ending-epilogue');
-  const epilogueBody = $('epilogue-terminal-body');
-  if (epilogueWrapper && epilogueBody && data.epilogue) {
-    epilogueWrapper.classList.add('visible');
-    epilogueBody.innerHTML = '';
-    await sleep(500);
-    epilogueBody.classList.add('terminal-text');
-    epilogueBody.textContent = data.epilogue;
-    epilogueBody.classList.add('fade-in-text');
   }
 
   // --- Result Summary ---

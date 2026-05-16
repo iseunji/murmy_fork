@@ -434,6 +434,7 @@ function advancePhase(room) {
       const winner = endingType === 'inherited' ? 'innocent' : 'culprit';
 
       room.gameState = 'ending';
+      room.lastScores = scores;
       console.log(`[Room ${room.code}] Timer expired — auto-ending: ${endingType}`);
 
       room.players.forEach((s) => {
@@ -1506,6 +1507,7 @@ io.on('connection', (socket) => {
       const winner = endingType === 'inherited' ? 'innocent' : 'culprit';
 
       room.gameState = 'ending';
+      room.lastScores = scores;
       clearPhaseTimer(room);
 
       console.log(`[Room ${roomCode}] Game ended — ending type: ${endingType}`);
@@ -1528,6 +1530,40 @@ io.on('connection', (socket) => {
         }
       });
     }
+  });
+
+  // ------------------------------------------
+  // SAVE SCORE (innocent player confirms manual checks)
+  // ------------------------------------------
+  socket.on('save-score', ({ manualChecks }) => {
+    const roomCode = socketToRoom[socket.id];
+    if (!roomCode) return;
+    const room = rooms[roomCode];
+    if (!room) return;
+    const role = room.roles[socket.id];
+    if (role !== 'innocent') return;
+
+    // Calculate total from server-side scores
+    const scores = room.lastScores;
+    let totalScore = 0;
+    if (scores && scores.innocentScores) {
+      scores.innocentScores.forEach((item, i) => {
+        if (item.auto) {
+          if (item.achieved) totalScore += item.points;
+        } else {
+          const manualIdx = scores.innocentScores.filter((s, j) => !s.auto && j <= i).length - 1;
+          if (manualChecks[manualIdx]) totalScore += item.points;
+        }
+      });
+    }
+
+    // Send to partner (culprit)
+    const partner = getPartnerSocket(room, socket.id);
+    if (partner) {
+      partner.emit('score-saved', { manualChecks, totalScore });
+    }
+
+    console.log(`[Room ${roomCode}] Innocent saved score: ${totalScore}`);
   });
 
   // ------------------------------------------

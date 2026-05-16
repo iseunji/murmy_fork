@@ -1480,6 +1480,26 @@ async function showEnding(data) {
           const wl = document.getElementById('innocent-win-line');
           if (wl) wl.textContent = `이도현이 총 ${total}점을 모아 승리하였습니다.`;
         }
+
+        // 저장하기 버튼 (도현만)
+        if (data.myRole === 'innocent') {
+          const saveBtn = document.createElement('button');
+          saveBtn.className = 'score-save-btn';
+          saveBtn.textContent = '점수 저장하기';
+          saveBtn.addEventListener('click', () => {
+            const checkboxes = scoreList.querySelectorAll('.score-checkbox');
+            const manualChecks = [];
+            checkboxes.forEach((cb) => {
+              manualChecks.push(cb.checked);
+            });
+            socket.emit('save-score', { manualChecks });
+            saveBtn.textContent = '저장 완료';
+            saveBtn.disabled = true;
+            saveBtn.classList.add('saved');
+            checkboxes.forEach((cb) => { cb.disabled = true; });
+          });
+          summaryEl.appendChild(saveBtn);
+        }
       }
     }
 
@@ -3177,6 +3197,38 @@ socket.on('accusation-received', (data) => {
 
 socket.on('game-ending', async (data) => {
   await showEnding(data);
+});
+
+// ---- Score saved by innocent player ----
+
+socket.on('score-saved', (data) => {
+  const scoreItems = document.querySelectorAll('.score-item');
+  const manualItems = [];
+  scoreItems.forEach((li) => {
+    const dash = li.querySelector('.score-check:not(.achieved)');
+    if (dash && dash.textContent === '—') {
+      manualItems.push({ li, dash });
+    }
+  });
+  if (data.manualChecks && manualItems.length === data.manualChecks.length) {
+    let bonusTotal = 0;
+    manualItems.forEach((m, i) => {
+      const achieved = data.manualChecks[i];
+      m.dash.textContent = achieved ? '✓' : '✕';
+      m.dash.className = achieved ? 'score-check achieved' : 'score-check';
+      const pts = m.li.querySelector('.score-points');
+      if (pts && achieved) {
+        const p = parseInt(pts.textContent) || 3;
+        pts.textContent = `3점`;
+        bonusTotal += 3;
+      }
+    });
+    const wl = document.getElementById('innocent-win-line');
+    if (wl && data.totalScore != null) {
+      wl.textContent = `이도현이 총 ${data.totalScore}점을 모아 승리하였습니다.`;
+    }
+  }
+  showToast('상대방이 점수를 저장했습니다.', 'info');
 });
 
 // ---- Partner Away (temporary) ----

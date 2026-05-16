@@ -1963,14 +1963,14 @@ function initImageZoom() {
     btnIn.addEventListener('click', (e) => {
       e.stopPropagation();
       const rect = wrap.getBoundingClientRect();
-      zoomAt(0.25, rect.width / 2, rect.height / 2);
+      zoomAt(0.5, rect.width / 2, rect.height / 2);
     });
   }
   if (btnOut) {
     btnOut.addEventListener('click', (e) => {
       e.stopPropagation();
       const rect = wrap.getBoundingClientRect();
-      zoomAt(-0.25, rect.width / 2, rect.height / 2);
+      zoomAt(-0.5, rect.width / 2, rect.height / 2);
     });
   }
 }

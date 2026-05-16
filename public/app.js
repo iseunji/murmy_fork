@@ -2886,9 +2886,10 @@ socket.on('evidence-detail', (data) => {
     actionButtons.hidden = true;
   }
 
-  // Check if body content overflows; only show scroll gradient when needed.
+  // Scroll description to top & check overflow for gradient hint.
   const bodyWrap = $('evidence-modal-body-wrap');
   const bodyEl = $('evidence-modal-content');
+  if (bodyEl) bodyEl.scrollTop = 0;
   if (bodyWrap && bodyEl) {
     requestAnimationFrame(() => {
       const hasOverflow = bodyEl.scrollHeight > bodyEl.clientHeight + 5;
@@ -2959,9 +2960,10 @@ socket.on('evidence-picked', (data) => {
 
   SFX.reveal();
 
-  // Check if body content overflows; only show scroll gradient when needed.
+  // Scroll description to top & check overflow for gradient hint.
   const bodyWrap2 = $('evidence-modal-body-wrap');
   const bodyEl2 = $('evidence-modal-content');
+  if (bodyEl2) bodyEl2.scrollTop = 0;
   if (bodyWrap2 && bodyEl2) {
     requestAnimationFrame(() => {
       const hasOverflow = bodyEl2.scrollHeight > bodyEl2.clientHeight + 5;

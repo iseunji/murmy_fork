@@ -2525,10 +2525,10 @@ body::before {
 
 .score-check {
   flex-shrink: 0;
-  width: 18px;
+  width: 20px;
   text-align: center;
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.35);
+  font-size: 1.05rem;
+  color: #e53935;
 }
 
 .score-check.achieved {

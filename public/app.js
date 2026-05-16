@@ -1379,7 +1379,7 @@ async function showEnding(data) {
 
           const check = document.createElement('span');
           check.className = achieved ? 'score-check achieved' : 'score-check';
-          check.textContent = achieved ? '✓' : '✗';
+          check.textContent = achieved ? '✓' : '✕';
           li.appendChild(check);
 
           const label = document.createElement('span');
@@ -1414,7 +1414,7 @@ async function showEnding(data) {
           if (item.auto) {
             const check = document.createElement('span');
             check.className = item.achieved ? 'score-check achieved' : 'score-check';
-            check.textContent = item.achieved ? '✓' : '✗';
+            check.textContent = item.achieved ? '✓' : '✕';
             li.appendChild(check);
 
             const label = document.createElement('span');

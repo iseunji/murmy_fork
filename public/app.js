@@ -1791,7 +1791,7 @@ function closeTabPanel() {
    ========================================================================== */
 
 const imageZoom = { scale: 1, x: 0, y: 0, minScale: 1, maxScale: 4 };
-let _zoomHintShown = false;
+// Per-tab zoom hint tracking via sessionStorage
 
 function resetImageZoom() {
   imageZoom.scale = 1;
@@ -1845,8 +1845,8 @@ function zoomAt(delta, cx, cy) {
 }
 
 function showZoomHint() {
-  if (_zoomHintShown) return;
-  _zoomHintShown = true;
+  if (sessionStorage.getItem('zoomHintShown')) return;
+  sessionStorage.setItem('zoomHintShown', '1');
   const hint = $('image-zoom-hint');
   if (!hint) return;
   hint.classList.add('visible');

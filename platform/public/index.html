@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a1a2e">
+  <title>Murmy - 2인용 머더 미스터리</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="platform.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="platform-header" id="platform-header">
+      <a href="/" class="header-logo">Murmy</a>
+      <nav class="header-nav" id="header-nav">
+        <button class="btn-header" id="btn-login">로그인</button>
+      </nav>
+      <nav class="header-nav header-nav--logged-in" id="header-nav-logged" hidden>
+        <span class="user-points" id="header-points">0P</span>
+        <button class="btn-header btn-profile" id="btn-profile">내 정보</button>
+        <button class="btn-header btn-logout" id="btn-logout">로그아웃</button>
+      </nav>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="platform-main" id="platform-main">
+
+      <!-- PAGE: Game List (Home) -->
+      <section class="page page--home active" id="page-home">
+        <div class="hero">
+          <h1 class="hero-title">2인용 머더 미스터리</h1>
+          <p class="hero-desc">둘이서 즐기는 추리 게임. 역할을 나누고, 증거를 모으고, 진실을 밝혀라.</p>
+        </div>
+
+        <div class="game-list" id="game-list">
+          <!-- Game cards injected by JS -->
+        </div>
+      </section>
+
+      <!-- PAGE: Auth (Login / Signup) -->
+      <section class="page page--auth" id="page-auth" hidden>
+        <div class="auth-container">
+          <h2 class="auth-title" id="auth-title">로그인</h2>
+
+          <form class="auth-form" id="auth-form">
+            <div class="form-group" id="form-group-nickname" hidden>
+              <label for="auth-nickname">닉네임</label>
+              <input type="text" id="auth-nickname" placeholder="게임에서 사용할 닉네임" autocomplete="nickname">
+            </div>
+            <div class="form-group">
+              <label for="auth-email">이메일</label>
+              <input type="email" id="auth-email" placeholder="email@example.com" autocomplete="email" required>
+            </div>
+            <div class="form-group">
+              <label for="auth-password">비밀번호</label>
+              <input type="password" id="auth-password" placeholder="6자 이상" autocomplete="current-password" required>
+            </div>
+            <p class="auth-error" id="auth-error" hidden></p>
+            <button type="submit" class="btn btn-primary btn-auth" id="btn-auth-submit">로그인</button>
+          </form>
+
+          <div class="auth-divider"><span>또는</span></div>
+
+          <div class="auth-oauth">
+            <a href="/api/auth/kakao" class="btn btn-oauth btn-kakao">카카오로 시작하기</a>
+            <a href="/api/auth/google" class="btn btn-oauth btn-google">Google로 시작하기</a>
+          </div>
+
+          <p class="auth-toggle">
+            <span id="auth-toggle-text">계정이 없으신가요?</span>
+            <button class="btn-link" id="btn-auth-toggle">회원가입</button>
+          </p>
+        </div>
+      </section>
+
+      <!-- PAGE: Profile -->
+      <section class="page page--profile" id="page-profile" hidden>
+        <div class="profile-container">
+          <h2 class="profile-title">내 정보</h2>
+          <div class="profile-card">
+            <div class="profile-info">
+              <span class="profile-nickname" id="profile-nickname">-</span>
+              <span class="profile-email" id="profile-email">-</span>
+            </div>
+            <div class="profile-points-block">
+              <span class="profile-points-label">보유 포인트</span>
+              <span class="profile-points-value" id="profile-points">0P</span>
+              <span class="profile-points-note">1P = 1원</span>
+            </div>
+          </div>
+
+          <div class="profile-section">
+            <h3>쿠폰</h3>
+            <div class="coupon-list" id="coupon-list">
+              <p class="empty-state">쿠폰이 없습니다.</p>
+            </div>
+          </div>
+
+          <div class="profile-section">
+            <h3>플레이 기록</h3>
+            <div class="history-list" id="history-list">
+              <p class="empty-state">아직 플레이한 게임이 없습니다.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE: Purchase -->
+      <section class="page page--purchase" id="page-purchase" hidden>
+        <div class="purchase-container">
+          <h2 class="purchase-title">게임 구매</h2>
+          <div class="purchase-game-info" id="purchase-game-info">
+            <!-- Injected by JS -->
+          </div>
+          <div class="purchase-form">
+            <div class="purchase-row">
+              <span>게임 가격</span>
+              <span id="purchase-price">20,000원</span>
+            </div>
+            <div class="purchase-row">
+              <label for="purchase-coupon">쿠폰 코드</label>
+              <input type="text" id="purchase-coupon" placeholder="쿠폰 코드 입력">
+            </div>
+            <div class="purchase-row">
+              <label for="purchase-points">포인트 사용</label>
+              <div class="points-input-wrap">
+                <input type="number" id="purchase-points" value="0" min="0">
+                <span class="points-available" id="purchase-points-available">사용 가능: 0P</span>
+              </div>
+            </div>
+            <div class="purchase-divider"></div>
+            <div class="purchase-row purchase-total">
+              <span>최종 결제 금액</span>
+              <span id="purchase-total">20,000원</span>
+            </div>
+            <button class="btn btn-primary btn-purchase" id="btn-purchase-confirm">구매하기</button>
+            <p class="purchase-note">실제 결제는 연동되지 않습니다 (데모)</p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="platform.js"></script>
+</body>
+</html>

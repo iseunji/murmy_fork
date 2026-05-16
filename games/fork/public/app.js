@@ -567,7 +567,7 @@ class AmbientSound {
 
   startBGM(fromBeginning) {
     if (!this.bgm) {
-      this.bgm = new Audio('/assets/bgm.mp3');
+      this.bgm = new Audio('assets/bgm.mp3');
       this.bgm.loop = true;
       this.bgm.volume = 0.3;
     }
@@ -2142,7 +2142,7 @@ function renderCharacterInfoTab(container) {
     row.className = 'character-info-row';
     row.innerHTML =
       '<div class="character-info-portrait">' +
-        '<img src="/assets/' + char.id + '.png?v=2" alt="' + char.name + '" />' +
+        '<img src="assets/' + char.id + '.png?v=2" alt="' + char.name + '" />' +
       '</div>' +
       '<div class="character-info-details">' +
         '<h3 class="character-info-name">' + char.name + badge + '</h3>' +
@@ -2370,7 +2370,7 @@ function closeTradeProposalModal() {
 /**
  * Establish the Socket.IO connection and register all event handlers.
  */
-const socket = io();
+const socket = io('/fork');
 
 // ---- Room Management ----
 
@@ -2489,9 +2489,9 @@ const SKETCH_FILTER = '<defs><filter id="pencil"><feTurbulence type="turbulence"
 const SK = 'filter="url(#pencil)"'; // shorthand
 
 const CHARACTER_SILHOUETTES = {
-  hajin: '<img src="/assets/hajin.png?v=2" alt="서하진" />',
-  dohyun: '<img src="/assets/dohyun.png?v=2" alt="이도현" />',
-  professor: '<img src="/assets/professor.png?v=2" alt="황준석" />',
+  hajin: '<img src="assets/hajin.png?v=2" alt="서하진" />',
+  dohyun: '<img src="assets/dohyun.png?v=2" alt="이도현" />',
+  professor: '<img src="assets/professor.png?v=2" alt="황준석" />',
 };
 
 function renderCharacterCards(characters) {

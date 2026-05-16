@@ -726,7 +726,7 @@ body::before {
    ============================================================ */
 
 #screen-title {
-  background: var(--bg) url('/assets/kraft-texture.png') center / cover no-repeat;
+  background: var(--bg) url('assets/kraft-texture.png') center / cover no-repeat;
 }
 
 #screen-title::before {

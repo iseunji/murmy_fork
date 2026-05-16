@@ -6,13 +6,14 @@
   <meta name="theme-color" content="#212121">
   <meta name="description" content="Fork - 2인용 머더 미스터리 웹 게임">
   <title>Fork: 갈라진 의도</title>
+  <base href="/games/fork/">
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@300;400;500&display=block" rel="stylesheet">
 
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="style.css">
   <style>
     html { visibility: hidden; }
     html.fonts-loaded { visibility: visible; }
@@ -57,11 +58,11 @@
   <!-- ===== SCREEN 1: TITLE ===== -->
   <section id="screen-title" class="screen active">
     <div class="screen-inner title-layout">
-      <img class="title-logo" src="/assets/Title.png" alt="Fork 갈라진 의도">
+      <img class="title-logo" src="assets/Title.png" alt="Fork 갈라진 의도">
       <div class="title-content">
         <div class="sketch-divider" aria-hidden="true"></div>
         <div class="title-illustration-wrap">
-          <img class="title-illustration" src="/assets/title-illustration.png" alt="표지 일러스트">
+          <img class="title-illustration" src="assets/title-illustration.png" alt="표지 일러스트">
         </div>
       </div>
       <div class="title-bottom">
@@ -508,6 +509,6 @@
   <!-- Socket.io client -->
   <script src="/socket.io/socket.io.js"></script>
   <!-- App script -->
-  <script src="/app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>

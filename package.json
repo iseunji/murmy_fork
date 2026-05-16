@@ -1,14 +1,19 @@
 {
-  "name": "fork-murder-mystery",
-  "version": "1.0.0",
-  "description": "《Fork》 - 2인용 인터랙티브 머더 미스터리 게임",
+  "name": "murmy",
+  "version": "2.0.0",
+  "description": "Murmy - 2인용 머더 미스터리 플랫폼",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
+    "better-sqlite3": "^12.10.0",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^17.4.2",
     "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.3",
     "socket.io": "^4.7.4"
   },
   "devDependencies": {

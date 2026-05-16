@@ -1717,10 +1717,12 @@ function openTabPanel(tabId) {
   if (!title || !body) return;
 
   body.innerHTML = '';
+  title.style.display = '';
 
   switch (tabId) {
     case 'characters':
-      title.textContent = '인물/목표';
+      title.textContent = '';
+      title.style.display = 'none';
       renderCharacterInfoTab(body);
       break;
     case 'phase1':

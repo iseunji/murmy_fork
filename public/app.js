@@ -1250,7 +1250,7 @@ async function showEnding(data) {
       p.className = 'ending-paragraph visible';
 
       // [읽어주세요] guide lines → blue
-      if (/^\[.*읽어주세요.*\]$/.test(paragraph)) {
+      if (/\[.*읽어주세요.*\]/.test(paragraph)) {
         p.classList.add('ending-reading-guide');
         p.textContent = paragraph;
       // Lines containing "dialogue" → highlight quoted parts in blue

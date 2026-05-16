@@ -1429,12 +1429,19 @@ async function showEnding(data) {
 
             if (item.achieved) autoTotal += item.points;
           } else {
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.className = 'score-checkbox';
-            checkbox.dataset.points = item.points;
-            checkbox.addEventListener('change', () => updateInnocentTotal());
-            li.appendChild(checkbox);
+            if (data.myRole === 'innocent') {
+              const checkbox = document.createElement('input');
+              checkbox.type = 'checkbox';
+              checkbox.className = 'score-checkbox';
+              checkbox.dataset.points = item.points;
+              checkbox.addEventListener('change', () => updateInnocentTotal());
+              li.appendChild(checkbox);
+            } else {
+              const check = document.createElement('span');
+              check.className = 'score-check';
+              check.textContent = '—';
+              li.appendChild(check);
+            }
 
             const label = document.createElement('span');
             label.className = 'score-label';

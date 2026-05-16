@@ -1311,7 +1311,22 @@ async function showEnding(data) {
         // Last paragraph is the conclusion text
         p.className = 'truth-conclusion';
       }
-      p.textContent = paragraph;
+      // Highlight 【...】 time markers in gold
+      if (/【.*?】/.test(paragraph) && !p.className) {
+        const parts = paragraph.split(/(【.*?】)/);
+        for (const part of parts) {
+          if (/^【.*?】$/.test(part)) {
+            const span = document.createElement('span');
+            span.style.color = 'var(--accent-amber)';
+            span.textContent = part;
+            p.appendChild(span);
+          } else {
+            p.appendChild(document.createTextNode(part));
+          }
+        }
+      } else {
+        p.textContent = paragraph;
+      }
       truthRevealInner.appendChild(p);
     }
 

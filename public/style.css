@@ -2330,9 +2330,9 @@ body::before {
 }
 
 .truth-reveal-inner p {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   line-height: 1.95;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   margin-bottom: 16px;
 }
 

@@ -1957,8 +1957,15 @@ function initImageZoom() {
   });
 
   // --- Zoom buttons ---
+  const btnReset = $('btn-zoom-reset');
   const btnIn = $('btn-zoom-in');
   const btnOut = $('btn-zoom-out');
+  if (btnReset) {
+    btnReset.addEventListener('click', (e) => {
+      e.stopPropagation();
+      resetImageZoom();
+    });
+  }
   if (btnIn) {
     btnIn.addEventListener('click', (e) => {
       e.stopPropagation();

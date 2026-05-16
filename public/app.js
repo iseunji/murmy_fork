@@ -1895,7 +1895,9 @@ function initImageZoom() {
       const rect = wrap.getBoundingClientRect();
       const cx = ((e.touches[0].clientX + e.touches[1].clientX) / 2) - rect.left;
       const cy = ((e.touches[0].clientY + e.touches[1].clientY) / 2) - rect.top;
-      const newScale = Math.max(imageZoom.minScale, Math.min(imageZoom.maxScale, startScale * (dist / startDist)));
+      const rawRatio = dist / startDist;
+      const dampedRatio = 1 + (rawRatio - 1) * 0.45;
+      const newScale = Math.max(imageZoom.minScale, Math.min(imageZoom.maxScale, startScale * dampedRatio));
       const ratio = newScale / imageZoom.scale;
       imageZoom.scale = newScale;
       imageZoom.x = cx - ratio * (cx - imageZoom.x);
@@ -1924,7 +1926,7 @@ function initImageZoom() {
     const rect = wrap.getBoundingClientRect();
     const cx = e.clientX - rect.left;
     const cy = e.clientY - rect.top;
-    const delta = e.deltaY > 0 ? -0.3 : 0.3;
+    const delta = e.deltaY > 0 ? -0.15 : 0.15;
     zoomAt(delta, cx, cy);
   }, { passive: false });
 
@@ -1961,14 +1963,14 @@ function initImageZoom() {
     btnIn.addEventListener('click', (e) => {
       e.stopPropagation();
       const rect = wrap.getBoundingClientRect();
-      zoomAt(0.5, rect.width / 2, rect.height / 2);
+      zoomAt(0.25, rect.width / 2, rect.height / 2);
     });
   }
   if (btnOut) {
     btnOut.addEventListener('click', (e) => {
       e.stopPropagation();
       const rect = wrap.getBoundingClientRect();
-      zoomAt(-0.5, rect.width / 2, rect.height / 2);
+      zoomAt(-0.25, rect.width / 2, rect.height / 2);
     });
   }
 }

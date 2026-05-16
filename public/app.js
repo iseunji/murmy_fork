@@ -909,15 +909,10 @@ function renderEvidenceCards(evidenceList) {
       card.classList.add('new');
     }
 
-    const icon = document.createElement('span');
-    icon.className = 'evidence-icon';
-    icon.textContent = EVIDENCE_ICONS[ev.type] || DEFAULT_EVIDENCE_ICON;
-
     const title = document.createElement('span');
     title.className = 'evidence-title';
     title.textContent = ev.title;
 
-    card.appendChild(icon);
     card.appendChild(title);
 
     // Add "NEW" badge for unseen evidence.
@@ -1055,15 +1050,10 @@ function renderEvidencePool(pool, isMyTurn) {
     card.className = 'evidence-card' + (isMyTurn ? ' selectable' : ' locked');
     card.dataset.id = ev.id;
 
-    const icon = document.createElement('span');
-    icon.className = 'evidence-icon';
-    icon.textContent = EVIDENCE_ICONS[ev.type] || DEFAULT_EVIDENCE_ICON;
-
     const title = document.createElement('span');
     title.className = 'evidence-title';
     title.textContent = ev.title;
 
-    card.appendChild(icon);
     card.appendChild(title);
 
     if (isMyTurn) {
@@ -1102,15 +1092,10 @@ function renderCollectedEvidence(collectedList) {
     card.className = 'evidence-card collected';
     card.dataset.id = ev.id;
 
-    const icon = document.createElement('span');
-    icon.className = 'evidence-icon';
-    icon.textContent = EVIDENCE_ICONS[ev.type] || DEFAULT_EVIDENCE_ICON;
-
     const title = document.createElement('span');
     title.className = 'evidence-title';
     title.textContent = ev.title;
 
-    card.appendChild(icon);
     card.appendChild(title);
 
     if (ev.tag) {
@@ -2213,15 +2198,10 @@ function renderEvidenceTabContent(container, evidenceList, narrativeText) {
     card.className = 'evidence-card collected';
     card.dataset.id = ev.id;
 
-    const icon = document.createElement('span');
-    icon.className = 'evidence-icon';
-    icon.textContent = EVIDENCE_ICONS[ev.type] || DEFAULT_EVIDENCE_ICON;
-
     const titleSpan = document.createElement('span');
     titleSpan.className = 'evidence-title';
     titleSpan.textContent = ev.title;
 
-    card.appendChild(icon);
     card.appendChild(titleSpan);
 
     card.addEventListener('click', () => {
@@ -2251,15 +2231,10 @@ function renderComboTabContent(container) {
     card.className = 'evidence-card collected combo-card';
     card.dataset.id = combo.id;
 
-    const icon = document.createElement('span');
-    icon.className = 'evidence-icon';
-    icon.textContent = EVIDENCE_ICONS[combo.type] || DEFAULT_EVIDENCE_ICON;
-
     const titleSpan = document.createElement('span');
     titleSpan.className = 'evidence-title';
     titleSpan.textContent = combo.title;
 
-    card.appendChild(icon);
     card.appendChild(titleSpan);
 
     card.addEventListener('click', () => {
@@ -2333,15 +2308,14 @@ function showTradeProposalModal(data) {
   if (!modal || !cardInfo || !myCardsGrid) return;
 
   // Show proposed card info
-  const icon = EVIDENCE_ICONS[data.card.type] || DEFAULT_EVIDENCE_ICON;
-  cardInfo.textContent = `${icon} ${data.card.title}`;
+  cardInfo.textContent = data.card.title;
 
   // Show my cards for selection
   myCardsGrid.innerHTML = '';
   state.allCollectedEvidence.forEach((ev) => {
     const card = document.createElement('button');
     card.className = 'trade-my-card';
-    card.textContent = `${EVIDENCE_ICONS[ev.type] || DEFAULT_EVIDENCE_ICON} ${ev.title}`;
+    card.textContent = ev.title;
     card.addEventListener('click', () => {
       SFX.click();
       socket.emit('trade-accept', { myCardId: ev.id });

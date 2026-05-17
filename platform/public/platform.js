@@ -241,15 +241,11 @@
 
     container.innerHTML = games.map((game) => {
       const owned = game.purchased;
-      const charsHtml = (game.coverCharacters || []).map((src) =>
-        `<img class="game-card-char" src="${src}" alt="">`
-      ).join('');
-
       return `
         <div class="game-card" data-game-id="${game.id}">
           <div class="game-card-cover game-card-cover--loading" data-bg="${game.coverBg || ''}">
             ${game.coverLogo ? `<img class="game-card-logo" src="${game.coverLogo}" alt="${game.title}">` : ''}
-            ${charsHtml ? `<div class="game-card-chars">${charsHtml}</div>` : ''}
+            ${game.coverIllust ? `<div class="game-card-illust-wrap"><img class="game-card-illust" src="${game.coverIllust}" alt=""></div>` : ''}
           </div>
           <div class="game-card-body">
             <div class="game-card-header">

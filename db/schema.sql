@@ -70,9 +70,33 @@ CREATE TABLE IF NOT EXISTS reviews (
   created_at TEXT DEFAULT (datetime('now'))
 );
 
+-- Promo codes table (anyone can redeem)
+CREATE TABLE IF NOT EXISTS promo_codes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT UNIQUE NOT NULL,
+  game_id TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT 'full_access',
+  max_uses INTEGER,
+  current_uses INTEGER DEFAULT 0,
+  expires_at TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+-- Promo redemptions table
+CREATE TABLE IF NOT EXISTS promo_redemptions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  promo_code_id INTEGER NOT NULL REFERENCES promo_codes(id),
+  game_id TEXT NOT NULL,
+  redeemed_at TEXT DEFAULT (datetime('now')),
+  UNIQUE(user_id, promo_code_id)
+);
+
 -- Index for faster lookups
 CREATE INDEX IF NOT EXISTS idx_purchases_user_game ON purchases(user_id, game_id);
 CREATE INDEX IF NOT EXISTS idx_completions_user_game ON game_completions(user_id, game_id);
 CREATE INDEX IF NOT EXISTS idx_coupons_user ON coupons(user_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_game ON reviews(game_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_user_game ON reviews(user_id, game_id);
+CREATE INDEX IF NOT EXISTS idx_promo_codes_code ON promo_codes(code);
+CREATE INDEX IF NOT EXISTS idx_promo_redemptions_user_game ON promo_redemptions(user_id, game_id);

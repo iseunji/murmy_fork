@@ -260,7 +260,7 @@ router.post('/games/:id/purchase', requireAuth, async (req, res) => {
     return res.status(400).json({ error: '이미 구매한 게임입니다.' });
   }
 
-  const { pointsToUse = 0, couponCode } = req.body;
+  const { pointsToUse = 0, couponCode, paymentMethod } = req.body;
   let discount = 0;
   let couponId = null;
 
@@ -296,8 +296,8 @@ router.post('/games/:id/purchase', requireAuth, async (req, res) => {
 
   // Record purchase
   db.prepare(
-    'INSERT INTO purchases (user_id, game_id, amount_paid, points_used, coupon_id) VALUES (?, ?, ?, ?, ?)'
-  ).run(req.user.id, game.id, amountPaid, actualPointsUsed, couponId);
+    'INSERT INTO purchases (user_id, game_id, amount_paid, points_used, coupon_id, payment_method) VALUES (?, ?, ?, ?, ?, ?)'
+  ).run(req.user.id, game.id, amountPaid, actualPointsUsed, couponId, paymentMethod || null);
 
   // Mark coupon as used
   if (couponId) {
@@ -406,6 +406,63 @@ router.post('/reviews', requireAuth, (req, res) => {
   ).run(req.user.id, gameId, rating, content.trim());
 
   res.json({ success: true });
+});
+
+// ==========================================================================
+// PROMO CODE ROUTES
+// ==========================================================================
+
+// POST /api/promo/redeem — redeem a promo code for game access
+router.post('/promo/redeem', requireAuth, (req, res) => {
+  const { code } = req.body;
+  if (!code || !code.trim()) {
+    return res.status(400).json({ error: '프로모션 코드를 입력해주세요.' });
+  }
+
+  const promo = db.prepare('SELECT * FROM promo_codes WHERE code = ?').get(code.trim().toUpperCase());
+  if (!promo) {
+    return res.status(404).json({ error: '유효하지 않은 프로모션 코드입니다.' });
+  }
+
+  // Check expiry
+  if (promo.expires_at && new Date(promo.expires_at) < new Date()) {
+    return res.status(400).json({ error: '만료된 프로모션 코드입니다.' });
+  }
+
+  // Check max uses
+  if (promo.max_uses !== null && promo.current_uses >= promo.max_uses) {
+    return res.status(400).json({ error: '사용 한도에 도달한 프로모션 코드입니다.' });
+  }
+
+  // Check if user already has access (purchased or already redeemed)
+  if (points.hasPurchased(req.user.id, promo.game_id)) {
+    return res.status(400).json({ error: '이미 해당 게임에 접근 권한이 있습니다.' });
+  }
+
+  // Check if already redeemed this specific code
+  const existing = db.prepare(
+    'SELECT id FROM promo_redemptions WHERE user_id = ? AND promo_code_id = ?'
+  ).get(req.user.id, promo.id);
+  if (existing) {
+    return res.status(400).json({ error: '이미 사용한 프로모션 코드입니다.' });
+  }
+
+  // Redeem
+  db.prepare(
+    'INSERT INTO promo_redemptions (user_id, promo_code_id, game_id) VALUES (?, ?, ?)'
+  ).run(req.user.id, promo.id, promo.game_id);
+
+  db.prepare(
+    'UPDATE promo_codes SET current_uses = current_uses + 1 WHERE id = ?'
+  ).run(promo.id);
+
+  const game = GAMES.find((g) => g.id === promo.game_id);
+  res.json({
+    success: true,
+    gameId: promo.game_id,
+    gameTitle: game ? game.title : promo.game_id,
+    message: `${game ? game.title : promo.game_id} 이용권이 등록되었습니다.`,
+  });
 });
 
 // DELETE /api/reviews/:id — delete own review

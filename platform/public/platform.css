@@ -600,6 +600,12 @@ body {
   font-weight: 300;
 }
 
+.game-card-meta-inline {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-weight: 300;
+}
+
 .game-card-badge {
   font-size: 0.7rem;
   padding: 0.2rem 0.5rem;

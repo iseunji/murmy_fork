@@ -251,16 +251,12 @@
             <div class="game-card-header">
               <div class="game-card-title-row">
                 <span class="game-card-title">${game.title}</span>
-                ${game.subtitle ? `<span class="game-card-subtitle">(${game.subtitle})</span>` : ''}
+                <span class="game-card-meta-inline">${game.subtitle ? `(${game.subtitle})` : ''} · ${game.players}인용 ${game.duration}</span>
               </div>
               ${owned
                 ? '<span class="game-card-badge game-card-badge--owned">보유 중</span>'
                 : `<span class="game-card-price">${game.price.toLocaleString()}원</span>`
               }
-            </div>
-            <div class="game-card-meta">
-              <span>${game.players}인용</span>
-              <span>${game.duration}</span>
             </div>
             <p class="game-card-desc">${game.description}</p>
             <div class="game-card-actions">

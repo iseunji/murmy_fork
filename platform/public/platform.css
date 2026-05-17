@@ -1,5 +1,5 @@
 /* ============================================================
-   MURMY42 PLATFORM STYLES — Mobile Web App (390px)
+   MURMY42 PLATFORM STYLES — Mobile Web App (500px)
    ============================================================ */
 
 /* --- Dark Theme (default) --- */
@@ -25,9 +25,9 @@
   --google: #fff;
   --radius: 12px;
   --radius-sm: 8px;
-  --container-max: 390px;
+  --container-max: 500px;
   --font-body: 'Noto Sans KR', sans-serif;
-  --bottom-nav-height: 56px;
+  --bottom-nav-height: 64px;
 }
 
 /* --- Light Theme --- */
@@ -47,6 +47,14 @@
   --header-bg: #f7f6f3;
   --card-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
   --danger: #c44040;
+}
+
+html {
+  background: #0a0a0c;
+}
+
+html[data-theme="light"] {
+  background: #e8e6e1;
 }
 
 * {
@@ -90,11 +98,13 @@ body {
 }
 
 .header-logo {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--accent);
   text-decoration: none;
-  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+}
+.header-logo-img {
+  height: 42px;
+  width: auto;
 }
 
 .header-right {
@@ -118,14 +128,19 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   background: none;
   border: 1px solid var(--border);
   border-radius: 50%;
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s;
+}
+
+.btn-theme svg {
+  width: 15px;
+  height: 15px;
 }
 
 .btn-theme:hover {
@@ -137,6 +152,111 @@ body {
 [data-theme="light"] .icon-sun { display: none; }
 [data-theme="light"] .icon-moon { display: block; }
 
+/* Hamburger Button */
+.btn-hamburger {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  width: 34px;
+  height: 34px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+}
+
+.hamburger-line {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: var(--text-secondary);
+  border-radius: 1px;
+  transition: all 0.2s;
+}
+
+.btn-hamburger:hover .hamburger-line,
+.btn-hamburger.active .hamburger-line {
+  background: var(--accent);
+}
+
+/* Hamburger Menu Dropdown */
+.hamburger-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 100%;
+  max-width: var(--container-max);
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  z-index: 99;
+  animation: menuSlideDown 0.15s ease-out;
+}
+
+.hamburger-menu[hidden] {
+  display: none;
+}
+
+@keyframes menuSlideDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.hamburger-menu-inner {
+  padding: 0.5rem 0;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1.25rem;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-align: left;
+}
+
+.menu-item:hover {
+  background: var(--accent-subtle);
+}
+
+.menu-item[hidden] {
+  display: none;
+}
+
+.menu-icon {
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+}
+
+.menu-label {
+  flex: 1;
+}
+
+.menu-value {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.hamburger-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 98;
+}
+
+.hamburger-backdrop[hidden] {
+  display: none;
+}
+
+
 /* ============================================================
    BOTTOM NAVIGATION
    ============================================================ */
@@ -147,14 +267,15 @@ body {
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
-  max-width: var(--container-max);
-  height: var(--bottom-nav-height);
+  max-width: 500px;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-around;
-  background: var(--header-bg);
-  border-top: 1px solid var(--border);
-  z-index: 100;
+  background: var(--bg-primary);
+  border-top: none;
+  z-index: 10001;
+  padding-top: 2px;
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
@@ -162,27 +283,58 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.15rem;
+  justify-content: center;
+  flex: 1;
+  height: 100%;
   background: none;
   border: none;
-  color: var(--text-muted);
-  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 10px;
+  font-weight: 500;
   font-family: inherit;
   cursor: pointer;
-  padding: 0.4rem 1rem;
-  transition: color 0.2s;
+  gap: 4px;
+  transition: color 0.15s;
+  text-decoration: none;
 }
 
 .bottom-nav-item[hidden] {
   display: none;
 }
 
-.bottom-nav-item.active {
-  color: var(--accent);
+.bottom-nav-item:hover {
+  color: #ffffff;
 }
 
-.bottom-nav-item svg {
-  stroke: currentColor;
+.bottom-nav-item.active {
+  color: #ffffff;
+}
+
+.bottom-nav-item.active i {
+  font-weight: 900;
+}
+
+.bottom-nav-item i {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Light theme bottom nav */
+[data-theme="light"] .bottom-nav {
+  background: var(--accent);
+}
+
+[data-theme="light"] .bottom-nav-item {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+[data-theme="light"] .bottom-nav-item:hover,
+[data-theme="light"] .bottom-nav-item.active {
+  color: #ffffff;
 }
 
 /* ============================================================
@@ -799,4 +951,247 @@ body {
   font-size: 0.75rem;
   color: var(--text-muted);
   margin-top: 0.5rem;
+}
+
+/* ============================================================
+   REVIEWS PAGE
+   ============================================================ */
+
+.reviews-container {
+  margin: 1rem auto;
+  width: 100%;
+}
+
+.reviews-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.reviews-title {
+  font-size: 1.5rem;
+}
+
+.btn-write-review {
+  padding: 0.5rem 1rem;
+  font-size: 0.82rem;
+}
+
+/* Stats */
+.reviews-stats {
+  margin-bottom: 1.25rem;
+}
+
+.review-stat {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+  box-shadow: var(--card-shadow);
+}
+
+.review-stat-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  min-width: 3rem;
+}
+
+.review-stat-stars {
+  display: flex;
+  gap: 2px;
+}
+
+.review-stat-info {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  margin-left: auto;
+}
+
+/* Star colors */
+.star-filled {
+  color: #f5c518;
+  font-size: 0.85rem;
+}
+
+.star-empty {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+/* Review list */
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.review-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  box-shadow: var(--card-shadow);
+}
+
+.review-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.4rem;
+}
+
+.review-item-nickname {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.review-item-game {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-left: 0.4rem;
+}
+
+.review-item-date {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.review-item-stars {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 0.5rem;
+}
+
+.review-item-content {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.review-delete {
+  margin-top: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--text-muted) !important;
+}
+
+.review-delete:hover {
+  color: var(--danger) !important;
+}
+
+/* Review Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 10002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modal-overlay[hidden] {
+  display: none;
+}
+
+.review-modal-content {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: var(--card-shadow);
+}
+
+.review-modal-title {
+  font-size: 1.2rem;
+  margin-bottom: 1.25rem;
+}
+
+.review-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.review-form-label {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.review-form-select {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.75rem;
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  font-family: inherit;
+  outline: none;
+  appearance: none;
+}
+
+.review-form-select:focus {
+  border-color: var(--accent);
+}
+
+.star-input {
+  display: flex;
+  gap: 6px;
+}
+
+.star-input i {
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: color 0.15s, transform 0.1s;
+}
+
+.star-input i.star-filled {
+  color: #f5c518;
+}
+
+.star-input i:hover {
+  transform: scale(1.15);
+}
+
+.review-form-textarea {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 100px;
+  outline: none;
+}
+
+.review-form-textarea:focus {
+  border-color: var(--accent);
+}
+
+.review-form-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.review-form-actions .btn {
+  flex: 1;
+}
+
+.review-form-actions .btn-secondary {
+  padding: 0.65rem;
 }

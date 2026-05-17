@@ -314,7 +314,7 @@ murmy/
 │   ├── points.js          # 포인트 적립/차감 로직
 │   └── middleware.js      # requireAuth, optionalAuth
 ├── platform/
-│   ├── routes.js          # API 라우트 (/api/auth/*, /api/user/*, /api/games/*)
+│   ├── routes.js          # API 라우트 (/api/auth/*, /api/user/*, /api/games/*, /api/reviews/*)
 │   ├─�� assets/            # 플랫폼 이미지 (게임 커버 등)
 │   └── public/            # 플랫폼 프론트엔드 SPA
 │       ├── index.html
@@ -339,6 +339,7 @@ murmy/
 | `/api/auth/*` | 인증 API |
 | `/api/user/*` | 사용자 정보 API |
 | `/api/games/*` | 게임 목록/구매/완료 API |
+| `/api/reviews` | 후기 목록/작성/삭제 API |
 
 ### 인증 시스템 (2026-05-17 확정)
 
@@ -374,6 +375,28 @@ murmy/
 - Fork 게임: `/fork` 네임스페이스
 - 클라이언트 연결: `io('/fork')`
 - 추후 게임 추가 시: `/game2`, `/game3` 등 네임스페이스 분리
+
+### 후기 시스템 (2026-05-17 확정)
+
+- **DB 테이블**: `reviews` (user_id, game_id, rating 1~5, content, created_at)
+- **작성 조건**: 로그인 + 해당 게임 완료 (game_completions 존재)
+- **1인 1후기**: 동일 게임에 대해 중복 작성 불가
+- **별점**: 1~5점, 반별 표시 지원
+- **API**:
+  - `GET /api/reviews` — 전체 후기 목록 + 게임별 평균 별점
+  - `POST /api/reviews` — 후기 작성 (gameId, rating, content)
+  - `DELETE /api/reviews/:id` — 본인 후기 삭제
+- **하단 네비**: 홈 | 후기 | 마이 (Font Awesome 아이콘)
+- **아이콘**: 홈(fa-home), 후기(fa-comment-dots), 마이(fa-user)
+
+### 플랫폼 UI (2026-05-17 확정)
+
+- **뷰박스 너비**: 500px (`--container-max`)
+- **하단 네비**: Font Awesome 6.5.1, 높이 64px, 아이콘 20px, 라벨 10px
+- **상단 헤더 우측**: 테마 전환 버튼 (30px) + 햄버거 메뉴
+- **로고**: `murmy42_logo.png` (높이 42px)
+- **OG 썸네일**: `murmy42_thumb.png`
+- **뷰박스 바깥 배경**: 다크 `#0a0a0c`, 라이트 `#e8e6e1`
 
 ### 새 게임 추가 시
 

@@ -9,26 +9,26 @@
   <!-- OG / SNS 썸네일 -->
   <meta property="og:title" content="Murmy42 - 2인용 머더 미스터리">
   <meta property="og:description" content="둘이서 즐기는 추리 게임. 역할을 나누고, 증거를 모으고, 진실을 밝히세요.">
-  <meta property="og:image" content="http://murmy42.duckdns.org/platform-assets/og-thumbnail.png">
+  <meta property="og:image" content="http://murmy42.duckdns.org/platform-assets/murmy42_thumb.png">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Murmy42 - 2인용 머더 미스터리">
   <meta name="twitter:description" content="둘이서 즐기는 추리 게임. 역할을 나누고, 증거를 모으고, 진실을 밝히세요.">
-  <meta name="twitter:image" content="http://murmy42.duckdns.org/platform-assets/og-thumbnail.png">
+  <meta name="twitter:image" content="http://murmy42.duckdns.org/platform-assets/murmy42_thumb.png">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
   <link rel="stylesheet" href="platform.css">
 </head>
 <body>
   <div id="app">
     <!-- Top Header -->
     <header class="platform-header" id="platform-header">
-      <a href="/" class="header-logo" id="header-logo">Murmy42</a>
+      <a href="/" class="header-logo" id="header-logo"><img src="/platform-assets/murmy42_logo.png" alt="Murmy42" class="header-logo-img"></a>
       <div class="header-right">
-        <span class="user-points" id="header-points" hidden>0P</span>
         <button class="btn-theme" id="btn-theme" aria-label="테마 전환">
           <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
@@ -37,7 +37,25 @@
             <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
           </svg>
         </button>
+        <button class="btn-hamburger" id="btn-hamburger" aria-label="메뉴">
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+        </button>
       </div>
+
+    <!-- Hamburger Dropdown Menu -->
+    <div class="hamburger-menu" id="hamburger-menu" hidden>
+      <div class="hamburger-menu-inner">
+        <div class="menu-item" id="menu-points" hidden>
+          <span class="menu-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 000 4h4a2 2 0 010 4H8"/><path d="M12 6v2m0 8v2"/></svg>
+          </span>
+          <span class="menu-label">보유 포인트</span>
+          <span class="menu-value" id="menu-points-value">0P</span>
+        </div>
+      </div>
+    </div>
     </header>
 
     <!-- Main Content Area -->
@@ -47,7 +65,7 @@
       <section class="page page--home active" id="page-home">
         <div class="hero">
           <h1 class="hero-title">2인용 머더 미스터리</h1>
-          <p class="hero-desc">둘이서 즐기는 추리 게임. 역할을 나누고, 증거를 모으고, 진실을 밝히세요.</p>
+          <p class="hero-desc">둘이서 즐기는 추리 게임. 역할을 나누고, 증거를 모으고,<br>진실을 밝히세요.</p>
         </div>
 
         <div class="game-tabs" id="game-tabs">
@@ -125,6 +143,47 @@
         </div>
       </section>
 
+      <!-- PAGE: Reviews -->
+      <section class="page page--reviews" id="page-reviews" hidden>
+        <div class="reviews-container">
+          <div class="reviews-header">
+            <h2 class="reviews-title">후기</h2>
+            <button class="btn btn-primary btn-write-review" id="btn-write-review" hidden>작성하기</button>
+          </div>
+          <div class="reviews-stats" id="reviews-stats"></div>
+          <div class="reviews-list" id="reviews-list">
+            <p class="empty-state">아직 후기가 없습니다.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- MODAL: Write Review -->
+      <div class="modal-overlay" id="review-modal" hidden>
+        <div class="modal-content review-modal-content">
+          <h3 class="review-modal-title">후기 작성</h3>
+          <div class="review-form">
+            <label class="review-form-label">게임</label>
+            <select class="review-form-select" id="review-game-select">
+              <option value="">게임 선택</option>
+            </select>
+            <label class="review-form-label">별점</label>
+            <div class="star-input" id="star-input">
+              <i class="fas fa-star" data-rating="1"></i>
+              <i class="fas fa-star" data-rating="2"></i>
+              <i class="fas fa-star" data-rating="3"></i>
+              <i class="fas fa-star" data-rating="4"></i>
+              <i class="fas fa-star" data-rating="5"></i>
+            </div>
+            <label class="review-form-label">후기</label>
+            <textarea class="review-form-textarea" id="review-content" placeholder="플레이 경험을 공유해주세요..." maxlength="500"></textarea>
+            <div class="review-form-actions">
+              <button class="btn btn-secondary" id="btn-review-cancel">취소</button>
+              <button class="btn btn-primary" id="btn-review-submit">등록</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- PAGE: Purchase -->
       <section class="page page--purchase" id="page-purchase" hidden>
         <div class="purchase-container">
@@ -164,22 +223,13 @@
     <!-- Bottom Navigation -->
     <nav class="bottom-nav" id="bottom-nav">
       <button class="bottom-nav-item active" data-nav="home" id="nav-home">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-        </svg>
-        <span>홈</span>
+        <i class="fas fa-home"></i><span>홈</span>
       </button>
-      <button class="bottom-nav-item" data-nav="auth" id="nav-login">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
-        </svg>
-        <span>로그인</span>
+      <button class="bottom-nav-item" data-nav="reviews" id="nav-reviews">
+        <i class="fas fa-comment-dots"></i><span>후기</span>
       </button>
-      <button class="bottom-nav-item" data-nav="profile" id="nav-profile" hidden>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
-        </svg>
-        <span>내 정보</span>
+      <button class="bottom-nav-item" data-nav="my" id="nav-my">
+        <i class="fas fa-user"></i><span>마이</span>
       </button>
     </nav>
   </div>

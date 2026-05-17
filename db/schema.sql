@@ -60,7 +60,19 @@ CREATE TABLE IF NOT EXISTS coupons (
   created_at TEXT DEFAULT (datetime('now'))
 );
 
+-- Reviews table
+CREATE TABLE IF NOT EXISTS reviews (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  game_id TEXT NOT NULL,
+  rating INTEGER NOT NULL CHECK(rating >= 1 AND rating <= 5),
+  content TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
 -- Index for faster lookups
 CREATE INDEX IF NOT EXISTS idx_purchases_user_game ON purchases(user_id, game_id);
 CREATE INDEX IF NOT EXISTS idx_completions_user_game ON game_completions(user_id, game_id);
 CREATE INDEX IF NOT EXISTS idx_coupons_user ON coupons(user_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_game ON reviews(game_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_user_game ON reviews(user_id, game_id);

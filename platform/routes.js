@@ -350,4 +350,76 @@ router.post('/games/:id/complete', requireAuth, (req, res) => {
   });
 });
 
+// ==========================================================================
+// REVIEW ROUTES
+// ==========================================================================
+
+// GET /api/reviews — list all reviews (newest first)
+router.get('/reviews', (req, res) => {
+  const reviews = db.prepare(
+    `SELECT r.id, r.game_id, r.rating, r.content, r.created_at,
+            u.nickname, u.provider
+     FROM reviews r
+     JOIN users u ON r.user_id = u.id
+     ORDER BY r.created_at DESC`
+  ).all();
+
+  // Average rating per game
+  const stats = db.prepare(
+    `SELECT game_id, COUNT(*) as count, ROUND(AVG(rating), 1) as avg_rating
+     FROM reviews GROUP BY game_id`
+  ).all();
+
+  res.json({ reviews, stats });
+});
+
+// POST /api/reviews — write a review (must have completed the game)
+router.post('/reviews', requireAuth, (req, res) => {
+  const { gameId, rating, content } = req.body;
+
+  if (!gameId || !rating || !content) {
+    return res.status(400).json({ error: '모든 항목을 입력해주세요.' });
+  }
+  if (rating < 1 || rating > 5) {
+    return res.status(400).json({ error: '별점은 1~5 사이여야 합니다.' });
+  }
+  if (content.trim().length < 5) {
+    return res.status(400).json({ error: '후기는 5자 이상 작성해주세요.' });
+  }
+
+  // Check if user completed this game
+  const completion = db.prepare(
+    'SELECT id FROM game_completions WHERE user_id = ? AND game_id = ?'
+  ).get(req.user.id, gameId);
+
+  if (!completion) {
+    return res.status(403).json({ error: '게임을 완료한 후 후기를 작성할 수 있습니다.' });
+  }
+
+  // Check if already reviewed
+  const existing = db.prepare(
+    'SELECT id FROM reviews WHERE user_id = ? AND game_id = ?'
+  ).get(req.user.id, gameId);
+
+  if (existing) {
+    return res.status(400).json({ error: '이미 후기를 작성했습니다.' });
+  }
+
+  db.prepare(
+    'INSERT INTO reviews (user_id, game_id, rating, content) VALUES (?, ?, ?, ?)'
+  ).run(req.user.id, gameId, rating, content.trim());
+
+  res.json({ success: true });
+});
+
+// DELETE /api/reviews/:id — delete own review
+router.delete('/reviews/:id', requireAuth, (req, res) => {
+  const review = db.prepare('SELECT * FROM reviews WHERE id = ?').get(req.params.id);
+  if (!review) return res.status(404).json({ error: '후기를 찾을 수 없습니다.' });
+  if (review.user_id !== req.user.id) return res.status(403).json({ error: '본인의 후기만 삭제할 수 있습니다.' });
+
+  db.prepare('DELETE FROM reviews WHERE id = ?').run(req.params.id);
+  res.json({ success: true });
+});
+
 module.exports = router;

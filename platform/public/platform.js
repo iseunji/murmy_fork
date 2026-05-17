@@ -24,6 +24,7 @@
     home: $('#page-home'),
     auth: $('#page-auth'),
     profile: $('#page-profile'),
+    reviews: $('#page-reviews'),
     purchase: $('#page-purchase'),
   };
 
@@ -166,22 +167,50 @@
     });
   }
 
+  // --- Hamburger Menu ---
+  function toggleMenu() {
+    const menu = $('#hamburger-menu');
+    const btn = $('#btn-hamburger');
+    const isOpen = !menu.hidden;
+
+    if (isOpen) {
+      closeMenu();
+    } else {
+      menu.hidden = false;
+      btn.classList.add('active');
+      // Close on outside click
+      setTimeout(() => {
+        document.addEventListener('click', handleOutsideMenuClick);
+      }, 0);
+    }
+  }
+
+  function closeMenu() {
+    $('#hamburger-menu').hidden = true;
+    $('#btn-hamburger').classList.remove('active');
+    document.removeEventListener('click', handleOutsideMenuClick);
+  }
+
+  function handleOutsideMenuClick(e) {
+    const menu = $('#hamburger-menu');
+    const btn = $('#btn-hamburger');
+    if (!menu.contains(e.target) && !btn.contains(e.target)) {
+      closeMenu();
+    }
+  }
+
   // --- Auth UI ---
   function updateAuthUI() {
     const loggedIn = !!state.user;
 
-    // Top header points
-    const pointsEl = $('#header-points');
+    // Hamburger menu points
+    const menuPoints = $('#menu-points');
     if (loggedIn) {
-      pointsEl.hidden = false;
-      pointsEl.textContent = `${state.user.points}P`;
+      menuPoints.hidden = false;
+      $('#menu-points-value').textContent = `${state.user.points}P`;
     } else {
-      pointsEl.hidden = true;
+      menuPoints.hidden = true;
     }
-
-    // Bottom nav: show login or profile
-    $('#nav-login').hidden = loggedIn;
-    $('#nav-profile').hidden = !loggedIn;
   }
 
   // --- Game Tabs ---
@@ -392,6 +421,121 @@
     $('#purchase-total').textContent = `${total.toLocaleString()}원`;
   }
 
+  // --- Reviews ---
+  let reviewRating = 0;
+
+  async function loadReviews() {
+    try {
+      const data = await api('/reviews');
+      const list = $('#reviews-list');
+      const statsEl = $('#reviews-stats');
+      const writeBtn = $('#btn-write-review');
+
+      // Show write button if logged in
+      writeBtn.hidden = !state.user;
+
+      // Stats
+      if (data.stats && data.stats.length > 0) {
+        statsEl.innerHTML = data.stats.map((s) => {
+          const game = state.games.find((g) => g.id === s.game_id);
+          const title = game ? game.title : s.game_id;
+          return `
+            <div class="review-stat">
+              <span class="review-stat-title">${title}</span>
+              <span class="review-stat-stars">${renderStars(s.avg_rating)}</span>
+              <span class="review-stat-info">${s.avg_rating} / 5 (${s.count}개)</span>
+            </div>
+          `;
+        }).join('');
+      } else {
+        statsEl.innerHTML = '';
+      }
+
+      // List
+      if (data.reviews && data.reviews.length > 0) {
+        list.innerHTML = data.reviews.map((r) => {
+          const game = state.games.find((g) => g.id === r.game_id);
+          const title = game ? game.title : r.game_id;
+          const date = new Date(r.created_at + 'Z').toLocaleDateString('ko-KR');
+          const isOwn = state.user && state.user.nickname === r.nickname;
+          return `
+            <div class="review-item">
+              <div class="review-item-header">
+                <div>
+                  <span class="review-item-nickname">${r.nickname}</span>
+                  <span class="review-item-game">${title}</span>
+                </div>
+                <span class="review-item-date">${date}</span>
+              </div>
+              <div class="review-item-stars">${renderStars(r.rating)}</div>
+              <p class="review-item-content">${escapeHtml(r.content)}</p>
+              ${isOwn ? `<button class="btn-link review-delete" data-review-id="${r.id}">삭제</button>` : ''}
+            </div>
+          `;
+        }).join('');
+
+        // Delete handlers
+        list.querySelectorAll('.review-delete').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            if (!confirm('후기를 삭제하시겠습니까?')) return;
+            try {
+              await api(`/reviews/${btn.dataset.reviewId}`, { method: 'DELETE' });
+              loadReviews();
+            } catch (err) {
+              alert(err.message);
+            }
+          });
+        });
+      } else {
+        list.innerHTML = '<p class="empty-state">아직 후기가 없습니다.</p>';
+      }
+    } catch (err) {
+      console.error('Failed to load reviews:', err);
+    }
+  }
+
+  function renderStars(rating) {
+    let html = '';
+    for (let i = 1; i <= 5; i++) {
+      if (i <= Math.floor(rating)) {
+        html += '<i class="fas fa-star star-filled"></i>';
+      } else if (i - 0.5 <= rating) {
+        html += '<i class="fas fa-star-half-alt star-filled"></i>';
+      } else {
+        html += '<i class="far fa-star star-empty"></i>';
+      }
+    }
+    return html;
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function updateStarInput(rating) {
+    reviewRating = rating;
+    $('#star-input').querySelectorAll('i').forEach((star) => {
+      const val = parseInt(star.dataset.rating);
+      star.classList.toggle('star-filled', val <= rating);
+      star.classList.toggle('star-empty', val > rating);
+    });
+  }
+
+  function openReviewModal() {
+    const select = $('#review-game-select');
+    // Populate with completed games
+    const completedGames = state.games.filter((g) => g.purchased);
+    select.innerHTML = '<option value="">게임 선택</option>' +
+      completedGames.map((g) => `<option value="${g.id}">${g.title}</option>`).join('');
+
+    reviewRating = 0;
+    updateStarInput(0);
+    $('#review-content').value = '';
+    $('#review-modal').hidden = false;
+  }
+
   // --- Init ---
   async function init() {
     // Theme first (avoid flash)
@@ -441,6 +585,12 @@
     // Theme toggle
     $('#btn-theme').addEventListener('click', toggleTheme);
 
+    // Hamburger menu
+    $('#btn-hamburger').addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleMenu();
+    });
+
     // Game tabs
     $$('.game-tab').forEach((tab) => {
       tab.addEventListener('click', () => setTab(tab.dataset.tab));
@@ -452,15 +602,20 @@
       showPage('home');
     });
 
-    $('#nav-login').addEventListener('click', () => {
-      setActiveNav('auth');
-      showPage('auth');
+    $('#nav-reviews').addEventListener('click', () => {
+      setActiveNav('reviews');
+      showPage('reviews');
+      loadReviews();
     });
 
-    $('#nav-profile').addEventListener('click', () => {
-      setActiveNav('profile');
-      loadProfile();
-      showPage('profile');
+    $('#nav-my').addEventListener('click', () => {
+      setActiveNav('my');
+      if (state.user) {
+        loadProfile();
+        showPage('profile');
+      } else {
+        showPage('auth');
+      }
     });
 
     // My games button (profile -> owned tab)
@@ -485,7 +640,7 @@
       updateAuthUI();
       setActiveNav('home');
       showPage('home');
-      loadGames();
+      await loadGames();
     });
 
     // Purchase points input
@@ -517,9 +672,49 @@
       }
     });
 
+    // Review modal
+    $('#btn-write-review').addEventListener('click', () => {
+      if (!state.user) {
+        showPage('auth');
+        return;
+      }
+      openReviewModal();
+    });
+
+    $('#star-input').querySelectorAll('i').forEach((star) => {
+      star.addEventListener('click', () => {
+        updateStarInput(parseInt(star.dataset.rating));
+      });
+    });
+
+    $('#btn-review-cancel').addEventListener('click', () => {
+      $('#review-modal').hidden = true;
+    });
+
+    $('#btn-review-submit').addEventListener('click', async () => {
+      const gameId = $('#review-game-select').value;
+      const content = $('#review-content').value.trim();
+
+      if (!gameId) return alert('게임을 선택해주세요.');
+      if (!reviewRating) return alert('별점을 선택해주세요.');
+      if (content.length < 5) return alert('후기는 5자 이상 작성해주세요.');
+
+      try {
+        await api('/reviews', {
+          method: 'POST',
+          body: JSON.stringify({ gameId, rating: reviewRating, content }),
+        });
+        $('#review-modal').hidden = true;
+        loadReviews();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+
     // Logo click -> home
     $('.header-logo').addEventListener('click', (e) => {
       e.preventDefault();
+      setActiveNav('home');
       showPage('home');
     });
   }

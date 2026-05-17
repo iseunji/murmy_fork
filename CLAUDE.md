@@ -310,7 +310,7 @@ murmy/
 │   └── data.db            # SQLite 데이터베이스 (gitignored)
 ├── lib/
 │   ├── db.js              # better-sqlite3 연결 + 초기화
-│   ├── auth.js            # 인증 (이메일+비밀번호, OAuth)
+│   ├── auth.js            # 인증 (OAuth 전용 + 토큰 관리)
 │   ├── points.js          # 포인트 적립/차감 로직
 │   └── middleware.js      # requireAuth, optionalAuth
 ├── platform/
@@ -340,13 +340,17 @@ murmy/
 | `/api/user/*` | 사용자 정보 API |
 | `/api/games/*` | 게임 목록/구매/완료 API |
 
-### 인증 시스템
+### 인증 시스템 (2026-05-17 확정)
 
-- **이메일 + 비밀번호**: bcrypt 해시, JWT 토큰 (7일 유효)
-- **카카오 OAuth**: `/api/auth/kakao` → 리다이렉트 → 콜백 → JWT 발급
-- **구글 OAuth**: `/api/auth/google` → 리다이렉트 → 콜백 → JWT 발급
-- OAuth 키는 `.env`에 설�� (`KAKAO_CLIENT_ID`, `GOOGLE_CLIENT_ID` 등)
-- 프론트엔드: `localStorage`에 ���큰 저장, API 요청 시 `Authorization: Bearer` 헤더
+- **OAuth 전용**: 카카오 / 네이버 / 구글 (이메일+비밀번호 완전 제거)
+- **Access Token**: JWT, 1시간 만료, `localStorage`에 저장
+- **Refresh Token**: 랜덤 hex, 30일 만료, DB `refresh_tokens` 테이블 + `localStorage`에 저장
+- **토큰 갱신**: 프론트에서 401+TOKEN_EXPIRED 수신 시 자동으로 `/api/auth/refresh` 호출
+- **최근 로그인 표시**: `localStorage`에 `murmy_last_provider` 저장 → 로그인 화면 해당 버튼에 "최근" 뱃지
+- **OAuth 라우트**: `/api/auth/kakao`, `/api/auth/naver`, `/api/auth/google` + 각 callback
+- **추가 라우트**: `POST /api/auth/refresh` (토큰 갱신), `POST /api/auth/logout` (refresh 폐기)
+- OAuth 키는 `.env`에 설정 (`KAKAO_CLIENT_ID`, `NAVER_CLIENT_ID`, `GOOGLE_CLIENT_ID` 등)
+- 프론트엔드: `localStorage`에 토큰 저장, API 요청 시 `Authorization: Bearer` 헤더
 
 ### 포인트 시스템
 

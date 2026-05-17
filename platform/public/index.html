@@ -69,39 +69,31 @@
         <p class="game-list-empty" id="game-list-empty" hidden>구매한 게임이 없습니다.</p>
       </section>
 
-      <!-- PAGE: Auth (Login / Signup) -->
+      <!-- PAGE: Auth (OAuth Login) -->
       <section class="page page--auth" id="page-auth" hidden>
         <div class="auth-container">
-          <h2 class="auth-title" id="auth-title">로그인</h2>
+          <h2 class="auth-title">로그인 / 회원가입</h2>
+          <p class="auth-desc">소셜 계정으로 간편하게 시작하세요.</p>
 
-          <form class="auth-form" id="auth-form">
-            <div class="form-group" id="form-group-nickname" hidden>
-              <label for="auth-nickname">닉네임</label>
-              <input type="text" id="auth-nickname" placeholder="게임에서 사용할 닉네임" autocomplete="nickname">
-            </div>
-            <div class="form-group">
-              <label for="auth-email">이메일</label>
-              <input type="email" id="auth-email" placeholder="email@example.com" autocomplete="email" required>
-            </div>
-            <div class="form-group">
-              <label for="auth-password">비밀번호</label>
-              <input type="password" id="auth-password" placeholder="6자 이상" autocomplete="current-password" required>
-            </div>
-            <p class="auth-error" id="auth-error" hidden></p>
-            <button type="submit" class="btn btn-primary btn-auth" id="btn-auth-submit">로그인</button>
-          </form>
-
-          <div class="auth-divider"><span>또는</span></div>
-
-          <div class="auth-oauth">
-            <a href="/api/auth/kakao" class="btn btn-oauth btn-kakao">카카오로 시작하기</a>
-            <a href="/api/auth/google" class="btn btn-oauth btn-google">Google로 시작하기</a>
+          <div class="auth-oauth" id="auth-oauth">
+            <a href="/api/auth/kakao" class="btn btn-oauth btn-kakao" data-provider="kakao">
+              <svg class="oauth-logo" width="20" height="20" viewBox="0 0 24 24"><path d="M12 3C6.48 3 2 6.36 2 10.5c0 2.67 1.8 5.02 4.5 6.38-.15.56-.98 3.6-.98 3.6 0 0-.02.17.09.23.1.06.23.01.23.01.3-.04 3.52-2.3 4.08-2.7.67.1 1.37.15 2.08.15 5.52 0 10-3.36 10-7.5S17.52 3 12 3z" fill="#3c1e1e"/></svg>
+              <span>카카오로 계속하기</span>
+              <span class="oauth-recent" data-recent="kakao" hidden>최근</span>
+            </a>
+            <a href="/api/auth/naver" class="btn btn-oauth btn-naver" data-provider="naver">
+              <svg class="oauth-logo" width="20" height="20" viewBox="0 0 24 24"><path d="M16.27 3H7.73L3 12l4.73 9h8.54L21 12l-4.73-9z" fill="none"/><path d="M14.4 7.2v4.58L9.6 7.2H7.2v9.6h2.4v-4.58l4.8 4.58h2.4V7.2h-2.4z" fill="#fff"/></svg>
+              <span>네이버로 계속하기</span>
+              <span class="oauth-recent" data-recent="naver" hidden>최근</span>
+            </a>
+            <a href="/api/auth/google" class="btn btn-oauth btn-google" data-provider="google">
+              <svg class="oauth-logo" width="20" height="20" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+              <span>Google로 계속하기</span>
+              <span class="oauth-recent" data-recent="google" hidden>최근</span>
+            </a>
           </div>
 
-          <p class="auth-toggle">
-            <span id="auth-toggle-text">계정이 없으신가요?</span>
-            <button class="btn-link" id="btn-auth-toggle">회원가입</button>
-          </p>
+          <p class="auth-error" id="auth-error" hidden></p>
         </div>
       </section>
 

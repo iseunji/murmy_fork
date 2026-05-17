@@ -1,7 +1,6 @@
 const express = require('express');
-const crypto = require('crypto');
 const router = express.Router();
-const { signup, login, oauthLogin, verifyToken } = require('../lib/auth');
+const { oauthLogin, refreshAccessToken, logout } = require('../lib/auth');
 const { requireAuth, optionalAuth } = require('../lib/middleware');
 const points = require('../lib/points');
 const db = require('../lib/db');
@@ -23,52 +22,10 @@ const GAMES = [
 ];
 
 // ==========================================================================
-// AUTH ROUTES
+// AUTH ROUTES — OAuth only
 // ==========================================================================
 
-// POST /api/auth/signup
-router.post('/auth/signup', async (req, res) => {
-  try {
-    const { email, password, nickname } = req.body;
-
-    if (!email || !password || !nickname) {
-      return res.status(400).json({ error: '모든 필드를 입력해주세요.' });
-    }
-    if (password.length < 6) {
-      return res.status(400).json({ error: '비밀번호는 6자 이상이어야 합니다.' });
-    }
-
-    const result = await signup(email, password, nickname);
-    res.json({
-      user: { id: result.user.id, email: result.user.email, nickname: result.user.nickname, points: result.user.points },
-      token: result.token,
-      couponCode: result.couponCode,
-    });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
-// POST /api/auth/login
-router.post('/auth/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ error: '이메일과 비밀번호를 입력해주세요.' });
-    }
-
-    const result = await login(email, password);
-    res.json({
-      user: { id: result.user.id, email: result.user.email, nickname: result.user.nickname, points: result.user.points },
-      token: result.token,
-    });
-  } catch (err) {
-    res.status(401).json({ error: err.message });
-  }
-});
-
-// GET /api/auth/kakao — redirect to Kakao OAuth
+// --- Kakao OAuth ---
 router.get('/auth/kakao', (req, res) => {
   const clientId = process.env.KAKAO_CLIENT_ID;
   const redirectUri = process.env.KAKAO_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/auth/kakao/callback`;
@@ -78,7 +35,6 @@ router.get('/auth/kakao', (req, res) => {
   res.redirect(url);
 });
 
-// GET /api/auth/kakao/callback
 router.get('/auth/kakao/callback', async (req, res) => {
   try {
     const { code } = req.query;
@@ -86,7 +42,6 @@ router.get('/auth/kakao/callback', async (req, res) => {
     const clientSecret = process.env.KAKAO_CLIENT_SECRET || '';
     const redirectUri = process.env.KAKAO_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/auth/kakao/callback`;
 
-    // Exchange code for token
     const tokenRes = await fetch('https://kauth.kakao.com/oauth/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -100,7 +55,6 @@ router.get('/auth/kakao/callback', async (req, res) => {
     });
     const tokenData = await tokenRes.json();
 
-    // Get user info
     const userRes = await fetch('https://kapi.kakao.com/v2/user/me', {
       headers: { Authorization: `Bearer ${tokenData.access_token}` },
     });
@@ -113,14 +67,64 @@ router.get('/auth/kakao/callback', async (req, res) => {
     };
 
     const result = oauthLogin('kakao', profile);
-    // Redirect to frontend with token
-    res.redirect(`/?token=${result.token}`);
+    res.redirect(`/?token=${result.accessToken}&refresh=${result.refreshToken}&provider=kakao`);
   } catch (err) {
     res.redirect('/?error=oauth_failed');
   }
 });
 
-// GET /api/auth/google — redirect to Google OAuth
+// --- Naver OAuth ---
+router.get('/auth/naver', (req, res) => {
+  const clientId = process.env.NAVER_CLIENT_ID;
+  const redirectUri = process.env.NAVER_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/auth/naver/callback`;
+  if (!clientId) return res.status(500).json({ error: 'Naver OAuth not configured' });
+
+  const state = Math.random().toString(36).substring(2);
+  const url = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
+  res.redirect(url);
+});
+
+router.get('/auth/naver/callback', async (req, res) => {
+  try {
+    const { code, state } = req.query;
+    const clientId = process.env.NAVER_CLIENT_ID;
+    const clientSecret = process.env.NAVER_CLIENT_SECRET;
+    const redirectUri = process.env.NAVER_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/auth/naver/callback`;
+
+    const tokenRes = await fetch('https://nid.naver.com/oauth2.0/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: redirectUri,
+        code,
+        state,
+      }),
+    });
+    const tokenData = await tokenRes.json();
+
+    const userRes = await fetch('https://openapi.naver.com/v1/nid/me', {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` },
+    });
+    const userData = await userRes.json();
+    const naverProfile = userData.response;
+
+    const profile = {
+      id: naverProfile.id,
+      email: naverProfile.email,
+      nickname: naverProfile.nickname || naverProfile.name || '네이버 사용자',
+    };
+
+    const result = oauthLogin('naver', profile);
+    res.redirect(`/?token=${result.accessToken}&refresh=${result.refreshToken}&provider=naver`);
+  } catch (err) {
+    res.redirect('/?error=oauth_failed');
+  }
+});
+
+// --- Google OAuth ---
 router.get('/auth/google', (req, res) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/auth/google/callback`;
@@ -130,7 +134,6 @@ router.get('/auth/google', (req, res) => {
   res.redirect(url);
 });
 
-// GET /api/auth/google/callback
 router.get('/auth/google/callback', async (req, res) => {
   try {
     const { code } = req.query;
@@ -138,7 +141,6 @@ router.get('/auth/google/callback', async (req, res) => {
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
     const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/auth/google/callback`;
 
-    // Exchange code for token
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -152,7 +154,6 @@ router.get('/auth/google/callback', async (req, res) => {
     });
     const tokenData = await tokenRes.json();
 
-    // Get user info
     const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
       headers: { Authorization: `Bearer ${tokenData.access_token}` },
     });
@@ -165,10 +166,35 @@ router.get('/auth/google/callback', async (req, res) => {
     };
 
     const result = oauthLogin('google', profile);
-    res.redirect(`/?token=${result.token}`);
+    res.redirect(`/?token=${result.accessToken}&refresh=${result.refreshToken}&provider=google`);
   } catch (err) {
     res.redirect('/?error=oauth_failed');
   }
+});
+
+// --- Token refresh ---
+router.post('/auth/refresh', (req, res) => {
+  const { refreshToken } = req.body;
+  if (!refreshToken) {
+    return res.status(400).json({ error: 'Refresh token required' });
+  }
+
+  const result = refreshAccessToken(refreshToken);
+  if (!result) {
+    return res.status(401).json({ error: '세션이 만료되었습니다. 다시 로그인해주세요.' });
+  }
+
+  res.json({
+    token: result.accessToken,
+    refreshToken: result.refreshToken,
+  });
+});
+
+// --- Logout ---
+router.post('/auth/logout', (req, res) => {
+  const { refreshToken } = req.body;
+  logout(refreshToken);
+  res.json({ success: true });
 });
 
 // ==========================================================================
@@ -186,6 +212,8 @@ router.get('/user/me', requireAuth, (req, res) => {
     id: user.id,
     email: user.email,
     nickname: user.nickname,
+    provider: user.provider,
+    lastProvider: user.last_provider,
     points: user.points,
     coupons,
   });

@@ -9,10 +9,10 @@
   const state = {
     user: null,
     token: localStorage.getItem('murmy_token') || null,
+    refreshToken: localStorage.getItem('murmy_refresh') || null,
     games: [],
     currentPage: 'home',
     currentTab: 'all',
-    authMode: 'login',
     purchaseGameId: null,
   };
 
@@ -56,16 +56,80 @@
     applyTheme(isLight ? 'dark' : 'light');
   }
 
-  // --- API helper ---
+  // --- Token management ---
+  function saveTokens(token, refreshToken, provider) {
+    state.token = token;
+    state.refreshToken = refreshToken;
+    localStorage.setItem('murmy_token', token);
+    localStorage.setItem('murmy_refresh', refreshToken);
+    if (provider) {
+      localStorage.setItem('murmy_last_provider', provider);
+    }
+  }
+
+  function clearTokens() {
+    state.token = null;
+    state.refreshToken = null;
+    state.user = null;
+    localStorage.removeItem('murmy_token');
+    localStorage.removeItem('murmy_refresh');
+  }
+
+  async function refreshAccessToken() {
+    if (!state.refreshToken) return false;
+
+    try {
+      const res = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken: state.refreshToken }),
+      });
+
+      if (!res.ok) {
+        clearTokens();
+        return false;
+      }
+
+      const data = await res.json();
+      saveTokens(data.token, data.refreshToken);
+      return true;
+    } catch {
+      clearTokens();
+      return false;
+    }
+  }
+
+  // --- API helper with auto-refresh ---
   async function api(path, options = {}) {
     const headers = { 'Content-Type': 'application/json', ...options.headers };
     if (state.token) {
       headers['Authorization'] = `Bearer ${state.token}`;
     }
-    const res = await fetch(`/api${path}`, { ...options, headers });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Request failed');
-    return data;
+
+    let res = await fetch(`/api${path}`, { ...options, headers });
+
+    // If 401 with TOKEN_EXPIRED, try refresh
+    if (res.status === 401 && state.refreshToken) {
+      const body = await res.json();
+      if (body.code === 'TOKEN_EXPIRED') {
+        const refreshed = await refreshAccessToken();
+        if (refreshed) {
+          headers['Authorization'] = `Bearer ${state.token}`;
+          res = await fetch(`/api${path}`, { ...options, headers });
+        } else {
+          throw new Error('세션이 만료되었습니다. 다시 로그인해주세요.');
+        }
+      } else {
+        throw new Error(body.error || 'Request failed');
+      }
+    }
+
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || 'Request failed');
+    }
+
+    return await res.json();
   }
 
   // --- Navigation ---
@@ -80,6 +144,19 @@
       page.classList.add('active');
     }
     state.currentPage = pageId;
+
+    // Show "최근" badge on auth page
+    if (pageId === 'auth') {
+      showLastProviderBadge();
+    }
+  }
+
+  // --- Last provider badge ---
+  function showLastProviderBadge() {
+    const lastProvider = localStorage.getItem('murmy_last_provider');
+    $$('.oauth-recent').forEach((badge) => {
+      badge.hidden = badge.dataset.recent !== lastProvider;
+    });
   }
 
   // --- Auth UI ---
@@ -91,17 +168,6 @@
     if (loggedIn) {
       $('#header-points').textContent = `${state.user.points}P`;
     }
-  }
-
-  function setAuthMode(mode) {
-    state.authMode = mode;
-    const isSignup = mode === 'signup';
-    $('#auth-title').textContent = isSignup ? '회원가입' : '로그인';
-    $('#btn-auth-submit').textContent = isSignup ? '가입하기' : '로그인';
-    $('#form-group-nickname').hidden = !isSignup;
-    $('#auth-toggle-text').textContent = isSignup ? '이미 계정이 있으신가요?' : '계정이 없으신가요?';
-    $('#btn-auth-toggle').textContent = isSignup ? '로그인' : '회원가입';
-    $('#auth-error').hidden = true;
   }
 
   // --- Game Tabs ---
@@ -214,7 +280,7 @@
       updateAuthUI();
 
       $('#profile-nickname').textContent = data.nickname;
-      $('#profile-email').textContent = data.email;
+      $('#profile-email').textContent = data.email || `${data.provider} 계정`;
       $('#profile-points').textContent = `${data.points}P`;
 
       // Coupons
@@ -282,13 +348,23 @@
     // Theme first (avoid flash)
     initTheme();
 
-    // Check for OAuth token in URL
+    // Check for OAuth token in URL (from callback redirect)
     const urlParams = new URLSearchParams(window.location.search);
     const tokenFromUrl = urlParams.get('token');
-    if (tokenFromUrl) {
-      state.token = tokenFromUrl;
-      localStorage.setItem('murmy_token', tokenFromUrl);
+    const refreshFromUrl = urlParams.get('refresh');
+    const providerFromUrl = urlParams.get('provider');
+    const errorFromUrl = urlParams.get('error');
+
+    if (tokenFromUrl && refreshFromUrl) {
+      saveTokens(tokenFromUrl, refreshFromUrl, providerFromUrl);
       window.history.replaceState({}, '', '/');
+    } else if (errorFromUrl) {
+      window.history.replaceState({}, '', '/');
+      // Show error on auth page
+      showPage('auth');
+      const errEl = $('#auth-error');
+      errEl.textContent = '로그인에 실패했습니다. 다시 시도해주세요.';
+      errEl.hidden = false;
     }
 
     // Load user if token exists
@@ -297,8 +373,7 @@
         const data = await api('/user/me');
         state.user = data;
       } catch {
-        state.token = null;
-        localStorage.removeItem('murmy_token');
+        clearTokens();
       }
     }
 
@@ -324,7 +399,6 @@
 
     // Login button
     $('#btn-login').addEventListener('click', () => {
-      setAuthMode('login');
       showPage('auth');
     });
 
@@ -335,10 +409,18 @@
     });
 
     // Logout button
-    $('#btn-logout').addEventListener('click', () => {
-      state.user = null;
-      state.token = null;
-      localStorage.removeItem('murmy_token');
+    $('#btn-logout').addEventListener('click', async () => {
+      // Notify server to invalidate refresh token
+      if (state.refreshToken) {
+        try {
+          await fetch('/api/auth/logout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken: state.refreshToken }),
+          });
+        } catch { /* ignore */ }
+      }
+      clearTokens();
       updateAuthUI();
       showPage('home');
       loadGames();
@@ -348,47 +430,6 @@
     $('#btn-my-games').addEventListener('click', () => {
       setTab('owned');
       showPage('home');
-    });
-
-    // Auth toggle (login <-> signup)
-    $('#btn-auth-toggle').addEventListener('click', () => {
-      setAuthMode(state.authMode === 'login' ? 'signup' : 'login');
-    });
-
-    // Auth form submit
-    $('#auth-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = $('#auth-email').value.trim();
-      const password = $('#auth-password').value;
-      const nickname = $('#auth-nickname').value.trim();
-
-      try {
-        let result;
-        if (state.authMode === 'signup') {
-          result = await api('/auth/signup', {
-            method: 'POST',
-            body: JSON.stringify({ email, password, nickname }),
-          });
-          if (result.couponCode) {
-            alert(`가입 완료! 환영 쿠폰이 발급되었습니다: ${result.couponCode}\n(2,000원 할인, 90일 유효)`);
-          }
-        } else {
-          result = await api('/auth/login', {
-            method: 'POST',
-            body: JSON.stringify({ email, password }),
-          });
-        }
-
-        state.token = result.token;
-        state.user = result.user;
-        localStorage.setItem('murmy_token', result.token);
-        updateAuthUI();
-        showPage('home');
-        loadGames();
-      } catch (err) {
-        $('#auth-error').textContent = err.message;
-        $('#auth-error').hidden = false;
-      }
     });
 
     // Purchase points input

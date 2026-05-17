@@ -1,15 +1,27 @@
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  email TEXT UNIQUE NOT NULL,
-  password_hash TEXT,
+  email TEXT,
   nickname TEXT NOT NULL,
-  provider TEXT DEFAULT 'email',
-  provider_id TEXT,
+  provider TEXT NOT NULL,
+  provider_id TEXT NOT NULL,
+  last_provider TEXT,
   points INTEGER DEFAULT 0,
   created_at TEXT DEFAULT (datetime('now')),
   UNIQUE(provider, provider_id)
 );
+
+-- Refresh tokens table
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  token TEXT UNIQUE NOT NULL,
+  expires_at TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token);
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id);
 
 -- Purchases table
 CREATE TABLE IF NOT EXISTS purchases (

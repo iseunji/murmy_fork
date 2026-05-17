@@ -725,6 +725,30 @@ body::before {
    SCREEN 1: TITLE
    ============================================================ */
 
+/* ---- Back to Platform ---- */
+.btn-back-platform {
+  position: absolute;
+  top: calc(8px + var(--safe-top));
+  left: calc(8px + var(--safe-left));
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 18px;
+  opacity: 0.35;
+  transition: opacity 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-back-platform:active {
+  opacity: 0.8;
+}
+
 #screen-title {
   background: var(--bg) url('assets/kraft-texture.png') center / cover no-repeat;
 }

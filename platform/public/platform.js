@@ -263,8 +263,7 @@
             <p class="game-card-desc">${game.description}</p>
             <div class="game-card-actions">
               ${owned
-                ? `<button class="btn btn-invite" data-action="invite">함께할 친구 초대하기</button>
-                   <button class="btn btn-play" data-action="play">플레이하기</button>`
+                ? `<button class="btn btn-invite" data-action="invite">함께할 친구 초대하기</button>`
                 : '<button class="btn btn-buy" data-action="buy">구매하기</button>'
               }
             </div>
@@ -319,20 +318,12 @@
         if (!game) return;
 
         if (game.purchased) {
-          window.location.href = `/games/${gameId}/`;
+          openInviteModal(gameId);
         } else if (!state.user) {
           showPage('auth');
         } else {
           showPurchasePage(gameId);
         }
-      });
-    });
-
-    container.querySelectorAll('[data-action="play"]').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const gameId = btn.closest('.game-card').dataset.gameId;
-        window.location.href = `/games/${gameId}/`;
       });
     });
 
@@ -552,6 +543,7 @@
       });
       $('#invite-link-input').value = data.inviteUrl;
       $('#invite-modal').hidden = false;
+      $('#invite-modal').dataset.gameId = gameId;
       // Store invite code so the host's game client can link the room
       localStorage.setItem('murmy_host_invite', data.inviteCode);
     } catch (err) {
@@ -774,7 +766,12 @@
     });
 
     $('#btn-invite-close').addEventListener('click', () => {
-      $('#invite-modal').hidden = true;
+      const modal = $('#invite-modal');
+      const gameId = modal.dataset.gameId;
+      modal.hidden = true;
+      if (gameId) {
+        window.location.href = `/games/${gameId}/`;
+      }
     });
 
     // Promo code submit

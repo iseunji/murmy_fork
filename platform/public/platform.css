@@ -655,16 +655,6 @@ body {
   flex: 1;
 }
 
-.btn-play {
-  background: var(--success);
-  color: #fff;
-  font-weight: 600;
-}
-
-.btn-play:hover {
-  filter: brightness(1.1);
-}
-
 .btn-buy {
   background: var(--accent);
   color: #111113;

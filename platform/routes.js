@@ -73,57 +73,6 @@ router.get('/auth/kakao/callback', async (req, res) => {
   }
 });
 
-// --- Naver OAuth ---
-router.get('/auth/naver', (req, res) => {
-  const clientId = process.env.NAVER_CLIENT_ID;
-  const redirectUri = process.env.NAVER_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/auth/naver/callback`;
-  if (!clientId) return res.status(500).json({ error: 'Naver OAuth not configured' });
-
-  const state = Math.random().toString(36).substring(2);
-  const url = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
-  res.redirect(url);
-});
-
-router.get('/auth/naver/callback', async (req, res) => {
-  try {
-    const { code, state } = req.query;
-    const clientId = process.env.NAVER_CLIENT_ID;
-    const clientSecret = process.env.NAVER_CLIENT_SECRET;
-    const redirectUri = process.env.NAVER_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/auth/naver/callback`;
-
-    const tokenRes = await fetch('https://nid.naver.com/oauth2.0/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'authorization_code',
-        client_id: clientId,
-        client_secret: clientSecret,
-        redirect_uri: redirectUri,
-        code,
-        state,
-      }),
-    });
-    const tokenData = await tokenRes.json();
-
-    const userRes = await fetch('https://openapi.naver.com/v1/nid/me', {
-      headers: { Authorization: `Bearer ${tokenData.access_token}` },
-    });
-    const userData = await userRes.json();
-    const naverProfile = userData.response;
-
-    const profile = {
-      id: naverProfile.id,
-      email: naverProfile.email,
-      nickname: naverProfile.nickname || naverProfile.name || '네이버 사용자',
-    };
-
-    const result = oauthLogin('naver', profile);
-    res.redirect(`/?token=${result.accessToken}&refresh=${result.refreshToken}&provider=naver`);
-  } catch (err) {
-    res.redirect('/?error=oauth_failed');
-  }
-});
-
 // --- Google OAuth ---
 router.get('/auth/google', (req, res) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;

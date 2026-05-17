@@ -21,7 +21,6 @@
   --success: #5bb89a;
   --danger: #d45555;
   --kakao: #fee500;
-  --naver: #03c75a;
   --google: #fff;
   --radius: 12px;
   --radius-sm: 8px;
@@ -668,11 +667,6 @@ body {
   color: #3c1e1e;
 }
 
-.btn-naver {
-  background: var(--naver);
-  color: #fff;
-}
-
 .btn-google {
   background: var(--google);
   color: #333;
@@ -695,10 +689,6 @@ body {
   background: rgba(0, 0, 0, 0.12);
   color: inherit;
   opacity: 0.7;
-}
-
-.btn-naver .oauth-recent {
-  background: rgba(255, 255, 255, 0.2);
 }
 
 .auth-error {

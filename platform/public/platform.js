@@ -1,5 +1,5 @@
 // ============================================================
-// MURMY PLATFORM - Frontend
+// MURMY42 PLATFORM - Frontend
 // ============================================================
 
 (function () {
@@ -11,7 +11,8 @@
     token: localStorage.getItem('murmy_token') || null,
     games: [],
     currentPage: 'home',
-    authMode: 'login', // 'login' or 'signup'
+    currentTab: 'all',
+    authMode: 'login',
     purchaseGameId: null,
   };
 
@@ -25,6 +26,35 @@
     profile: $('#page-profile'),
     purchase: $('#page-purchase'),
   };
+
+  // --- Theme ---
+  function initTheme() {
+    const saved = localStorage.getItem('murmy_theme');
+    if (saved) {
+      applyTheme(saved);
+    } else {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      applyTheme(prefersDark ? 'dark' : 'light');
+    }
+  }
+
+  function applyTheme(theme) {
+    if (theme === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+    localStorage.setItem('murmy_theme', theme);
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) {
+      meta.content = theme === 'light' ? '#f7f6f3' : '#111113';
+    }
+  }
+
+  function toggleTheme() {
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    applyTheme(isLight ? 'dark' : 'light');
+  }
 
   // --- API helper ---
   async function api(path, options = {}) {
@@ -74,44 +104,92 @@
     $('#auth-error').hidden = true;
   }
 
+  // --- Game Tabs ---
+  function setTab(tab) {
+    state.currentTab = tab;
+    $$('.game-tab').forEach((t) => {
+      t.classList.toggle('active', t.dataset.tab === tab);
+    });
+    renderGameList();
+  }
+
   // --- Game List ---
   function renderGameList() {
     const container = $('#game-list');
-    container.innerHTML = state.games.map((game) => {
+    const emptyMsg = $('#game-list-empty');
+
+    let games = state.games;
+    if (state.currentTab === 'owned') {
+      games = games.filter((g) => g.purchased);
+    }
+
+    if (games.length === 0 && state.currentTab === 'owned') {
+      container.innerHTML = '';
+      emptyMsg.hidden = false;
+      return;
+    }
+    emptyMsg.hidden = true;
+
+    container.innerHTML = games.map((game) => {
       const owned = game.purchased;
+      const coverStyle = game.coverBg
+        ? `background-image: url('${game.coverBg}'); background-size: cover; background-position: center;`
+        : '';
+
       return `
         <div class="game-card" data-game-id="${game.id}">
-          <div class="game-card-header">
-            <div>
-              <div class="game-card-title">${game.title}</div>
-              <div class="game-card-subtitle">${game.subtitle}</div>
+          <div class="game-card-cover" style="${coverStyle}">
+            ${game.coverLogo ? `<img src="${game.coverLogo}" alt="${game.title}">` : ''}
+          </div>
+          <div class="game-card-body">
+            <div class="game-card-header">
+              <div>
+                <div class="game-card-title">${game.title}</div>
+                <div class="game-card-subtitle">${game.subtitle}</div>
+              </div>
+              ${owned
+                ? '<span class="game-card-badge game-card-badge--owned">보유 중</span>'
+                : `<span class="game-card-price">${game.price.toLocaleString()}원</span>`
+              }
             </div>
-            ${owned
-              ? '<span class="game-card-badge game-card-badge--owned">보유 중</span>'
-              : `<span class="game-card-price">${game.price.toLocaleString()}원</span>`
-            }
-          </div>
-          <p class="game-card-desc">${game.description}</p>
-          <div class="game-card-meta">
-            <span>${game.players}인용</span>
-            <span>${game.duration}</span>
-          </div>
-          <div class="game-card-actions">
-            ${owned
-              ? '<button class="btn btn-play" data-action="play">플레이하기</button>'
-              : '<button class="btn btn-buy" data-action="buy">구매하기</button>'
-            }
+            <p class="game-card-desc">${game.description}</p>
+            <div class="game-card-meta">
+              <span>${game.players}인용</span>
+              <span>${game.duration}</span>
+            </div>
+            <div class="game-card-actions">
+              ${owned
+                ? '<button class="btn btn-play" data-action="play">플레이하기</button>'
+                : '<button class="btn btn-buy" data-action="buy">구매하기</button>'
+              }
+            </div>
           </div>
         </div>
       `;
     }).join('');
 
     // Event listeners
+    container.querySelectorAll('.game-card').forEach((card) => {
+      card.addEventListener('click', () => {
+        const gameId = card.dataset.gameId;
+        const game = state.games.find((g) => g.id === gameId);
+        if (!game) return;
+
+        if (game.purchased) {
+          window.location.href = `/games/${gameId}/`;
+        } else if (!state.user) {
+          showPage('auth');
+        } else {
+          showPurchasePage(gameId);
+        }
+      });
+    });
+
     container.querySelectorAll('[data-action="play"]').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const gameId = btn.closest('.game-card').dataset.gameId;
-        window.location.href = `/games/${gameId}`;
+        window.location.href = `/games/${gameId}/`;
       });
     });
 
@@ -195,13 +273,15 @@
 
   function updatePurchaseTotal(basePrice) {
     const pointsUsed = parseInt($('#purchase-points').value) || 0;
-    // Coupon discount is server-side validated, just show estimate
     const total = Math.max(0, basePrice - pointsUsed);
     $('#purchase-total').textContent = `${total.toLocaleString()}원`;
   }
 
   // --- Init ---
   async function init() {
+    // Theme first (avoid flash)
+    initTheme();
+
     // Check for OAuth token in URL
     const urlParams = new URLSearchParams(window.location.search);
     const tokenFromUrl = urlParams.get('token');
@@ -217,7 +297,6 @@
         const data = await api('/user/me');
         state.user = data;
       } catch {
-        // Token expired
         state.token = null;
         localStorage.removeItem('murmy_token');
       }
@@ -234,6 +313,14 @@
     }
 
     // --- Event Listeners ---
+
+    // Theme toggle
+    $('#btn-theme').addEventListener('click', toggleTheme);
+
+    // Game tabs
+    $$('.game-tab').forEach((tab) => {
+      tab.addEventListener('click', () => setTab(tab.dataset.tab));
+    });
 
     // Login button
     $('#btn-login').addEventListener('click', () => {
@@ -255,6 +342,12 @@
       updateAuthUI();
       showPage('home');
       loadGames();
+    });
+
+    // My games button (profile -> owned tab)
+    $('#btn-my-games').addEventListener('click', () => {
+      setTab('owned');
+      showPage('home');
     });
 
     // Auth toggle (login <-> signup)

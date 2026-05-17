@@ -343,14 +343,14 @@ murmy/
 
 ### 인증 시스템 (2026-05-17 확정)
 
-- **OAuth 전용**: 카카오 / 네이버 / 구글 (이메일+비밀번호 완전 제거)
+- **OAuth 전용**: 카카오 / 구글 (네이버 제거, 이메일+비밀번호 완전 제거)
 - **Access Token**: JWT, 1시간 만료, `localStorage`에 저장
 - **Refresh Token**: 랜덤 hex, 30일 만료, DB `refresh_tokens` 테이블 + `localStorage`에 저장
 - **토큰 갱신**: 프론트에서 401+TOKEN_EXPIRED 수신 시 자동으로 `/api/auth/refresh` 호출
 - **최근 로그인 표시**: `localStorage`에 `murmy_last_provider` 저장 → 로그인 화면 해당 버튼에 "최근" 뱃지
-- **OAuth 라우트**: `/api/auth/kakao`, `/api/auth/naver`, `/api/auth/google` + 각 callback
+- **OAuth 라우트**: `/api/auth/kakao`, `/api/auth/google` + 각 callback
 - **추가 라우트**: `POST /api/auth/refresh` (토큰 갱신), `POST /api/auth/logout` (refresh 폐기)
-- OAuth 키는 `.env`에 설정 (`KAKAO_CLIENT_ID`, `NAVER_CLIENT_ID`, `GOOGLE_CLIENT_ID` 등)
+- OAuth 키는 `.env`에 설정 (`KAKAO_CLIENT_ID`, `GOOGLE_CLIENT_ID` 등)
 - 프론트엔드: `localStorage`에 토큰 저장, API 요청 시 `Authorization: Bearer` 헤더
 
 ### 포인트 시스템
@@ -396,7 +396,30 @@ murmy/
 - **상단 헤더 우측**: 테마 전환 버튼 (30px) + 햄버거 메뉴
 - **로고**: `murmy42_logo.png` (높이 42px)
 - **OG 썸네일**: `murmy42_thumb.png`
-- **뷰박스 바깥 배경**: 다크 `#0a0a0c`, 라이트 `#e8e6e1`
+- **뷰박스 바깥 배경**: 테마 무관 통일 `#888` (중립 회색)
+
+### HTTPS / SSL (2026-05-17 확정)
+
+- **도메인**: `murmy42.duckdns.org` (DuckDNS 무료 DDNS)
+- **SSL 인증서**: Let's Encrypt (acme.sh로 발급, 자동 갱신)
+- **인증서 경로**: `/home/opc/certs/fullchain.pem`, `/home/opc/certs/privkey.pem`
+- **서버 동작**: SSL 인증서 파일 존재 시 자동 HTTPS (443 포트), 부재 시 HTTP (4567 포트)
+- **HTTP→HTTPS 리다이렉트**: 포트 80에서 자동 리다이렉트
+- **Node.js 포트 바인딩**: `setcap cap_net_bind_service=+ep $(which node)` (root 없이 443/80 바인딩)
+- **인증서 갱신**: `~/.acme.sh/acme.sh --cron` (acme.sh 자동 cron 등록됨)
+- **DuckDNS 토큰**: `.env`에 미저장, DuckDNS 웹사이트에서 관리
+- **Oracle Cloud VCN**: 포트 22, 80, 443, 4567 인바운드 허용
+
+### 서버 배포 (2026-05-17 확정)
+
+- **호스팅**: Oracle Cloud (Always Free Tier) — VM.Standard.E2.1.Micro (1GB RAM, 1 OCPU)
+- **OS**: Oracle Linux 9.7
+- **IP**: 158.180.93.155
+- **SSH 접속**: `ssh -i ~/Downloads/ssh-key-2026-05-16.key opc@158.180.93.155` 또는 `ssh opc@158.180.93.155` (ed25519 키도 등록됨)
+- **프로세스 매니저**: PM2 (`pm2 restart murmy42`)
+- **배포 방법**: `scp`로 파일 전송 후 `pm2 restart` (서버에 git 미설치)
+- **서버에 git 없음**: `scp -i ~/Downloads/ssh-key-2026-05-16.key <파일> opc@158.180.93.155:~/murmy/<경로>`로 전송
+- **주의**: 1GB RAM 서버이므로 `dnf install` 등 무거운 패키지 설치 시 서버 과부하 → SSH 불가 상태 발생 가능
 
 ### 새 게임 추가 시
 

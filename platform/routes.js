@@ -39,28 +39,52 @@ router.get('/auth/kakao', (req, res) => {
 
 router.get('/auth/kakao/callback', async (req, res) => {
   try {
-    const { code } = req.query;
+    const { code, error: kakaoError, error_description } = req.query;
+    if (kakaoError) {
+      console.error('[Kakao OAuth] Authorization error:', kakaoError, error_description);
+      return res.redirect(`/?error=kakao_${kakaoError}`);
+    }
+    if (!code) {
+      console.error('[Kakao OAuth] No authorization code received');
+      return res.redirect('/?error=kakao_no_code');
+    }
+
     const clientId = process.env.KAKAO_CLIENT_ID;
-    const clientSecret = process.env.KAKAO_CLIENT_SECRET || '';
+    const clientSecret = process.env.KAKAO_CLIENT_SECRET;
     const redirectUri = process.env.KAKAO_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/auth/kakao/callback`;
+
+    const tokenParams = {
+      grant_type: 'authorization_code',
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      code,
+    };
+    // Only include client_secret if it's actually set
+    if (clientSecret) {
+      tokenParams.client_secret = clientSecret;
+    }
 
     const tokenRes = await fetch('https://kauth.kakao.com/oauth/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'authorization_code',
-        client_id: clientId,
-        client_secret: clientSecret,
-        redirect_uri: redirectUri,
-        code,
-      }),
+      body: new URLSearchParams(tokenParams),
     });
     const tokenData = await tokenRes.json();
+
+    if (!tokenRes.ok || !tokenData.access_token) {
+      console.error('[Kakao OAuth] Token request failed:', tokenData);
+      return res.redirect(`/?error=kakao_token_failed&detail=${encodeURIComponent(tokenData.error_code || tokenData.error || 'unknown')}`);
+    }
 
     const userRes = await fetch('https://kapi.kakao.com/v2/user/me', {
       headers: { Authorization: `Bearer ${tokenData.access_token}` },
     });
     const userData = await userRes.json();
+
+    if (!userRes.ok || !userData.id) {
+      console.error('[Kakao OAuth] User info request failed:', userData);
+      return res.redirect('/?error=kakao_user_failed');
+    }
 
     const profile = {
       id: String(userData.id),
@@ -71,7 +95,8 @@ router.get('/auth/kakao/callback', async (req, res) => {
     const result = oauthLogin('kakao', profile);
     res.redirect(`/?token=${result.accessToken}&refresh=${result.refreshToken}&provider=kakao`);
   } catch (err) {
-    res.redirect('/?error=oauth_failed');
+    console.error('[Kakao OAuth] Unexpected error:', err);
+    res.redirect('/?error=kakao_exception');
   }
 });
 
@@ -87,7 +112,16 @@ router.get('/auth/google', (req, res) => {
 
 router.get('/auth/google/callback', async (req, res) => {
   try {
-    const { code } = req.query;
+    const { code, error: googleError } = req.query;
+    if (googleError) {
+      console.error('[Google OAuth] Authorization error:', googleError);
+      return res.redirect(`/?error=google_${googleError}`);
+    }
+    if (!code) {
+      console.error('[Google OAuth] No authorization code received');
+      return res.redirect('/?error=google_no_code');
+    }
+
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
     const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/auth/google/callback`;
@@ -105,10 +139,20 @@ router.get('/auth/google/callback', async (req, res) => {
     });
     const tokenData = await tokenRes.json();
 
+    if (!tokenRes.ok || !tokenData.access_token) {
+      console.error('[Google OAuth] Token request failed:', tokenData);
+      return res.redirect(`/?error=google_token_failed&detail=${encodeURIComponent(tokenData.error || 'unknown')}`);
+    }
+
     const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
       headers: { Authorization: `Bearer ${tokenData.access_token}` },
     });
     const userData = await userRes.json();
+
+    if (!userRes.ok || !userData.id) {
+      console.error('[Google OAuth] User info request failed:', userData);
+      return res.redirect('/?error=google_user_failed');
+    }
 
     const profile = {
       id: userData.id,
@@ -119,7 +163,8 @@ router.get('/auth/google/callback', async (req, res) => {
     const result = oauthLogin('google', profile);
     res.redirect(`/?token=${result.accessToken}&refresh=${result.refreshToken}&provider=google`);
   } catch (err) {
-    res.redirect('/?error=oauth_failed');
+    console.error('[Google OAuth] Unexpected error:', err);
+    res.redirect('/?error=google_exception');
   }
 });
 

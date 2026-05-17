@@ -549,10 +549,19 @@
       window.history.replaceState({}, '', '/');
     } else if (errorFromUrl) {
       window.history.replaceState({}, '', '/');
-      // Show error on auth page
+      // Show error on auth page with specific message
       showPage('auth');
       const errEl = $('#auth-error');
-      errEl.textContent = '로그인에 실패했습니다. 다시 시도해주세요.';
+      const detail = urlParams.get('detail') || '';
+      let errMsg = '로그인에 실패했습니다. 다시 시도해주세요.';
+      if (errorFromUrl.includes('token_failed')) {
+        errMsg = `인증 서버 오류가 발생했습니다 (${detail || errorFromUrl}). 다시 시도해주세요.`;
+      } else if (errorFromUrl.includes('access_denied')) {
+        errMsg = '로그인이 취소되었습니다.';
+      } else if (errorFromUrl.includes('no_code')) {
+        errMsg = '인증 코드를 받지 못했습니다. 다시 시도해주세요.';
+      }
+      errEl.textContent = errMsg;
       errEl.hidden = false;
     }
 

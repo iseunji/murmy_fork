@@ -254,7 +254,9 @@
                 <span class="game-card-meta-inline">${game.subtitle ? `(${game.subtitle})` : ''} · ${game.players}인용 ${game.duration}</span>
               </div>
               ${owned
-                ? '<span class="game-card-badge game-card-badge--owned">보유 중</span>'
+                ? (game.accessType === 'promo'
+                  ? '<span class="game-card-badge game-card-badge--promo">프로모션</span>'
+                  : '<span class="game-card-badge game-card-badge--owned">구매</span>')
                 : `<span class="game-card-price">${game.price.toLocaleString()}원</span>`
               }
             </div>
@@ -714,6 +716,38 @@
       } catch (err) {
         alert(err.message);
       }
+    });
+
+    // Promo code submit
+    $('#btn-promo-submit').addEventListener('click', async () => {
+      const code = $('#promo-code-input').value.trim();
+      const resultEl = $('#promo-result');
+      if (!code) {
+        resultEl.textContent = '코드를 입력해주세요.';
+        resultEl.className = 'promo-result promo-result--error';
+        resultEl.hidden = false;
+        return;
+      }
+      try {
+        const data = await api('/promo/redeem', {
+          method: 'POST',
+          body: JSON.stringify({ code }),
+        });
+        resultEl.textContent = data.message;
+        resultEl.className = 'promo-result promo-result--success';
+        resultEl.hidden = false;
+        $('#promo-code-input').value = '';
+        // Refresh game list
+        await loadGames();
+      } catch (err) {
+        resultEl.textContent = err.message;
+        resultEl.className = 'promo-result promo-result--error';
+        resultEl.hidden = false;
+      }
+    });
+
+    $('#promo-code-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') $('#btn-promo-submit').click();
     });
 
     // Logo click -> home

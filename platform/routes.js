@@ -235,8 +235,8 @@ router.get('/user/history', requireAuth, (req, res) => {
 // GET /api/games
 router.get('/games', optionalAuth, (req, res) => {
   const gameList = GAMES.map((g) => {
-    const purchased = req.user ? points.hasPurchased(req.user.id, g.id) : false;
-    return { ...g, purchased };
+    const accessType = req.user ? points.getAccessType(req.user.id, g.id) : null;
+    return { ...g, purchased: !!accessType, accessType };
   });
   res.json(gameList);
 });
@@ -246,8 +246,8 @@ router.get('/games/:id', optionalAuth, (req, res) => {
   const game = GAMES.find((g) => g.id === req.params.id);
   if (!game) return res.status(404).json({ error: '게임을 찾을 수 없습니다.' });
 
-  const purchased = req.user ? points.hasPurchased(req.user.id, game.id) : false;
-  res.json({ ...game, purchased });
+  const accessType = req.user ? points.getAccessType(req.user.id, game.id) : null;
+  res.json({ ...game, purchased: !!accessType, accessType });
 });
 
 // POST /api/games/:id/purchase

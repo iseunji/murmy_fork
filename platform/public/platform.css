@@ -50,11 +50,7 @@
 }
 
 html {
-  background: #0a0a0c;
-}
-
-html[data-theme="light"] {
-  background: #e8e6e1;
+  background: #888;
 }
 
 * {

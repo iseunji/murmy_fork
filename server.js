@@ -6,18 +6,42 @@ async function main() {
 
   const express = require('express');
   const http = require('http');
+  const https = require('https');
+  const fs = require('fs');
   const { Server } = require('socket.io');
   const path = require('path');
   const cookieParser = require('cookie-parser');
 
   // -------------------------------------------------------------------------
-  // Express + HTTP + Socket.io setup
+  // Express + HTTP/HTTPS + Socket.io setup
   // -------------------------------------------------------------------------
   const app = express();
-  const server = http.createServer(app);
-  const io = new Server(server);
-
   const PORT = process.env.PORT || 4567;
+
+  // HTTPS setup (production with certs)
+  const certPath = process.env.SSL_CERT || '/home/opc/certs/fullchain.pem';
+  const keyPath = process.env.SSL_KEY || '/home/opc/certs/privkey.pem';
+  let server;
+
+  if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
+    server = https.createServer({
+      cert: fs.readFileSync(certPath),
+      key: fs.readFileSync(keyPath),
+    }, app);
+
+    // HTTP → HTTPS redirect on port 80
+    const httpRedirect = express();
+    httpRedirect.get('*', (req, res) => {
+      res.redirect(`https://${req.headers.host}${req.url}`);
+    });
+    http.createServer(httpRedirect).listen(80, () => {
+      console.log('[Server] HTTP→HTTPS redirect on port 80');
+    }).on('error', () => {});
+  } else {
+    server = http.createServer(app);
+  }
+
+  const io = new Server(server);
 
   // Middleware
   app.use(express.json());
@@ -71,9 +95,12 @@ async function main() {
   // -------------------------------------------------------------------------
   // Start server
   // -------------------------------------------------------------------------
-  server.listen(PORT, () => {
-    console.log(`[Server] Murmy platform running on http://localhost:${PORT}`);
-    console.log(`[Server] Fork game available at http://localhost:${PORT}/games/fork`);
+  const HTTPS_PORT = process.env.HTTPS_PORT || 443;
+  const listenPort = server instanceof https.Server ? HTTPS_PORT : PORT;
+  server.listen(listenPort, () => {
+    const proto = server instanceof https.Server ? 'https' : 'http';
+    console.log(`[Server] Murmy platform running on ${proto}://localhost:${listenPort}`);
+    console.log(`[Server] Fork game available at ${proto}://localhost:${listenPort}/games/fork`);
   });
 }
 

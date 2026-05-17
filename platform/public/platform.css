@@ -651,6 +651,10 @@ body {
   gap: 0.5rem;
 }
 
+.game-card-actions .btn {
+  flex: 1;
+}
+
 .btn-play {
   background: var(--success);
   color: #fff;
@@ -892,6 +896,13 @@ body {
 /* --- Invite Modal --- */
 .invite-modal-content {
   text-align: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: var(--card-shadow);
 }
 
 .invite-modal-title {
@@ -974,15 +985,14 @@ body {
 
 /* --- Invite Button (game card) --- */
 .btn-invite {
-  background: transparent;
-  color: var(--text-secondary);
-  border: 1px solid var(--border);
-  font-weight: 500;
-  font-size: 0.8rem;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  font-weight: 600;
 }
 
 .btn-invite:active {
-  opacity: 0.7;
+  opacity: 0.8;
 }
 
 .coupon-list, .history-list {

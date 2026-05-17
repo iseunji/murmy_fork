@@ -341,9 +341,12 @@ murmy/
 | `/api/games/*` | 게임 목록/구매/완료 API |
 | `/api/reviews` | 후기 목록/작성/삭제 API |
 
-### 인증 시스템 (2026-05-17 확정)
+### 인증 시스템 (2026-05-18 확정)
 
-- **OAuth 전용**: 카카오 / 구글 (네이버 제거, 이메일+비밀번호 완전 제거)
+- **OAuth 전용**: 카카오 / 구글 (네이버 완전 제거 — 코드+UI 모두 삭제됨)
+- **OAuth 상태**: 구글 `.env` 설정 완료, 카카오 `.env` 설정 완료
+- **미해결**: 카카오 KOE006 에러 — 카카오 개발자 콘솔에서 Redirect URI 등록 필요 (`https://murmy42.duckdns.org/api/auth/kakao/callback`)
+- **미해결**: 구글 redirect_uri_mismatch — Google Cloud Console에서 승인된 리디렉션 URI 등록 필요 (`https://murmy42.duckdns.org/api/auth/google/callback`)
 - **Access Token**: JWT, 1시간 만료, `localStorage`에 저장
 - **Refresh Token**: 랜덤 hex, 30일 만료, DB `refresh_tokens` 테이블 + `localStorage`에 저장
 - **토큰 갱신**: 프론트에서 401+TOKEN_EXPIRED 수신 시 자동으로 `/api/auth/refresh` 호출
@@ -389,14 +392,19 @@ murmy/
 - **하단 네비**: 홈 | 후기 | 마이 (Font Awesome 아이콘)
 - **아이콘**: 홈(fa-home), 후기(fa-comment-dots), 마이(fa-user)
 
-### 플랫폼 UI (2026-05-17 확정)
+### 플랫폼 UI (2026-05-18 확정)
 
 - **뷰박스 너비**: 500px (`--container-max`)
 - **하단 네비**: Font Awesome 6.5.1, 높이 64px, 아이콘 20px, 라벨 10px
 - **상단 헤더 우측**: 테마 전환 버튼 (30px) + 햄버거 메뉴
 - **로고**: `murmy42_logo.png` (높이 42px)
 - **OG 썸네일**: `murmy42_thumb.png`
+- **파비콘**: `favicon.png` (300x300, 돋보기 탐정 아이콘) — 플랫폼 + 게임 양쪽 적용
 - **뷰박스 바깥 배경**: 테마 무관 통일 `#888` (중립 회색)
+- **게임 카드 커버**: 크라프트지 배경 + Fork 로고(Title.png) + 일러스트(title-illustration.png, 후광 효과)
+- **게임 카드 제목**: "Fork (갈라진 의도)" 한 줄 표시, "(갈라진 의도)"는 font-weight 300
+- **게임 카드 메타**: 2인용 / 60~80분 — 제목 바로 아래 배치
+- **OAuth 버튼**: 누를 때 scale 이펙트 없음, opacity 0.8로 피드백
 
 ### HTTPS / SSL (2026-05-17 확정)
 
@@ -410,7 +418,7 @@ murmy/
 - **DuckDNS 토큰**: `.env`에 미저장, DuckDNS 웹사이트에서 관리
 - **Oracle Cloud VCN**: 포트 22, 80, 443, 4567 인바운드 허용
 
-### 서버 배포 (2026-05-17 확정)
+### 서버 배포 (2026-05-18 확정)
 
 - **호스팅**: Oracle Cloud (Always Free Tier) — VM.Standard.E2.1.Micro (1GB RAM, 1 OCPU)
 - **OS**: Oracle Linux 9.7
@@ -419,7 +427,8 @@ murmy/
 - **프로세스 매니저**: PM2 (`pm2 restart murmy42`)
 - **배포 방법**: `scp`로 파일 전송 후 `pm2 restart` (서버에 git 미설치)
 - **서버에 git 없음**: `scp -i ~/Downloads/ssh-key-2026-05-16.key <파일> opc@158.180.93.155:~/murmy/<경로>`로 전송
-- **주의**: 1GB RAM 서버이므로 `dnf install` 등 무거운 패키지 설치 시 서버 과부하 → SSH 불가 상태 발생 가능
+- **주의**: 1GB RAM 서버 — 짧은 시간에 SCP/SSH 연속 요청 시 서버 먹통 가능. 배포 시 한 번에 모아서 전송할 것
+- **주의**: `dnf install` 등 무거운 패키지 설치 시 서버 과부하 → SSH 불가 상태 발생 가능
 
 ### 새 게임 추가 시
 

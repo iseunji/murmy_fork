@@ -507,8 +507,8 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.6rem;
-  padding: 1.5rem 1rem 1.25rem;
+  gap: 0.3rem;
+  padding: 1.5rem 1rem 0.5rem;
   transition: opacity 0.3s;
 }
 
@@ -711,7 +711,7 @@ body {
 }
 
 .btn-oauth:active {
-  transform: scale(0.98);
+  opacity: 0.8;
 }
 
 .oauth-logo {

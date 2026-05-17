@@ -625,9 +625,9 @@ body {
 }
 
 .game-card-badge--promo {
-  background: rgba(201, 169, 110, 0.1);
-  color: var(--accent);
-  border-color: rgba(201, 169, 110, 0.2);
+  background: rgba(91, 184, 154, 0.1);
+  color: var(--success);
+  border-color: rgba(91, 184, 154, 0.2);
 }
 
 .game-card-desc {
@@ -653,7 +653,7 @@ body {
 
 .btn-play {
   background: var(--success);
-  color: #111113;
+  color: #fff;
   font-weight: 600;
 }
 
@@ -887,6 +887,102 @@ body {
 .promo-result--error {
   color: var(--danger);
   background: rgba(212, 85, 85, 0.08);
+}
+
+/* --- Invite Modal --- */
+.invite-modal-content {
+  text-align: center;
+}
+
+.invite-modal-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.invite-modal-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+.invite-link-box {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.invite-link-input {
+  flex: 1;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.625rem 0.75rem;
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  min-width: 0;
+}
+
+.btn-invite-copy {
+  padding: 0.625rem 1rem;
+  white-space: nowrap;
+  font-size: 0.85rem;
+}
+
+.invite-share-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.btn-share {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  transition: opacity 0.15s;
+}
+
+.btn-share:active {
+  opacity: 0.7;
+}
+
+.btn-share-kakao {
+  background: #fee500;
+  color: #3c1e1e;
+  border-color: #fee500;
+}
+
+.btn-share-sms {
+  background: var(--success);
+  color: #fff;
+  border-color: var(--success);
+}
+
+.btn-invite-close {
+  width: 100%;
+}
+
+/* --- Invite Button (game card) --- */
+.btn-invite {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  font-weight: 500;
+  font-size: 0.8rem;
+}
+
+.btn-invite:active {
+  opacity: 0.7;
 }
 
 .coupon-list, .history-list {

@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const router = express.Router();
 const { oauthLogin, refreshAccessToken, logout } = require('../lib/auth');
 const { requireAuth, optionalAuth } = require('../lib/middleware');
@@ -18,7 +19,7 @@ const GAMES = [
     coverBg: '/games/fork/assets/kraft-texture.png',
     coverLogo: '/games/fork/assets/Title.png',
     coverIllust: '/platform-assets/title-illustration.png',
-    coverCharacters: ['/games/fork/assets/Hajin.png', '/games/fork/assets/Dohyun.png'],
+    coverCharacters: ['/games/fork/assets/hajin.png', '/games/fork/assets/dohyun.png'],
     available: true,
   },
 ];
@@ -406,6 +407,59 @@ router.post('/reviews', requireAuth, (req, res) => {
   ).run(req.user.id, gameId, rating, content.trim());
 
   res.json({ success: true });
+});
+
+// ==========================================================================
+// INVITE ROUTES
+// ==========================================================================
+
+// POST /api/games/:id/invite — create invite link (host must own game)
+router.post('/games/:id/invite', requireAuth, (req, res) => {
+  const gameId = req.params.id;
+  const game = GAMES.find((g) => g.id === gameId);
+  if (!game) return res.status(404).json({ error: '게임을 찾을 수 없습니다.' });
+
+  if (!points.hasPurchased(req.user.id, gameId)) {
+    return res.status(403).json({ error: '게임을 소유해야 초대할 수 있습니다.' });
+  }
+
+  // Expire any previous active invites from this host for this game
+  db.prepare(
+    "UPDATE game_invites SET status = 'expired' WHERE host_user_id = ? AND game_id = ? AND status = 'active'"
+  ).run(req.user.id, gameId);
+
+  // Generate unique invite code
+  const inviteCode = crypto.randomBytes(6).toString('base64url');
+
+  db.prepare(
+    'INSERT INTO game_invites (host_user_id, game_id, invite_code) VALUES (?, ?, ?)'
+  ).run(req.user.id, gameId, inviteCode);
+
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  const inviteUrl = `${baseUrl}/games/${gameId}/?invite=${inviteCode}`;
+
+  res.json({ inviteCode, inviteUrl });
+});
+
+// GET /api/invite/:code — validate invite link
+router.get('/invite/:code', (req, res) => {
+  const invite = db.prepare(
+    'SELECT * FROM game_invites WHERE invite_code = ?'
+  ).get(req.params.code);
+
+  if (!invite) {
+    return res.status(404).json({ valid: false, error: '유효하지 않은 초대 링크입니다.' });
+  }
+
+  if (invite.status === 'used') {
+    return res.status(410).json({ valid: false, error: '이미 사용된 초대 링크입니다. 새 초대 링크를 요청하세요.' });
+  }
+
+  if (invite.status === 'expired') {
+    return res.status(410).json({ valid: false, error: '만료된 초대 링크입니다.' });
+  }
+
+  res.json({ valid: true, gameId: invite.game_id, inviteCode: invite.invite_code });
 });
 
 // ==========================================================================

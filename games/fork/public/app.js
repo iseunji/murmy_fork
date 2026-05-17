@@ -3254,6 +3254,20 @@ socket.on('partner-disconnected', () => {
   }, 1500);
 });
 
+// ---- Invite Events ----
+
+socket.on('invite-waiting', (data) => {
+  const lobbyTitle = document.querySelector('.lobby-title');
+  if (lobbyTitle) lobbyTitle.textContent = data.message || '호스트 대기 중...';
+});
+
+socket.on('invite-error', (data) => {
+  showToast(data.error || '초대 링크 오류', 'error');
+  setTimeout(() => {
+    window.location.href = '/';
+  }, 2000);
+});
+
 // ---- Generic Error ----
 
 socket.on('error', (data) => {
@@ -3498,7 +3512,10 @@ function bindEvents() {
   if (btnCreateRoom) {
     btnCreateRoom.addEventListener('click', () => {
       SFX.click();
-      socket.emit('create-room', {});
+      // Pass invite code if host created one from the platform
+      const hostInvite = localStorage.getItem('murmy_host_invite');
+      socket.emit('create-room', { inviteCode: hostInvite || undefined });
+      if (hostInvite) localStorage.removeItem('murmy_host_invite');
 
       // Show the create section, hide the join section.
       const createSection = $('lobby-create-section');
@@ -3929,6 +3946,23 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!document.body.classList.contains('capture-protected')) return;
     document.body.classList.toggle('capture-blacked', document.hidden);
   });
+
+  // Invite mode: ?invite=CODE 로 초대 링크를 통해 접속
+  const inviteCode = new URLSearchParams(window.location.search).get('invite');
+  if (inviteCode) {
+    state._inviteCode = inviteCode;
+    // Clean URL
+    window.history.replaceState({}, '', window.location.pathname);
+    // Skip title, go to lobby-like waiting state
+    showScreen('screen-lobby');
+    // Hide lobby options (create/join), show waiting message
+    const lobbyOptions = document.querySelector('.lobby-options');
+    if (lobbyOptions) lobbyOptions.style.display = 'none';
+    const lobbyTitle = document.querySelector('.lobby-title');
+    if (lobbyTitle) lobbyTitle.textContent = '초대받은 게임에 접속 중...';
+    // Emit join-via-invite
+    socket.emit('join-via-invite', { inviteCode });
+  }
 
   // Dev mode: ?dev=screen-waiting 등으로 더미 데이터와 함께 특정 화면 바로 열기
   const devScreen = new URLSearchParams(window.location.search).get('dev');

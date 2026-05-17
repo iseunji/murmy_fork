@@ -70,6 +70,20 @@ CREATE TABLE IF NOT EXISTS reviews (
   created_at TEXT DEFAULT (datetime('now'))
 );
 
+-- Game invites table (one-time invite links)
+CREATE TABLE IF NOT EXISTS game_invites (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  host_user_id INTEGER NOT NULL REFERENCES users(id),
+  game_id TEXT NOT NULL,
+  invite_code TEXT UNIQUE NOT NULL,
+  room_code TEXT,
+  status TEXT NOT NULL DEFAULT 'active',
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_game_invites_code ON game_invites(invite_code);
+CREATE INDEX IF NOT EXISTS idx_game_invites_host ON game_invites(host_user_id, status);
+
 -- Promo codes table (anyone can redeem)
 CREATE TABLE IF NOT EXISTS promo_codes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -1,10 +1,16 @@
 const gameData = require('./game-data');
 
+// DB access for invite system
+let db = null;
+try { db = require('../../lib/db'); } catch (_) {}
+
 // ---------------------------------------------------------------------------
 // In-memory room storage
 // ---------------------------------------------------------------------------
 const rooms = {}; // roomCode -> room object
 const socketToRoom = {}; // socketId -> roomCode (for fast lookup on disconnect)
+const inviteToRoom = {}; // inviteCode -> roomCode (for guest auto-join)
+const pendingInviteGuests = {}; // inviteCode -> [socket] (guests waiting for host)
 
 // Phase order used by the state machine
 const PHASE_ORDER = ['investigation1', 'discussion1', 'investigation2', 'discussion2', 'accusation'];
@@ -496,7 +502,7 @@ function register(namespace) {
     // ------------------------------------------
     // CREATE ROOM
     // ------------------------------------------
-    socket.on('create-room', () => {
+    socket.on('create-room', ({ inviteCode } = {}) => {
       const roomCode = generateRoomCode();
 
       const room = {
@@ -530,14 +536,84 @@ function register(namespace) {
         allCollectedEvidence: {},
         comboCards: {},
         pendingTrade: null,
+        inviteCode: inviteCode || null,
       };
 
       rooms[roomCode] = room;
       socketToRoom[socket.id] = roomCode;
       socket.join(roomCode);
 
-      console.log(`[Room ${roomCode}] Created by ${socket.id}`);
+      // Link invite code to this room
+      if (inviteCode && db) {
+        inviteToRoom[inviteCode] = roomCode;
+        db.prepare("UPDATE game_invites SET room_code = ? WHERE invite_code = ? AND status = 'active'")
+          .run(roomCode, inviteCode);
+
+        // If guest is already waiting, auto-join them
+        const waitingGuests = pendingInviteGuests[inviteCode];
+        if (waitingGuests && waitingGuests.length > 0) {
+          const guest = waitingGuests.shift();
+          delete pendingInviteGuests[inviteCode];
+          room.players[1] = guest;
+          socketToRoom[guest.id] = roomCode;
+          guest.join(roomCode);
+          console.log(`[Room ${roomCode}] Invite guest auto-joined (${guest.id})`);
+          guest.emit('room-joined', { success: true, playerNum: 2 });
+          socket.emit('player-joined', { playerNum: 2 });
+        }
+      }
+
+      console.log(`[Room ${roomCode}] Created by ${socket.id}${inviteCode ? ` (invite: ${inviteCode})` : ''}`);
       socket.emit('room-created', { roomCode });
+    });
+
+    // ------------------------------------------
+    // JOIN VIA INVITE (guest auto-join)
+    // ------------------------------------------
+    socket.on('join-via-invite', ({ inviteCode }) => {
+      if (!inviteCode) {
+        socket.emit('invite-error', { error: '초대 코드가 없습니다.' });
+        return;
+      }
+
+      // Check invite validity
+      if (db) {
+        const invite = db.prepare("SELECT * FROM game_invites WHERE invite_code = ?").get(inviteCode);
+        if (!invite || invite.status !== 'active') {
+          socket.emit('invite-error', { error: invite?.status === 'used' ? '이미 사용된 초대 링크입니다.' : '유효하지 않은 초대 링크입니다.' });
+          return;
+        }
+      }
+
+      // Check if room already exists for this invite
+      const roomCode = inviteToRoom[inviteCode];
+      if (roomCode && rooms[roomCode]) {
+        const room = rooms[roomCode];
+        const connectedCount = room.players.filter((s) => s !== null).length;
+        if (connectedCount >= 2) {
+          socket.emit('invite-error', { error: '이미 다른 플레이어가 참여 중입니다.' });
+          return;
+        }
+        // Join the room
+        const playerIndex = room.players.indexOf(null);
+        room.players[playerIndex] = socket;
+        socketToRoom[socket.id] = roomCode;
+        socket.join(roomCode);
+        console.log(`[Room ${roomCode}] Invite guest joined (${socket.id})`);
+        socket.emit('room-joined', { success: true, playerNum: playerIndex + 1 });
+        const partner = getPartnerSocket(room, socket.id);
+        if (partner) {
+          partner.emit('player-joined', { playerNum: playerIndex + 1 });
+        }
+      } else {
+        // Room not created yet — put guest in waiting queue
+        if (!pendingInviteGuests[inviteCode]) {
+          pendingInviteGuests[inviteCode] = [];
+        }
+        pendingInviteGuests[inviteCode].push(socket);
+        socket.emit('invite-waiting', { message: '호스트가 방을 생성할 때까지 대기 중...' });
+        console.log(`[Invite ${inviteCode}] Guest waiting for host (${socket.id})`);
+      }
     });
 
     // ------------------------------------------
@@ -745,6 +821,14 @@ function register(namespace) {
 
         room.gameState = 'intro';
         console.log(`[Room ${roomCode}] Characters selected, roles assigned`);
+
+        // Mark invite as used (link can no longer be reused for new session)
+        if (room.inviteCode && db) {
+          db.prepare("UPDATE game_invites SET status = 'used' WHERE invite_code = ? AND status = 'active'")
+            .run(room.inviteCode);
+          delete inviteToRoom[room.inviteCode];
+          console.log(`[Room ${roomCode}] Invite ${room.inviteCode} marked as used`);
+        }
 
         shuffled.forEach((s, i) => {
           const role = roleAssignment[i];
@@ -1407,7 +1491,7 @@ function register(namespace) {
           }
           console.log(`[Room ${roomCode}] Player ${playerIndex + 1} permanently disconnected`);
         }
-      }, 15000);
+      }, 60000);
 
       scheduleRoomCleanup(roomCode);
     });

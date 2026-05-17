@@ -263,7 +263,8 @@
             <p class="game-card-desc">${game.description}</p>
             <div class="game-card-actions">
               ${owned
-                ? '<button class="btn btn-play" data-action="play">플레이하기</button>'
+                ? `<button class="btn btn-invite" data-action="invite">함께할 친구 초대하기</button>
+                   <button class="btn btn-play" data-action="play">플레이하기</button>`
                 : '<button class="btn btn-buy" data-action="buy">구매하기</button>'
               }
             </div>
@@ -332,6 +333,14 @@
         e.stopPropagation();
         const gameId = btn.closest('.game-card').dataset.gameId;
         window.location.href = `/games/${gameId}/`;
+      });
+    });
+
+    container.querySelectorAll('[data-action="invite"]').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const gameId = btn.closest('.game-card').dataset.gameId;
+        await openInviteModal(gameId);
       });
     });
 
@@ -534,6 +543,22 @@
     $('#review-modal').hidden = false;
   }
 
+  // --- Invite ---
+  async function openInviteModal(gameId) {
+    try {
+      const data = await api(`/games/${gameId}/invite`, {
+        method: 'POST',
+        body: JSON.stringify({}),
+      });
+      $('#invite-link-input').value = data.inviteUrl;
+      $('#invite-modal').hidden = false;
+      // Store invite code so the host's game client can link the room
+      localStorage.setItem('murmy_host_invite', data.inviteCode);
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
   // --- Init ---
   async function init() {
     // Theme first (avoid flash)
@@ -716,6 +741,40 @@
       } catch (err) {
         alert(err.message);
       }
+    });
+
+    // --- Invite modal ---
+    $('#btn-invite-copy').addEventListener('click', () => {
+      const input = $('#invite-link-input');
+      navigator.clipboard.writeText(input.value).then(() => {
+        $('#btn-invite-copy').textContent = '복사됨!';
+        setTimeout(() => { $('#btn-invite-copy').textContent = '복사'; }, 2000);
+      }).catch(() => {
+        input.select();
+        document.execCommand('copy');
+        $('#btn-invite-copy').textContent = '복사됨!';
+        setTimeout(() => { $('#btn-invite-copy').textContent = '복사'; }, 2000);
+      });
+    });
+
+    $('#btn-share-kakao').addEventListener('click', () => {
+      const url = $('#invite-link-input').value;
+      const kakaoUrl = `https://sharer.kakao.com/talk/friends/picker/link?url=${encodeURIComponent(url)}`;
+      if (navigator.share) {
+        navigator.share({ title: 'Murmy42 - 함께 플레이하기', text: '2인용 머더 미스터리 게임에 초대합니다!', url }).catch(() => {});
+      } else {
+        window.open(kakaoUrl, '_blank', 'width=500,height=600');
+      }
+    });
+
+    $('#btn-share-sms').addEventListener('click', () => {
+      const url = $('#invite-link-input').value;
+      const body = encodeURIComponent(`Murmy42 게임 초대! 아래 링크로 접속하세요:\n${url}`);
+      window.location.href = `sms:?body=${body}`;
+    });
+
+    $('#btn-invite-close').addEventListener('click', () => {
+      $('#invite-modal').hidden = true;
     });
 
     // Promo code submit

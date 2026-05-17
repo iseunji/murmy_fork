@@ -17,6 +17,7 @@ const GAMES = [
     duration: '60~80분',
     coverBg: '/games/fork/assets/kraft-texture.png',
     coverLogo: '/games/fork/assets/Title.png',
+    coverCharacters: ['/games/fork/assets/Hajin.png', '/games/fork/assets/Dohyun.png'],
     available: true,
   },
 ];

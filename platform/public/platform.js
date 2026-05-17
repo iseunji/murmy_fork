@@ -241,28 +241,32 @@
 
     container.innerHTML = games.map((game) => {
       const owned = game.purchased;
+      const charsHtml = (game.coverCharacters || []).map((src) =>
+        `<img class="game-card-char" src="${src}" alt="">`
+      ).join('');
 
       return `
         <div class="game-card" data-game-id="${game.id}">
           <div class="game-card-cover game-card-cover--loading" data-bg="${game.coverBg || ''}">
-            ${game.coverLogo ? `<img src="${game.coverLogo}" alt="${game.title}">` : ''}
+            ${game.coverLogo ? `<img class="game-card-logo" src="${game.coverLogo}" alt="${game.title}">` : ''}
+            ${charsHtml ? `<div class="game-card-chars">${charsHtml}</div>` : ''}
           </div>
           <div class="game-card-body">
             <div class="game-card-header">
-              <div>
-                <div class="game-card-title">${game.title}</div>
-                <div class="game-card-subtitle">${game.subtitle}</div>
+              <div class="game-card-title-row">
+                <span class="game-card-title">${game.title}</span>
+                ${game.subtitle ? `<span class="game-card-subtitle">(${game.subtitle})</span>` : ''}
               </div>
               ${owned
                 ? '<span class="game-card-badge game-card-badge--owned">보유 중</span>'
                 : `<span class="game-card-price">${game.price.toLocaleString()}원</span>`
               }
             </div>
-            <p class="game-card-desc">${game.description}</p>
             <div class="game-card-meta">
               <span>${game.players}인용</span>
               <span>${game.duration}</span>
             </div>
+            <p class="game-card-desc">${game.description}</p>
             <div class="game-card-actions">
               ${owned
                 ? '<button class="btn btn-play" data-action="play">플레이하기</button>'
@@ -277,7 +281,7 @@
     // Preload cover images before showing
     container.querySelectorAll('.game-card-cover').forEach((cover) => {
       const bgUrl = cover.dataset.bg;
-      const logoImg = cover.querySelector('img');
+      const allImgs = cover.querySelectorAll('img');
       const promises = [];
 
       if (bgUrl) {
@@ -294,14 +298,14 @@
         }));
       }
 
-      if (logoImg) {
-        if (!logoImg.complete) {
+      allImgs.forEach((imgEl) => {
+        if (!imgEl.complete) {
           promises.push(new Promise((resolve) => {
-            logoImg.onload = resolve;
-            logoImg.onerror = resolve;
+            imgEl.onload = resolve;
+            imgEl.onerror = resolve;
           }));
         }
-      }
+      });
 
       if (promises.length === 0) {
         cover.classList.remove('game-card-cover--loading');

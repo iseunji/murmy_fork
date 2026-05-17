@@ -159,15 +159,29 @@
     });
   }
 
+  // --- Bottom nav active state ---
+  function setActiveNav(navId) {
+    $$('.bottom-nav-item').forEach((item) => {
+      item.classList.toggle('active', item.dataset.nav === navId);
+    });
+  }
+
   // --- Auth UI ---
   function updateAuthUI() {
     const loggedIn = !!state.user;
-    $('#header-nav').hidden = loggedIn;
-    $('#header-nav-logged').hidden = !loggedIn;
 
+    // Top header points
+    const pointsEl = $('#header-points');
     if (loggedIn) {
-      $('#header-points').textContent = `${state.user.points}P`;
+      pointsEl.hidden = false;
+      pointsEl.textContent = `${state.user.points}P`;
+    } else {
+      pointsEl.hidden = true;
     }
+
+    // Bottom nav: show login or profile
+    $('#nav-login').hidden = loggedIn;
+    $('#nav-profile').hidden = !loggedIn;
   }
 
   // --- Game Tabs ---
@@ -198,13 +212,10 @@
 
     container.innerHTML = games.map((game) => {
       const owned = game.purchased;
-      const coverStyle = game.coverBg
-        ? `background-image: url('${game.coverBg}'); background-size: cover; background-position: center;`
-        : '';
 
       return `
         <div class="game-card" data-game-id="${game.id}">
-          <div class="game-card-cover" style="${coverStyle}">
+          <div class="game-card-cover game-card-cover--loading" data-bg="${game.coverBg || ''}">
             ${game.coverLogo ? `<img src="${game.coverLogo}" alt="${game.title}">` : ''}
           </div>
           <div class="game-card-body">
@@ -233,6 +244,44 @@
         </div>
       `;
     }).join('');
+
+    // Preload cover images before showing
+    container.querySelectorAll('.game-card-cover').forEach((cover) => {
+      const bgUrl = cover.dataset.bg;
+      const logoImg = cover.querySelector('img');
+      const promises = [];
+
+      if (bgUrl) {
+        promises.push(new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => {
+            cover.style.backgroundImage = `url('${bgUrl}')`;
+            cover.style.backgroundSize = 'cover';
+            cover.style.backgroundPosition = 'center';
+            resolve();
+          };
+          img.onerror = resolve;
+          img.src = bgUrl;
+        }));
+      }
+
+      if (logoImg) {
+        if (!logoImg.complete) {
+          promises.push(new Promise((resolve) => {
+            logoImg.onload = resolve;
+            logoImg.onerror = resolve;
+          }));
+        }
+      }
+
+      if (promises.length === 0) {
+        cover.classList.remove('game-card-cover--loading');
+      } else {
+        Promise.all(promises).then(() => {
+          cover.classList.remove('game-card-cover--loading');
+        });
+      }
+    });
 
     // Event listeners
     container.querySelectorAll('.game-card').forEach((card) => {
@@ -397,20 +446,32 @@
       tab.addEventListener('click', () => setTab(tab.dataset.tab));
     });
 
-    // Login button
-    $('#btn-login').addEventListener('click', () => {
+    // Bottom nav
+    $('#nav-home').addEventListener('click', () => {
+      setActiveNav('home');
+      showPage('home');
+    });
+
+    $('#nav-login').addEventListener('click', () => {
+      setActiveNav('auth');
       showPage('auth');
     });
 
-    // Profile button
-    $('#btn-profile').addEventListener('click', () => {
+    $('#nav-profile').addEventListener('click', () => {
+      setActiveNav('profile');
       loadProfile();
       showPage('profile');
     });
 
-    // Logout button
+    // My games button (profile -> owned tab)
+    $('#btn-my-games').addEventListener('click', () => {
+      setActiveNav('home');
+      setTab('owned');
+      showPage('home');
+    });
+
+    // Logout
     $('#btn-logout').addEventListener('click', async () => {
-      // Notify server to invalidate refresh token
       if (state.refreshToken) {
         try {
           await fetch('/api/auth/logout', {
@@ -422,14 +483,9 @@
       }
       clearTokens();
       updateAuthUI();
+      setActiveNav('home');
       showPage('home');
       loadGames();
-    });
-
-    // My games button (profile -> owned tab)
-    $('#btn-my-games').addEventListener('click', () => {
-      setTab('owned');
-      showPage('home');
     });
 
     // Purchase points input

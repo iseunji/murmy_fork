@@ -774,6 +774,18 @@
       }
     });
 
+    // Invite modal: X button (close without navigation)
+    $('#btn-invite-x').addEventListener('click', () => {
+      $('#invite-modal').hidden = true;
+    });
+
+    // Invite modal: click overlay outside content to close
+    $('#invite-modal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) {
+        $('#invite-modal').hidden = true;
+      }
+    });
+
     // Promo code submit
     $('#btn-promo-submit').addEventListener('click', async () => {
       const code = $('#promo-code-input').value.trim();

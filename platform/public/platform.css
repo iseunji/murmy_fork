@@ -885,6 +885,7 @@ body {
 
 /* --- Invite Modal --- */
 .invite-modal-content {
+  position: relative;
   text-align: center;
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -893,6 +894,25 @@ body {
   width: 100%;
   max-width: 440px;
   box-shadow: var(--card-shadow);
+}
+
+.modal-close-x {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.modal-close-x:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover, rgba(0,0,0,0.05));
 }
 
 .invite-modal-title {
@@ -1286,8 +1306,8 @@ body {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(6px);
   z-index: 10002;
   display: flex;
   align-items: center;
